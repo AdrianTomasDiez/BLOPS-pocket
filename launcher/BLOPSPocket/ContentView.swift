@@ -7,27 +7,49 @@ struct ContentView: View {
     @State private var isValid = false
     @State private var catalog: ZoneCatalog?
     @State private var folderName: String?
+    @State private var origin: FolderOrigin?
     @State private var hasSavedFolder = false
+
+    /// De dónde sale la carpeta que se está leyendo.
+    private enum FolderOrigin {
+        /// Copia dentro del contenedor de la app (vía recomendada).
+        case appDocuments
+        /// Carpeta elegida en Archivos y recordada con un bookmark.
+        case external
+
+        var description: String {
+            switch self {
+            case .appDocuments: return "Copia dentro de la app"
+            case .external: return "Carpeta elegida en Archivos"
+            }
+        }
+    }
 
     var body: some View {
         VStack(spacing: 12) {
             Text("BLOPS pocket")
                 .font(.largeTitle)
 
-            Text("Elige la carpeta del juego que copiaste en Archivos. Debe contener una subcarpeta zone.")
-                .multilineTextAlignment(.center)
+            if let folderName, let origin {
+                VStack(spacing: 2) {
+                    Text("Carpeta del juego: \(folderName)")
+                        .font(.subheadline)
+                        .multilineTextAlignment(.center)
+                    Text(origin.description)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
                 .padding(.horizontal)
+            } else {
+                Text("Copia la carpeta del juego (la que contiene la subcarpeta zone) en Archivos → En mi iPhone → BLOPS pocket → Games, o elige otra carpeta con el botón.")
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
 
-            Button("Elegir carpeta del juego") {
+            Button("Elegir otra carpeta del juego") {
                 showingPicker = true
             }
             .buttonStyle(.borderedProminent)
-
-            if let folderName {
-                Text("Carpeta: \(folderName)")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
 
             if let message {
                 Text(message)
@@ -50,7 +72,7 @@ struct ContentView: View {
                 .font(.footnote)
             }
 
-            Text("Este lanzador no incluye ni distribuye archivos del juego: solo lee la copia que tú posees.")
+            Text("Este lanzador no incluye ni distribuye archivos del juego: solo lee la copia que tú posees. Si desinstalas la app, se borra la copia que hayas puesto dentro.")
                 .font(.footnote)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -65,9 +87,20 @@ struct ContentView: View {
             handle(result)
         }
         .task {
-            // Recupera el acceso guardado para no tener que elegir la carpeta cada vez.
-            restoreSavedFolder()
+            prepareFolder()
         }
+    }
+
+    /// Al abrir: primero la copia dentro de la app, después la carpeta recordada.
+    private func prepareFolder() {
+        hasSavedFolder = GameFolderBookmark.hasSavedFolder()
+
+        if let gameFolder = GameFolderLocator.findInDocuments() {
+            inspect(gameFolder, origin: .appDocuments, savingBookmark: false)
+            return
+        }
+
+        restoreSavedFolder()
     }
 
     private func handle(_ result: Result<[URL], Error>) {
@@ -78,24 +111,20 @@ struct ContentView: View {
             message = "No se pudo abrir la carpeta. Vuelve a intentarlo."
         case .success(let urls):
             guard let url = urls.first else { return }
-            let accessed = url.startAccessingSecurityScopedResource()
-            defer {
-                if accessed { url.stopAccessingSecurityScopedResource() }
-            }
-            inspect(url, savingBookmark: true)
+            inspect(url, origin: .external, savingBookmark: true)
         }
     }
 
-    /// Recupera la carpeta guardada al abrir la app.
+    /// Recupera la carpeta elegida en Archivos una vez anterior.
     private func restoreSavedFolder() {
         guard let url = GameFolderBookmark.restore() else { return }
         hasSavedFolder = true
-        inspect(url, savingBookmark: false)
+        inspect(url, origin: .external, savingBookmark: false)
     }
 
     /// Valida la carpeta y construye el catálogo. Todo el acceso al disco ocurre
-    /// dentro del ámbito de seguridad de la URL.
-    private func inspect(_ url: URL, savingBookmark: Bool) {
+    /// dentro del ámbito de seguridad de la URL (para las carpetas externas).
+    private func inspect(_ url: URL, origin: FolderOrigin, savingBookmark: Bool) {
         let accessed = url.startAccessingSecurityScopedResource()
         defer {
             if accessed { url.stopAccessingSecurityScopedResource() }
@@ -104,12 +133,12 @@ struct ContentView: View {
         switch GameFolderValidator.validate(url) {
         case .valid:
             if savingBookmark {
-                let saved = GameFolderBookmark.save(url)
-                hasSavedFolder = saved
+                hasSavedFolder = GameFolderBookmark.save(url)
             }
             let catalog = ZoneCatalog.build(in: url)
             self.catalog = catalog
-            folderName = url.lastPathComponent
+            self.folderName = url.lastPathComponent
+            self.origin = origin
             isValid = !catalog.entries.isEmpty
             message = summary(for: catalog)
         case .notAFolder:
@@ -126,8 +155,13 @@ struct ContentView: View {
     private func forget() {
         GameFolderBookmark.clear()
         hasSavedFolder = false
-        folderName = nil
+        guard origin == .external else {
+            message = "Se olvidó la carpeta externa guardada."
+            return
+        }
         catalog = nil
+        folderName = nil
+        origin = nil
         isValid = false
         message = "Se olvidó la carpeta guardada. Elige de nuevo la carpeta del juego."
     }

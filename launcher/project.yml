@@ -1,6 +1,6 @@
 name: BLOPSPocket
 options:
-  bundleIdPrefix: com.example
+  bundleIdPrefix: com.adriantomasdiez
   deploymentTarget:
     iOS: "15.0"
 targets:
@@ -11,7 +11,7 @@ targets:
       - BLOPSPocket
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.blopspocket
+        PRODUCT_BUNDLE_IDENTIFIER: com.adriantomasdiez.blopspocket
         MARKETING_VERSION: "0.0.1"
         CURRENT_PROJECT_VERSION: "1"
     info:
@@ -21,3 +21,7 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        # Deja ver la carpeta de la app en Archivos → En mi iPhone → BLOPS pocket,
+        # que es la vía recomendada para copiar el juego (reglas.md, sección 10).
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true

@@ -12,7 +12,7 @@ Estudia los repositorios de referencia (IW4-Pocket, KisakBlack, bo1-zombies-deco
 
 ---
 
-## Prompt 2: Decisiones previas
+## Prompt 2: Decisiones previas (hecho)
 
 ```
 Antes de escribir código, pregúntame con ask_questions: licencia de la app (GPL-3.0 si usamos KisakBlack, Apache 2.0 si solo es referencia), nombre de la app, si hay un Mac para compilar o solo GitHub Actions, y si la distribución es personal o pública. Registra mis respuestas en la sección 6 de reglas.md.
@@ -20,7 +20,7 @@ Antes de escribir código, pregúntame con ask_questions: licencia de la app (GP
 
 ---
 
-## Prompt 3: Estructura del proyecto y CI para IPA
+## Prompt 3: Estructura del proyecto y CI para IPA (hecho)
 
 ```
 Crea la estructura mínima del proyecto según la sección 4 de reglas.md y un workflow de GitHub Actions que compile un placeholder y genere una IPA sin firmar, siguiendo el flujo de IW4-Pocket. Añade .gitignore para datos del juego. No añadas código del motor.
@@ -28,7 +28,7 @@ Crea la estructura mínima del proyecto según la sección 4 de reglas.md y un w
 
 ---
 
-## Prompt 4: Launcher: selección y validación de la carpeta del juego
+## Prompt 4: Launcher: selección y validación de la carpeta del juego (hecho)
 
 ```
 Crea el launcher iOS que deja elegir la carpeta del juego del usuario (con subcarpeta zone), valida que existe y muestra un mensaje claro si falta algo. No cargues ni leas los archivos del juego todavía. Sigue el modelo de IW4-Pocket para la ruta en Archivos.
@@ -36,7 +36,7 @@ Crea el launcher iOS que deja elegir la carpeta del juego del usuario (con subca
 
 ---
 
-## Prompt 5: Lectura de archivos de BO1
+## Prompt 5: Lectura de archivos de BO1 (hecho: contenedor y catálogo; la tabla de assets pasa a la fase 6)
 
 ```
 Investiga y documenta en reglas.md el formato de los archivos de zona de Black Ops 1 (FastFile). Después implementa un lector que liste los archivos de zona disponibles sin cargarlos en memoria. Verifica con una copia de prueba propia. No copies código de bo1-zombies-decompiled.

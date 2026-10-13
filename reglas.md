@@ -10,7 +10,7 @@ Lanzador para iPhone (iOS) que ejecute **Call of Duty: Black Ops 1** leyendo los
 
 - **Modo Zombies** es el objetivo principal (Adri lo quiere jugar en el móvil). Multijugador queda como opción posterior.
 - **Modelo de referencia de arquitectura:** [IW4-Pocket](https://github.com/MarkusSela/IW4-Pocket) (MW2 en iOS).
-- **Estado:** fase de estudio. Todavía no hay código.
+- **Estado:** fases 0–5 hechas (launcher, acceso persistente a la carpeta y catálogo de zonas). El motor (fases 6–7) está pendiente de decisión.
 
 ## 2. Restricciones legales (obligatorias)
 
@@ -154,7 +154,7 @@ BLOPS pocket/
     └── ios-ipa.yml       → compila y genera la IPA sin firmar (GitHub solo lee workflows desde esta ruta)
 ```
 
-No crear carpetas hasta que la fase lo requiera. El bundle id `com.example.blopspocket` es provisional: cámbialo antes de instalar en el iPhone.
+No crear carpetas hasta que la fase lo requiera. El bundle id definitivo es `com.adriantomasdiez.blopspocket`; si se cambia, hay que regenerar el proyecto con XcodeGen y reinstalar la IPA.
 
 ## 5. Reglas de funcionamiento
 
@@ -189,6 +189,10 @@ No crear carpetas hasta que la fase lo requiera. El bundle id `com.example.blops
 | 2026-10-13 | La tabla de assets de T5 no se implementa hasta estar verificada | Regla 5.7: no inventar formatos |
 | 2026-10-13 | El acceso a la carpeta del juego persiste con un bookmark en `UserDefaults` | iOS no admite `.withSecurityScope` (es de macOS); el bookmark de la URL del selector ya lleva el acceso. Cierra el pendiente de la fase 4 |
 | 2026-10-13 | El bookmark se guarda pero no se registra en logs | Regla 4: los logs no llevan datos del usuario; el bookmark contiene la ruta elegida |
+| 2026-10-13 | `LICENSE` (Apache 2.0 oficial) y `NOTICE` añadidos | La decisión de licencia de la fase 2 no estaba materializada (auditoría, sección 10) |
+| 2026-10-13 | Modelo de carpeta: copia dentro de la app como vía principal + selector externo como alternativa | Elegido por Adri; coincide con IW4-Pocket, RetroArch y PPSSPP y evita la fragilidad de iCloud con 2,6 GB |
+| 2026-10-13 | `UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace` y carpeta `Documents/Games` | Para que el juego aparezca en Archivos → En mi iPhone → BLOPS pocket → Games |
+| 2026-10-13 | Bundle id definitivo: `com.adriantomasdiez.blopspocket` | Elegido por Adri; sustituye al provisional `com.example.blopspocket` |
 
 ## 7. Estado actual
 
@@ -198,14 +202,14 @@ No crear carpetas hasta que la fase lo requiera. El bundle id `com.example.blops
 | 1 | Investigación de referencias | Hecho (este documento) |
 | 2 | Decisiones: licencia, nombre, base de código | Hecho (KisakBlack solo como referencia) |
 | 3 | Estructura del proyecto y CI para IPA sin firmar | Hecho. El CI en macOS compila y publica el artefacto `BLOPSPocket-unsigned` (run 38458720679 sobre 434f521 y run sobre 85cefbd, ambos `success`) |
-| 4 | Launcher: selección y validación de la carpeta del juego | Hecho. El acceso persiste entre aperturas con bookmark (`GameFolderBookmark.swift`) y se puede olvidar desde la pantalla. Sin probar en iPhone |
+| 4 | Launcher: selección y validación de la carpeta del juego | Hecho. Dos vías: la copia en `Documents/Games` (principal, `GameFolderLocator.swift`) y una carpeta externa recordada con bookmark (`GameFolderBookmark.swift`). Sin probar en iPhone |
 | 5 | Lectura de archivos de BO1 (formato y carga) | **Hecho en lo verificable**: formato del contenedor documentado y medido (sección 3.5) y catálogo de zonas en la app (`ZoneFileHeader.swift`, `ZoneCatalog.swift`). Falta compilarlo en CI y probarlo en el iPhone. La tabla de assets queda para la fase 6 |
 | 6 | Motor en iOS (Metal, audio, entrada, memoria) | Pendiente |
 | 7 | Pruebas en iPhone y documentación para el usuario | Pendiente |
 
 **Fase en curso:** 6 (motor en iOS). Las fases 4 y 5 quedan cerradas a falta de comprobar el run del CI y de probarlas en el iPhone.
 **Próximo paso:** prompt 6: definir la estrategia del motor (KisakBlack bajo GPL, reescritura propia, u otra) con sus riesgos de memoria y de licencia, y esperar la confirmación de Adri antes de implementar nada.
-**Último commit:** `2564356` (fase 5) en `main`, subido a origin, más el commit de la fase 4. **Sin commitear:** `.freebuff/` (no debe subirse).
+**Estado del repositorio:** todo commiteado y subido a `origin/main` (fases 4 y 5, y esta auditoría). **Sin commitear a propósito:** `.freebuff/`. El workflow del CI ejecuta también las pruebas de `tools/` antes de compilar.
 
 ## 8. Decisiones abiertas (por confirmar con Adri)
 
@@ -219,8 +223,8 @@ No crear carpetas hasta que la fase lo requiera. El bundle id `com.example.blops
 
 - Probar en el iPhone el catálogo de zonas y la persistencia del acceso (fases 4 y 5).
 - Probar la IPA en un iPhone con SideStore (instalación y selección de carpeta). Hoy solo sabemos que compila.
-- Decidir si la app debe leer una carpeta externa (Archivos) o copiar el juego dentro de la app, como hace IW4-Pocket (`Documents/Games`). Sin Mac no se puede comprobar el comportamiento de las URLs de Archivos fuera del simulador.
-- Cambiar el bundle id provisional `com.example.blopspocket` antes de instalar.
+- Probar en el iPhone las dos vías de carpeta: la copia en `Documents/Games` y el selector externo con bookmark.
+- Escribir en el README (fase 7) que desinstalar la app borra la copia del juego y que hay que comprobar el espacio libre antes de copiar 2,6 GB.
 - Comprobar el resultado del CI de la fase 4/5 (aquí no hay `gh` ni token: se mira en GitHub Actions).
 - Revisar el CI en cada cambio: el primer run tardó por la cola de runners macOS arm64.
 
@@ -233,3 +237,32 @@ Hecho: repositorio remoto creado y commits subidos a origin (ramas `main`).
 - Sin Xcode ni Mac en el entorno de desarrollo: el Swift solo se compila en GitHub Actions, así que el resultado de un `push` tarda y no se puede comprobar desde aquí.
 - Los tres repositorios de referencia están en Windows o son experimentales. Ninguno está probado en iOS.
 - IW4-Pocket tiene problemas de memoria en iPhone; el motor de BO1 puede tener problemas parecidos.
+
+## 10. Auditoría de las fases 0–4 (2026-10-13)
+
+Revisión de qué pedía cada fase contra lo que hay de verdad en el repositorio. La conclusión: no se saltó ninguna fase, pero había **tareas de la fase 2 y 3 que nunca se materializaron** y una decisión de la fase 4 sin cerrar.
+
+| Fase | Qué existía | Hueco encontrado |
+|---|---|---|
+| 0 | `reglas.md` | Ninguno |
+| 1 | §3 y §3.5 | Ninguno |
+| 2 | Decisiones en §6 | La licencia elegida (Apache 2.0) **no tenía archivo `LICENSE`** |
+| 3 | `project.yml`, workflow, `.gitignore` | Faltaba `LICENSE`/`NOTICE`; bundle id provisional; `Info.plist` generado sin ignorar |
+| 4 | Selector, validador, bookmark | Sin decidir el modelo de carpeta del juego |
+
+**Corregido en esta auditoría:**
+
+- `LICENSE` añadido con el texto oficial de Apache 2.0 (11 358 bytes, descargado de apache.org).
+- `NOTICE` añadido: propiedad del proyecto, licencia y atribuciones, con el aviso de que ninguna referencia aportó código y de que copiar GPL-3.0 obligaría a cambiar la licencia.
+- §1 decía "Todavía no hay código": corregido.
+- `prompts.md` no marcaba las fases 2–5 ya hechas: marcadas.
+- `launcher/BLOPSPocket/Info.plist` (generado por XcodeGen) añadido a `.gitignore`.
+
+**Modelo de carpeta del juego (fase 4) — decidido el 2026-10-13.** Investigación previa:
+
+- Elegir una carpeta externa con el selector de Archivos y un bookmark **funciona** (Apple lo documenta desde iOS 13), pero para 2.6 GB es frágil: iCloud puede desalojar los archivos y dejar la carpeta "válida pero sin bytes", el proveedor tiene que cooperar, y desinstalar la app borra el bookmark guardado.
+- El patrón que usan los proyectos equivalentes (IW4-Pocket, RetroArch, PPSSPP, Provenance) es **copiar el juego dentro de la app** y que el usuario lo vea en Archivos → En mi iPhone → nombre de la app, con `UIFileSharingEnabled` y `LSSupportsOpeningDocumentsInPlace`.
+- No hay cuota documentada del contenedor de la app: el límite es el espacio libre del dispositivo, y hay que comprobarlo antes de copiar 2.6 GB.
+- **Decidido:** vía principal copiar el juego en `Documents/Games` (que aparece en Archivos como En mi iPhone → BLOPS pocket) y mantener el selector externo como alternativa. Implementado con `GameFolderLocator.swift` y las claves de Info.plist `UIFileSharingEnabled` y `LSSupportsOpeningDocumentsInPlace`.
+
+Fuentes: [Apple: acceso a directorios](https://developer.apple.com/documentation/uikit/providing-access-to-directories), [UIFileSharingEnabled](https://developer.apple.com/documentation/bundleresources/information-property-list/uifilesharingenabled), [capacidad del volumen](https://developer.apple.com/documentation/foundation/checking-volume-storage-capacity), [README de IW4-Pocket](https://github.com/MarkusSela/IW4-Pocket), [guía iOS de RetroArch](https://docs.libretro.com/guides/install-ios/).
