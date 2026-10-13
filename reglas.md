@@ -70,6 +70,70 @@ El launcher se diseña como **IW4-Pocket**: runtime propio, lectura de la carpet
 
 **Recomendación:** empezar por el **launcher y la lectura de archivos** (bajo riesgo, valor inmediato) y dejar el motor para después, cuando esté decidida la licencia.
 
+### 3.5 Formato del FastFile de BO1 (medido sobre la copia de Adri, 2026-10-13)
+
+Todo lo de esta sección está **medido directamente** sobre las 143 zonas de la copia de Adri en Steam, con [tools/ffprobe.mjs](tools/ffprobe.mjs) y [tools/zonescan.mjs](tools/zonescan.mjs) (Node, sin dependencias). No se copió código de ningún proyecto de terceros: son medidas propias. Donde digo "hipótesis" es porque no está confirmado.
+
+#### Contenedor `.ff` — confirmado en los 143 archivos
+
+| Offset | Bytes | Contenido |
+|---|---|---|
+| 0 | 8 | ASCII `IWffu100` (magic de BO1 PC) |
+| 8 | 4 | versión de zona, uint32 little-endian: **`0x1D9` (473)** en los 143 |
+| 12 | hasta EOF | **un único stream zlib** (CMF `0x78`, FLG `0x01`), sin firma |
+
+- El stream zlib **llega exactamente a EOF**: 0 bytes de cola medidos en 6 archivos (incluidos 4 de Zombies). No hay bloques de 64 KiB ni cabecera de firma en la versión de Steam, contra lo que se repite en foros.
+- La versión 473 es la de BO1 PC y no coincide con CoD4 (`0x5`), WaW (`0x183`) ni MW2 (`0x114`).
+- Consecuencia para el launcher: **identificar una zona cuesta 12 bytes de lectura**, nunca descomprimir. Así funciona ya [ZoneFileHeader.swift](launcher/BLOPSPocket/ZoneFileHeader.swift) y `peek_zone_version` de IW4-Pocket.
+
+#### Zona descomprimida — observado, sin decodificar
+
+- Los primeros **36 bytes** son un prefijo. Su primer uint32 LE es siempre `tamañoDescomprimido − 36` (verificado en 7 archivos de tamaños muy distintos). El resto del prefijo no está identificado.
+- Tras el prefijo aparecen tablas de entradas de 4 bytes donde `0xFFFFFFFF` hace de puntero nulo (hipótesis: offsets de 32 bits, como en IW4).
+- **La tabla de assets (recuento, tipos y nombres) no está identificada todavía.** No se implementa nada sobre ella hasta tenerla verificada. Referencia externa de tipos para comparar más adelante: enum de T5 de OpenAssetTools (`XMODELPIECES`=0 … `EMBLEMSET`=42; `RAWFILE`=36, `STRINGTABLE`=37) — GPL-3.0, solo lectura.
+
+#### Tamaños inflados — dato clave para la regla 5 (memoria)
+
+| Zona | En disco | Descomprimida |
+|---|---|---|
+| common_zombie.ff | 49 MiB | **76 MiB** |
+| zombie_cosmodrome.ff | 51 MiB | **114 MiB** |
+| zombie_theater.ff | 47 MiB | **106 MiB** |
+| zombietron.ff | 87 MiB | (no medido) |
+| common_zombie_patch.ff | 766 KiB | 1.1 MiB |
+
+Una partida de Zombies necesita `common_zombie.ff` (76 MiB) + una zona de mapa (106–114 MiB) + `frontend.ff` (≈40 MiB) **solo en imágenes descomprimidas**, antes de GPU y audio. Es el mismo tipo de presión que tumbó a IW4-Pocket con ~3 GB. Previsiblemente habrá que ir a lectura por bloques/streaming en la fase 6.
+
+#### Inventario de `zone/`
+
+143 archivos `.ff`, 2.61 GiB: 71 en `Common/` (2.59 GiB) + 72 en `Spanish/` (20 MiB, traducción `sp_*`).
+
+| Grupo | Archivos | Tamaño |
+|---|---|---|
+| Campaña | 21 | 1535.2 MiB |
+| Multijugador | 18 | 673.9 MiB |
+| **Zombies** | **5** | **279.7 MiB** |
+| Interfaz | 9 | 82.6 MiB |
+| Comunes | 2 | 74.1 MiB |
+| Traducciones | 72 | 20.2 MiB |
+| Parches | 12 | 3.8 MiB |
+| Código | 4 | 3.1 MiB |
+
+Zonas de Zombies: `common_zombie.ff`, `zombie_theater.ff`, `zombie_cosmodrome.ff`, `zombie_pentagon.ff`, `zombietron.ff`.
+
+#### Fuentes y licencias consultadas para el formato
+
+Ninguna se ha usado como código; varias son GPL-3.0 o sin licencia, así que solo sirven como lectura:
+
+- [OpenAssetTools](https://github.com/Laupetin/OpenAssetTools) y su [enum de T5](https://git.alterware.dev/zone/OpenAssetTools/src/commit/0c22dddd0ef9991be32f115fe1947ea09a1ade3b/src/Common/Game/T5/T5.h) — **GPL-3.0**.
+- [ZoneTool](https://github.com/ZoneTool/zonetool) — **GPL-3.0**.
+- [CoD-FF-Tools](https://github.com/primetime43/CoD-FF-Tools/blob/main/docs/SupportedFormats.md) — **GPL-3.0** (sus tablas Cubren CoD4/WaW/MW2, **no BO1**).
+- [Wiki de modding de CoD5/WaW](https://wiki.zeroy.com/index.php?title=Call_of_Duty_5:_FastFile_Format) — contenido **CC BY-NC-SA 3.0**; solo lectura, sin copiar texto.
+- [Guía de modding de Black Ops (Steam)](https://steamcommunity.com/sharedfiles/filedetails/?id=2494448328) — nombres de archivos; sin licencia de reutilización.
+- [atian-cod-tools](https://github.com/ate47/atian-cod-tools) — doble licencia GPL-3.0 **o MIT**; si algún día se reutiliza código, solo la parte MIT.
+
+> Aviso registrado: el 2026-10-13 una búsqueda web no encontró especificación pública del contenedor T5; los valores de arriba son medidas propias. Cualquier dato no medido aquí se trata como hipótesis.
+
 ## 4. Estructura prevista
 
 ```
@@ -81,6 +145,10 @@ BLOPS pocket/
 ├── launcher/
 │   ├── project.yml       → especificación de XcodeGen (genera el .xcodeproj)
 │   └── BLOPSPocket/      → código SwiftUI de la app
+├── tools/                → sondas de verificación del formato (Node, sin dependencias)
+│   ├── ffprobe.mjs       → cabecera, descompresión y primeros bytes de una zona
+│   ├── zonescan.mjs      → catálogo de todas las zonas de una carpeta
+│   └── zonescan.test.mjs → 6 pruebas con archivos .ff sintéticos: `node --test tools/zonescan.test.mjs`
 ├── engine/               → runtime (fase 6, sin decidir)
 └── .github/workflows/
     └── ios-ipa.yml       → compila y genera la IPA sin firmar (GitHub solo lee workflows desde esta ruta)
@@ -111,6 +179,14 @@ No crear carpetas hasta que la fase lo requiera. El bundle id `com.example.blops
 | 2026-10-13 | Nombre de la app: BLOPS pocket | Elegido por Adri. Nombre de trabajo, sin marcas de Activision |
 | 2026-10-13 | Compilación solo con GitHub Actions (sin Mac) | Elegido por Adri. La IPA se genera en un runner macOS en la nube |
 | 2026-10-13 | Distribución: uso personal con SideStore | Elegida por Adri. Sin publicación pública por ahora |
+| 2026-10-13 | KisakBlack solo como referencia (no se copia código) | Elegido por Adri. Mantiene la licencia Apache 2.0 |
+| 2026-10-13 | Repositorio privado en GitHub: AdrianTomasDiez/BLOPS-pocket | Creado con `gh`. Rama por defecto `main` (el workflow solo se activa en `main`) |
+| 2026-10-13 | Commits con identidad de Adrian Tomás Diez | El commit inicial se reescribió (`85cefbd`) porque tenía un autor provisional |
+| 2026-10-13 | El token de `gh` necesita scope `workflow` para subir `.github/workflows/` | GitHub lo exige; añadido con `gh auth refresh -s workflow` y `gh auth setup-git` |
+| 2026-10-13 | Contenedor `.ff` de BO1 PC: magic `IWffu100` + versión `0x1D9` + un zlib hasta EOF | Medido en las 143 zonas de la copia de Adri; refuta lo que se repite en foros |
+| 2026-10-13 | Identificar una zona leyendo 12 bytes, nunca descomprimiendo | Regla 5 (memoria): descomprimir una zona de Zombies cuesta 76 MiB |
+| 2026-10-13 | Herramientas propias en `tools/` (Node, sin dependencias) para verificar el formato | No se copia código de terceros; sirven de referencia ejecutable del lector Swift |
+| 2026-10-13 | La tabla de assets de T5 no se implementa hasta estar verificada | Regla 5.7: no inventar formatos |
 
 ## 7. Estado actual
 
@@ -118,15 +194,16 @@ No crear carpetas hasta que la fase lo requiera. El bundle id `com.example.blops
 |---|---|---|
 | 0 | Contexto, reglas y legalidad | Hecho |
 | 1 | Investigación de referencias | Hecho (este documento) |
-| 2 | Decisiones: licencia, nombre, base de código | Parcial: licencia, nombre, CI y distribución decididos; base de código pendiente |
-| 3 | Estructura del proyecto y CI para IPA sin firmar | Hecho en código; compilación en CI sin verificar (no hay Mac ni runner local) |
-| 4 | Launcher: selección y validación de la carpeta del juego | Hecho en código (GameFolderValidator + selector); sin compilar, sin verificar en iPhone. No persiste el acceso entre aperturas |
-| 5 | Lectura de archivos de BO1 (formato y carga) | Pendiente |
+| 2 | Decisiones: licencia, nombre, base de código | Hecho (KisakBlack solo como referencia) |
+| 3 | Estructura del proyecto y CI para IPA sin firmar | Hecho. El CI en macOS compila y publica el artefacto `BLOPSPocket-unsigned` (run 38458720679 sobre 434f521 y run sobre 85cefbd, ambos `success`) |
+| 4 | Launcher: selección y validación de la carpeta del juego | Hecho. Compila en CI. Sin probar en iPhone. No persiste el acceso entre aperturas |
+| 5 | Lectura de archivos de BO1 (formato y carga) | **Hecho en lo verificable**: formato del contenedor documentado y medido (sección 3.5) y catálogo de zonas en la app (`ZoneFileHeader.swift`, `ZoneCatalog.swift`). Falta compilarlo en CI y probarlo en el iPhone. La tabla de assets queda para la fase 6 |
 | 6 | Motor en iOS (Metal, audio, entrada, memoria) | Pendiente |
 | 7 | Pruebas en iPhone y documentación para el usuario | Pendiente |
 
-**Fase en curso:** 5 (lectura de archivos de BO1), pendiente de decidir la base de código de la fase 2
-**Próximo paso:** decidir si KisakBlack es base o referencia; después, el formato de los archivos de zona.
+**Fase en curso:** 6 (motor en iOS). La fase 5 queda cerrada a falta de compilar en CI y de probarla en el iPhone.
+**Próximo paso:** prompt 6: definir la estrategia del motor (KisakBlack bajo GPL, reescritura propia, u otra) y sus riesgos de memoria, y esperar la confirmación de Adri antes de implementar. Antes de eso, queda pendiente de la fase 4 persistir el acceso a la carpeta entre aperturas.
+**Último commit:** `85cefbd` en `main` (Adrian Tomás Diez), subido a origin. **Sin commitear:** `reglas.md`, `launcher/BLOPSPocket/ZoneFileHeader.swift`, `launcher/BLOPSPocket/ZoneCatalog.swift`, `launcher/BLOPSPocket/ContentView.swift`, `tools/` y `.freebuff/` (este último no debería subirse).
 
 ## 8. Decisiones abiertas (por confirmar con Adri)
 
@@ -134,11 +211,24 @@ No crear carpetas hasta que la fase lo requiera. El bundle id `com.example.blops
 - **Nombre de la app:** BLOPS pocket (decidido, provisional).
 - **Dispositivo y entorno de build:** solo GitHub Actions, sin Mac (decidido).
 - **Distribución:** uso personal con SideStore (decidido).
+- **Base de código:** KisakBlack solo como referencia; no se copia código (decidido).
 
-Pendiente: decidir si se usa código de KisakBlack (lo que obligaría a GPL-3.0) o solo como referencia.
+### Pendientes abiertos
+
+- Compilar la fase 5 en CI (`push` a `main` dispara el workflow) y probar el catálogo de zonas en el iPhone.
+- Probar la IPA en un iPhone con SideStore (instalación y selección de carpeta). Hoy solo sabemos que compila.
+- Decidir si la app debe leer una carpeta externa (Archivos) o copiar el juego dentro de la app, como hace IW4-Pocket (`Documents/Games`). Sin Mac no se puede comprobar el comportamiento de las URLs de Archivos fuera del simulador.
+- Cambiar el bundle id provisional `com.example.blopspocket` antes de instalar.
+- Hacer que el acceso a la carpeta del juego persista entre aperturas (fase 4).
+- Confirmar si `reglas.md` se sube en un commit propio con la identidad de Adri.
+- Revisar el CI en cada cambio: el primer run tardó por la cola de runners macOS arm64.
+
+Pendiente: crear el repositorio remoto en GitHub y subir el commit inicial (hace falta `gh` o la URL del repositorio).
 
 ## 9. Problemas conocidos
 
-- Sin código todavía. Ninguna prueba ejecutada.
+- La cabecera interna de la zona (prefijo de 36 bytes) y la tabla de assets **no** están decodificadas: el launcher enumera zonas, no assets.
+- Las zonas traducidas `Spanish/sp_*.ff` (20 MiB) se listan, pero aún no se sabe cómo elige el juego entre `Common/` y `Spanish/`.
+- El código Swift nuevo no se ha compilado en ningún sitio: no hay Xcode ni Mac en el entorno de desarrollo (solo GitHub Actions).
 - Los tres repositorios de referencia están en Windows o son experimentales. Ninguno está probado en iOS.
 - IW4-Pocket tiene problemas de memoria en iPhone; el motor de BO1 puede tener problemas parecidos.
