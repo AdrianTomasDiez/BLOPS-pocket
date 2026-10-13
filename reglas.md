@@ -187,6 +187,8 @@ No crear carpetas hasta que la fase lo requiera. El bundle id `com.example.blops
 | 2026-10-13 | Identificar una zona leyendo 12 bytes, nunca descomprimiendo | Regla 5 (memoria): descomprimir una zona de Zombies cuesta 76 MiB |
 | 2026-10-13 | Herramientas propias en `tools/` (Node, sin dependencias) para verificar el formato | No se copia código de terceros; sirven de referencia ejecutable del lector Swift |
 | 2026-10-13 | La tabla de assets de T5 no se implementa hasta estar verificada | Regla 5.7: no inventar formatos |
+| 2026-10-13 | El acceso a la carpeta del juego persiste con un bookmark en `UserDefaults` | iOS no admite `.withSecurityScope` (es de macOS); el bookmark de la URL del selector ya lleva el acceso. Cierra el pendiente de la fase 4 |
+| 2026-10-13 | El bookmark se guarda pero no se registra en logs | Regla 4: los logs no llevan datos del usuario; el bookmark contiene la ruta elegida |
 
 ## 7. Estado actual
 
@@ -196,14 +198,14 @@ No crear carpetas hasta que la fase lo requiera. El bundle id `com.example.blops
 | 1 | Investigación de referencias | Hecho (este documento) |
 | 2 | Decisiones: licencia, nombre, base de código | Hecho (KisakBlack solo como referencia) |
 | 3 | Estructura del proyecto y CI para IPA sin firmar | Hecho. El CI en macOS compila y publica el artefacto `BLOPSPocket-unsigned` (run 38458720679 sobre 434f521 y run sobre 85cefbd, ambos `success`) |
-| 4 | Launcher: selección y validación de la carpeta del juego | Hecho. Compila en CI. Sin probar en iPhone. No persiste el acceso entre aperturas |
+| 4 | Launcher: selección y validación de la carpeta del juego | Hecho. El acceso persiste entre aperturas con bookmark (`GameFolderBookmark.swift`) y se puede olvidar desde la pantalla. Sin probar en iPhone |
 | 5 | Lectura de archivos de BO1 (formato y carga) | **Hecho en lo verificable**: formato del contenedor documentado y medido (sección 3.5) y catálogo de zonas en la app (`ZoneFileHeader.swift`, `ZoneCatalog.swift`). Falta compilarlo en CI y probarlo en el iPhone. La tabla de assets queda para la fase 6 |
 | 6 | Motor en iOS (Metal, audio, entrada, memoria) | Pendiente |
 | 7 | Pruebas en iPhone y documentación para el usuario | Pendiente |
 
-**Fase en curso:** 6 (motor en iOS). La fase 5 queda cerrada a falta de compilar en CI y de probarla en el iPhone.
-**Próximo paso:** prompt 6: definir la estrategia del motor (KisakBlack bajo GPL, reescritura propia, u otra) y sus riesgos de memoria, y esperar la confirmación de Adri antes de implementar. Antes de eso, queda pendiente de la fase 4 persistir el acceso a la carpeta entre aperturas.
-**Último commit:** `85cefbd` en `main` (Adrian Tomás Diez), subido a origin. **Sin commitear:** `reglas.md`, `launcher/BLOPSPocket/ZoneFileHeader.swift`, `launcher/BLOPSPocket/ZoneCatalog.swift`, `launcher/BLOPSPocket/ContentView.swift`, `tools/` y `.freebuff/` (este último no debería subirse).
+**Fase en curso:** 6 (motor en iOS). Las fases 4 y 5 quedan cerradas a falta de comprobar el run del CI y de probarlas en el iPhone.
+**Próximo paso:** prompt 6: definir la estrategia del motor (KisakBlack bajo GPL, reescritura propia, u otra) con sus riesgos de memoria y de licencia, y esperar la confirmación de Adri antes de implementar nada.
+**Último commit:** `2564356` (fase 5) en `main`, subido a origin, más el commit de la fase 4. **Sin commitear:** `.freebuff/` (no debe subirse).
 
 ## 8. Decisiones abiertas (por confirmar con Adri)
 
@@ -215,20 +217,19 @@ No crear carpetas hasta que la fase lo requiera. El bundle id `com.example.blops
 
 ### Pendientes abiertos
 
-- Compilar la fase 5 en CI (`push` a `main` dispara el workflow) y probar el catálogo de zonas en el iPhone.
+- Probar en el iPhone el catálogo de zonas y la persistencia del acceso (fases 4 y 5).
 - Probar la IPA en un iPhone con SideStore (instalación y selección de carpeta). Hoy solo sabemos que compila.
 - Decidir si la app debe leer una carpeta externa (Archivos) o copiar el juego dentro de la app, como hace IW4-Pocket (`Documents/Games`). Sin Mac no se puede comprobar el comportamiento de las URLs de Archivos fuera del simulador.
 - Cambiar el bundle id provisional `com.example.blopspocket` antes de instalar.
-- Hacer que el acceso a la carpeta del juego persista entre aperturas (fase 4).
-- Confirmar si `reglas.md` se sube en un commit propio con la identidad de Adri.
+- Comprobar el resultado del CI de la fase 4/5 (aquí no hay `gh` ni token: se mira en GitHub Actions).
 - Revisar el CI en cada cambio: el primer run tardó por la cola de runners macOS arm64.
 
-Pendiente: crear el repositorio remoto en GitHub y subir el commit inicial (hace falta `gh` o la URL del repositorio).
+Hecho: repositorio remoto creado y commits subidos a origin (ramas `main`).
 
 ## 9. Problemas conocidos
 
 - La cabecera interna de la zona (prefijo de 36 bytes) y la tabla de assets **no** están decodificadas: el launcher enumera zonas, no assets.
 - Las zonas traducidas `Spanish/sp_*.ff` (20 MiB) se listan, pero aún no se sabe cómo elige el juego entre `Common/` y `Spanish/`.
-- El código Swift nuevo no se ha compilado en ningún sitio: no hay Xcode ni Mac en el entorno de desarrollo (solo GitHub Actions).
+- Sin Xcode ni Mac en el entorno de desarrollo: el Swift solo se compila en GitHub Actions, así que el resultado de un `push` tarda y no se puede comprobar desde aquí.
 - Los tres repositorios de referencia están en Windows o son experimentales. Ninguno está probado en iOS.
 - IW4-Pocket tiene problemas de memoria en iPhone; el motor de BO1 puede tener problemas parecidos.

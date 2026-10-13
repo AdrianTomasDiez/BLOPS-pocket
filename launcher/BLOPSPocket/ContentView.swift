@@ -6,6 +6,8 @@ struct ContentView: View {
     @State private var message: String?
     @State private var isValid = false
     @State private var catalog: ZoneCatalog?
+    @State private var folderName: String?
+    @State private var hasSavedFolder = false
 
     var body: some View {
         VStack(spacing: 12) {
@@ -21,6 +23,12 @@ struct ContentView: View {
             }
             .buttonStyle(.borderedProminent)
 
+            if let folderName {
+                Text("Carpeta: \(folderName)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
             if let message {
                 Text(message)
                     .foregroundColor(isValid ? .green : .red)
@@ -33,6 +41,13 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 Spacer()
+            }
+
+            if hasSavedFolder {
+                Button("Olvidar la carpeta guardada") {
+                    forget()
+                }
+                .font(.footnote)
             }
 
             Text("Este lanzador no incluye ni distribuye archivos del juego: solo lee la copia que tú posees.")
@@ -49,6 +64,10 @@ struct ContentView: View {
         ) { result in
             handle(result)
         }
+        .task {
+            // Recupera el acceso guardado para no tener que elegir la carpeta cada vez.
+            restoreSavedFolder()
+        }
     }
 
     private func handle(_ result: Result<[URL], Error>) {
@@ -59,28 +78,58 @@ struct ContentView: View {
             message = "No se pudo abrir la carpeta. Vuelve a intentarlo."
         case .success(let urls):
             guard let url = urls.first else { return }
-            // Las URLs de Archivos requieren acceso de seguridad explícito.
-            // Todo lo que lea del disco debe hacerse dentro de este bloque.
             let accessed = url.startAccessingSecurityScopedResource()
             defer {
                 if accessed { url.stopAccessingSecurityScopedResource() }
             }
-            switch GameFolderValidator.validate(url) {
-            case .valid:
-                let catalog = ZoneCatalog.build(in: url)
-                self.catalog = catalog
-                isValid = !catalog.entries.isEmpty
-                message = summary(for: catalog)
-            case .notAFolder:
-                isValid = false
-                catalog = nil
-                message = "La selección no es una carpeta."
-            case .missingZoneFolder:
-                isValid = false
-                catalog = nil
-                message = "Falta la subcarpeta zone dentro de la carpeta elegida."
-            }
+            inspect(url, savingBookmark: true)
         }
+    }
+
+    /// Recupera la carpeta guardada al abrir la app.
+    private func restoreSavedFolder() {
+        guard let url = GameFolderBookmark.restore() else { return }
+        hasSavedFolder = true
+        inspect(url, savingBookmark: false)
+    }
+
+    /// Valida la carpeta y construye el catálogo. Todo el acceso al disco ocurre
+    /// dentro del ámbito de seguridad de la URL.
+    private func inspect(_ url: URL, savingBookmark: Bool) {
+        let accessed = url.startAccessingSecurityScopedResource()
+        defer {
+            if accessed { url.stopAccessingSecurityScopedResource() }
+        }
+
+        switch GameFolderValidator.validate(url) {
+        case .valid:
+            if savingBookmark {
+                let saved = GameFolderBookmark.save(url)
+                hasSavedFolder = saved
+            }
+            let catalog = ZoneCatalog.build(in: url)
+            self.catalog = catalog
+            folderName = url.lastPathComponent
+            isValid = !catalog.entries.isEmpty
+            message = summary(for: catalog)
+        case .notAFolder:
+            isValid = false
+            catalog = nil
+            message = "La selección no es una carpeta."
+        case .missingZoneFolder:
+            isValid = false
+            catalog = nil
+            message = "Falta la subcarpeta zone dentro de la carpeta elegida. Copia la carpeta del juego completa."
+        }
+    }
+
+    private func forget() {
+        GameFolderBookmark.clear()
+        hasSavedFolder = false
+        folderName = nil
+        catalog = nil
+        isValid = false
+        message = "Se olvidó la carpeta guardada. Elige de nuevo la carpeta del juego."
     }
 
     private func summary(for catalog: ZoneCatalog) -> String {
