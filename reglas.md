@@ -141,7 +141,10 @@ BLOPS pocket/
 ├── reglas.md             → este archivo
 ├── prompts.md            → prompts de cada fase
 ├── .gitignore            → excluye datos del juego, build e IPA
-├── README.md             → instrucciones para el usuario (fase 7)
+├── README.md             → instrucciones para el usuario (fase 7, hecho)
+├── pruebas-iphone.md     → comprobaciones manuales en el iPhone (fase 7)
+├── LICENSE               → Apache License 2.0 (texto oficial)
+├── NOTICE                → propiedad, licencia y atribuciones
 ├── launcher/
 │   ├── project.yml       → especificación de XcodeGen (genera el .xcodeproj)
 │   └── BLOPSPocket/      → código SwiftUI de la app
@@ -193,6 +196,7 @@ No crear carpetas hasta que la fase lo requiera. El bundle id definitivo es `com
 | 2026-10-13 | Modelo de carpeta: copia dentro de la app como vía principal + selector externo como alternativa | Elegido por Adri; coincide con IW4-Pocket, RetroArch y PPSSPP y evita la fragilidad de iCloud con 2,6 GB |
 | 2026-10-13 | `UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace` y carpeta `Documents/Games` | Para que el juego aparezca en Archivos → En mi iPhone → BLOPS pocket → Games |
 | 2026-10-13 | Bundle id definitivo: `com.adriantomasdiez.blopspocket` | Elegido por Adri; sustituye al provisional `com.example.blopspocket` |
+| 2026-10-13 | Se adelanta la fase 7 (README y pruebas manuales) antes de la fase 6 | Elegido por Adri. La documentación no depende del motor y desbloquea la prueba en el iPhone; el motor sigue sin decidir |
 
 ## 7. Estado actual
 
@@ -204,11 +208,11 @@ No crear carpetas hasta que la fase lo requiera. El bundle id definitivo es `com
 | 3 | Estructura del proyecto y CI para IPA sin firmar | Hecho. El CI en macOS compila y publica el artefacto `BLOPSPocket-unsigned` (run 38458720679 sobre 434f521 y run sobre 85cefbd, ambos `success`) |
 | 4 | Launcher: selección y validación de la carpeta del juego | Hecho. Dos vías: la copia en `Documents/Games` (principal, `GameFolderLocator.swift`) y una carpeta externa recordada con bookmark (`GameFolderBookmark.swift`). Sin probar en iPhone |
 | 5 | Lectura de archivos de BO1 (formato y carga) | **Hecho en lo verificable**: formato del contenedor documentado y medido (sección 3.5) y catálogo de zonas en la app (`ZoneFileHeader.swift`, `ZoneCatalog.swift`). Falta compilarlo en CI y probarlo en el iPhone. La tabla de assets queda para la fase 6 |
-| 6 | Motor en iOS (Metal, audio, entrada, memoria) | Pendiente |
-| 7 | Pruebas en iPhone y documentación para el usuario | Pendiente |
+| 6 | Motor en iOS (Metal, audio, entrada, memoria) | Pendiente y **aplazada**: se hace después de la fase 7 por decisión de Adri. No se implementa nada hasta decidir la estrategia y la licencia |
+| 7 | Pruebas en iPhone y documentación para el usuario | **Documentación hecha** (`README.md` y `pruebas-iphone.md`, 12 comprobaciones). Las pruebas en el iPhone están pendientes de que Adri pueda instalar la IPA |
 
-**Fase en curso:** 6 (motor en iOS). Las fases 4 y 5 quedan cerradas a falta de comprobar el run del CI y de probarlas en el iPhone.
-**Próximo paso:** prompt 6: definir la estrategia del motor (KisakBlack bajo GPL, reescritura propia, u otra) con sus riesgos de memoria y de licencia, y esperar la confirmación de Adri antes de implementar nada.
+**Fase en curso:** 7 (documentación hecha; faltan las pruebas en el iPhone). La fase 6 (motor) queda aplazada por decisión de Adri.
+**Próximo paso:** Adri instala la IPA con SideStore y recorre `pruebas-iphone.md`. Después, prompt 6: definir la estrategia del motor (KisakBlack bajo GPL, reescritura propia, u otra) con sus riesgos de memoria y de licencia, y esperar su confirmación antes de implementar nada.
 **Estado del repositorio:** todo commiteado y subido a `origin/main` (fases 4 y 5, y esta auditoría). **Sin commitear a propósito:** `.freebuff/`. El workflow del CI ejecuta también las pruebas de `tools/` antes de compilar.
 
 ## 8. Decisiones abiertas (por confirmar con Adri)
@@ -224,7 +228,8 @@ No crear carpetas hasta que la fase lo requiera. El bundle id definitivo es `com
 - Probar en el iPhone el catálogo de zonas y la persistencia del acceso (fases 4 y 5).
 - Probar la IPA en un iPhone con SideStore (instalación y selección de carpeta). Hoy solo sabemos que compila.
 - Probar en el iPhone las dos vías de carpeta: la copia en `Documents/Games` y el selector externo con bookmark.
-- Escribir en el README (fase 7) que desinstalar la app borra la copia del juego y que hay que comprobar el espacio libre antes de copiar 2,6 GB.
+- Recorrer `pruebas-iphone.md` en el iPhone y anotar los resultados (incluye el aviso de que desinstalar borra la copia y la comprobación de espacio).
+- Decidir la estrategia del motor (fase 6) cuando Adri quiera: es la única decisión técnica abierta que queda.
 - Comprobar el resultado del CI de la fase 4/5 (aquí no hay `gh` ni token: se mira en GitHub Actions).
 - Revisar el CI en cada cambio: el primer run tardó por la cola de runners macOS arm64.
 

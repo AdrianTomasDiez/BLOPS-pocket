@@ -44,7 +44,7 @@ Investiga y documenta en reglas.md el formato de los archivos de zona de Black O
 
 ---
 
-## Prompt 6: Motor en iOS
+## Prompt 6: Motor en iOS (aplazado por decisión de Adri: se hace después de la fase 7)
 
 ```
 Define en reglas.md la estrategia del motor (adaptar KisakBlack bajo GPL, reescribir desde cero, o usar otro enfoque) con sus riesgos de memoria y licencia. Espera mi confirmación antes de implementar cualquier parte del motor.
@@ -52,7 +52,7 @@ Define en reglas.md la estrategia del motor (adaptar KisakBlack bajo GPL, reescr
 
 ---
 
-## Prompt 7: Pruebas en iPhone y documentación
+## Prompt 7: Pruebas en iPhone y documentación (documentación hecha; pruebas pendientes en el iPhone)
 
 ```
 Escribe el README para el usuario (requisitos, cómo copiar la carpeta del juego con SideStore, limitaciones conocidas) y una lista de pruebas manuales en iPhone: arranque, validación de la carpeta, uso de memoria y cierre con el juego en curso. Ejecuta lo que se pueda automatizar y dime qué debo probar yo.
