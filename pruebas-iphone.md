@@ -14,7 +14,7 @@
 
 | # | Qué probar | Cómo | Qué debe pasar | Estado |
 |---|---|---|---|---|
-| 1 | Instalación | Instalar la IPA con SideStore y abrirla | La app abre, muestra "BLOPS pocket" y no se cierra | Pendiente |
+| 1 | Instalación | Instalar la IPA con SideStore y abrirla | La app abre, muestra "BLOPS pocket" y no se cierra. Si falla con el límite de 3 apps del perfil gratuito, liberar un hueco (ver el README) y reintentar | Pendiente |
 | 2 | Primera apertura sin juego | Abrir sin haber copiado nada | Explica dónde copiar el juego y ofrece el botón; no se queda en blanco ni se cierra | Pendiente |
 | 3 | Carpeta visible en Archivos | Abrir Archivos → En mi iPhone | Aparece **BLOPS pocket** con una carpeta **Games** dentro | Pendiente |
 | 4 | Copia de ~2,6 GiB | Copiar la carpeta del juego (con `zone/`) a `BLOPS pocket/Games` | La copia termina; apuntar cuánto tarda y si el iPhone avisa de falta de espacio | Pendiente |

@@ -21,6 +21,19 @@ Lanzador para iPhone que ejecuta **Call of Duty: Black Ops 1** leyendo los archi
 
 El identificador de la app es `com.adriantomasdiez.blopspocket`.
 
+### Si SideStore da error al instalar
+
+Con una cuenta Apple **gratuita** solo puedes tener **3 apps instaladas a la vez en el iPhone**, y la propia herramienta (SideStore o AltStore) ocupa uno de esos tres huecos. El error lo dice con estas palabras:
+
+> This device has reached the maximum number of installed apps using a free developer profile
+
+El mensaje suele listar las apps que ocupan los huecos. Para liberar uno:
+
+1. Desinstala en el iPhone una de esas apps (en AltStore, **Deactivate** libera el hueco guardando antes los datos).
+2. Vuelve a intentar la instalación.
+
+El límite es **por dispositivo**, así que usar otra cuenta de Apple no lo evita, y esperar a que caduque la firma de 7 días no libera el hueco por sí solo. Si necesitas convivir con más apps, las salidas son un Apple Developer Program de pago (99 $/año) o la instalación en otro dispositivo. Ojo también con el otro límite de la cuenta gratuita: 10 identificadores distintos por semana.
+
 ## Cómo copiar el juego al iPhone
 
 1. En el PC, localiza la carpeta del juego:
