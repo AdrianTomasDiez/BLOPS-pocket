@@ -1,0 +1,17 @@
+# Datos del juego: nunca se suben al repositorio (reglas.md, sección 5)
+zone/
+games/
+Games/
+*.ff
+*.iwd
+*.ipa
+
+# Artefactos de build
+build/
+DerivedData/
+Payload/
+launcher/*.xcodeproj/
+
+# macOS / Xcode
+.DS_Store
+xcuserdata/

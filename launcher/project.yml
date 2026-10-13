@@ -1,0 +1,23 @@
+name: BLOPSPocket
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    iOS: "15.0"
+targets:
+  BLOPSPocket:
+    type: application
+    platform: iOS
+    sources:
+      - BLOPSPocket
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.blopspocket
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+    info:
+      path: BLOPSPocket/Info.plist
+      properties:
+        CFBundleDisplayName: BLOPS pocket
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
