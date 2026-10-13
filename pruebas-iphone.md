@@ -38,4 +38,6 @@
 
 - Formato del contenedor `.ff` (magic `IWffu100`, versión `0x1D9`, un zlib hasta EOF) medido sobre las 143 zonas de la copia de Adri: `node tools/zonescan.mjs <carpeta>`.
 - La lógica del catálogo (grupos, versiones inesperadas, archivos truncados y la garantía de que **no se descomprime**): `node --test tools/zonescan.test.mjs`.
-- Nada de esto se ha ejecutado todavía en iOS: el código Swift solo se compila en GitHub Actions.
+- El launcher **compila** en GitHub Actions: los runs de `2564356` (fase 5), `2f050ac` (fase 4), `0683fa6` (auditoría) y `1a65063` (fase 7) están en verde, y los dos últimos ya ejecutan `node --test` antes de compilar.
+- La copia de Adri en el PC coincide con lo esperado: 143 zonas, todas `0x1D9`, Zombies 5 zonas · 279,7 MiB.
+- Lo que **no** está verificado es nada en dispositivo: eso es lo que cubre esta tabla.
