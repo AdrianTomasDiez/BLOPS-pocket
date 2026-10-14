@@ -102,6 +102,64 @@ test("recoge los static_assert de la cabecera", () => {
     ]);
 });
 
+test("sitúa cada miembro en su offset, con el relleno incluido", () => {
+    const { measurer } = measure(HEADER);
+    const mixed = measurer.membersOf("Mixed").map((m) => [m.name, m.offset, m.size]);
+    assert.deepEqual(mixed, [
+        ["name", 0, 4],
+        ["pad", 4, 1],
+        ["count", 6, 2],
+        ["values", 8, 12],
+        ["kind", 20, 1],
+        ["aligned", 24, 8],
+        ["ext", 32, 4],
+    ]);
+    const bits = measurer.membersOf("Bits").map((m) => [m.name, m.offset, m.bitfield]);
+    assert.deepEqual(bits, [
+        ["a", 0, 1],
+        ["b", 0, 31],
+        ["c", 4, 1],
+        ["d", 8, undefined],
+    ]);
+    // Los miembros de una union comparten el offset 0.
+    assert.deepEqual(measurer.membersOf("Packed8").map((m) => m.offset), [0, 0]);
+    assert.equal(measurer.membersOf("NoExiste"), null);
+});
+
+test("--fields imprime tamaño, alineación y offsets", () => {
+    const dir = mkdtempSync(join(tmpdir(), "zsizeof-"));
+    try {
+        const file = join(dir, "campos.h");
+        writeFileSync(file, HEADER);
+        const out = execFileSync(process.execPath, [fileURLToPath(new URL("./zsizeof.mjs", import.meta.url)), file, "--fields", "Bits"], {
+            encoding: "utf8",
+        });
+        assert.match(out, /Bits: size 12, align 4/);
+        assert.match(out, /\+\s*0\s+0 B\s+a : 1/);
+        assert.match(out, /\+\s*4\s+0 B\s+c : 1/);
+        assert.match(out, /\+\s*8\s+1 B\s+d/);
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+test("--fields falla con un tipo desconocido", () => {
+    const dir = mkdtempSync(join(tmpdir(), "zsizeof-"));
+    try {
+        const file = join(dir, "campos.h");
+        writeFileSync(file, HEADER);
+        assert.throws(
+            () => execFileSync(process.execPath, [fileURLToPath(new URL("./zsizeof.mjs", import.meta.url)), file, "--fields", "NoExiste"], {
+                encoding: "utf8",
+                stdio: "pipe",
+            }),
+            /Command failed/,
+        );
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
 test("avisa de los tipos que no logra resolver", () => {
     const { measurer } = measure("struct S { UnknownType t; int tail; };");
     assert.deepEqual(measurer.unknowns(), ["UnknownType"]);

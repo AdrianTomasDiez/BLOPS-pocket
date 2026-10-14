@@ -10,9 +10,10 @@
 // calcular tamaños. Es la misma información que usa el generador de cargadores.
 //
 // Uso:
-//   node tools/zsizeof.mjs <cabecera.h> [--ptr 4] [--type Nombre] [--check]
+//   node tools/zsizeof.mjs <cabecera.h> [--ptr 4] [--type Nombre] [--fields Tipo] [--check]
 //     --ptr <n>     tamaño de puntero en bytes (por defecto 4)
 //     --type <n>    imprime solo el tamaño del tipo indicado
+//     --fields <t>  imprime tamaño, alineación y offset de cada miembro del tipo
 //     --check       comprueba los static_assert(sizeof(X) == N) de la cabecera
 //
 // Códigos de salida: 0 = correcto; 1 = error de lectura o comprobación fallida; 2 = uso incorrecto.
@@ -104,6 +105,7 @@ export function createMeasurer(pointerSize = 4) {
         let maxAlign = 1;
         let inBitfieldUnit = false;
         let bitfieldFree = 0;
+        const placed = [];
         for (const member of members) {
             if (member.bitfield !== undefined) {
                 const base = member.base;
@@ -117,15 +119,17 @@ export function createMeasurer(pointerSize = 4) {
                 }
                 bitfieldFree -= bits;
                 maxAlign = Math.max(maxAlign, base.align);
+                placed.push({ name: member.name, offset: offset - base.size, size: 0, align: base.align, bitfield: bits });
                 continue;
             }
             inBitfieldUnit = false;
             offset = Math.ceil(offset / member.align) * member.align;
+            placed.push({ name: member.name, offset, size: member.size, align: member.align });
             offset += member.size;
             maxAlign = Math.max(maxAlign, member.align);
         }
         const align = Math.max(maxAlign, explicitAlign ?? 1);
-        return { size: Math.ceil(offset / align) * align, align };
+        return { size: Math.ceil(offset / align) * align, align, members: placed };
     }
 
     /** Parsea el contenido completo: va acumulando tipos. */
@@ -283,11 +287,13 @@ export function createMeasurer(pointerSize = 4) {
     function unionLayout(members, explicitAlign) {
         let size = 0;
         let align = explicitAlign ?? 1;
+        const placed = [];
         for (const member of members) {
             size = Math.max(size, member.size);
             align = Math.max(align, member.align);
+            placed.push({ name: member.name, offset: 0, size: member.size, align: member.align });
         }
-        return { size: Math.ceil(size / align) * align, align };
+        return { size: Math.ceil(size / align) * align, align, members: placed };
     }
 
     function parseMember(tokens, i, containerKind) {
@@ -392,6 +398,10 @@ export function createMeasurer(pointerSize = 4) {
             const type = types.get(name);
             return type ? type.align : null;
         },
+        membersOf(name) {
+            const type = types.get(name);
+            return type && type.members ? type.members : null;
+        },
         names() {
             return [...types.keys()].sort();
         },
@@ -410,8 +420,10 @@ async function main(argv) {
     const pointerSize = ptrIndex === -1 ? 4 : Number(args[ptrIndex + 1]);
     const typeIndex = args.indexOf("--type");
     const typeName = typeIndex === -1 ? null : args[typeIndex + 1];
+    const fieldsIndex = args.indexOf("--fields");
+    const fieldsName = fieldsIndex === -1 ? null : args[fieldsIndex + 1];
     const check = args.includes("--check");
-    const isOptionValue = (i) => (ptrIndex >= 0 && i === ptrIndex + 1) || (typeIndex >= 0 && i === typeIndex + 1);
+    const isOptionValue = (i) => [ptrIndex, typeIndex, fieldsIndex].some((index) => index >= 0 && i === index + 1);
     const file = args.find((arg, i) => !arg.startsWith("--") && !isOptionValue(i));
 
     if (!file || !Number.isFinite(pointerSize)) {
@@ -439,6 +451,21 @@ async function main(argv) {
         }
         console.log(`${basename(file)}: ${asserts.length} static_assert, ${failures} fallo(s)`);
         return failures === 0 ? 0 : 1;
+    }
+
+    if (fieldsName) {
+        const members = measurer.membersOf(fieldsName);
+        const size = measurer.sizeOf(fieldsName);
+        if (!members) {
+            console.error(`Tipo desconocido o sin miembros: ${fieldsName}`);
+            return 1;
+        }
+        console.log(`${fieldsName}: size ${size}, align ${measurer.alignOf(fieldsName)}`);
+        for (const member of members) {
+            const label = member.bitfield !== undefined ? `${member.name} : ${member.bitfield}` : member.name;
+            console.log(`  +${String(member.offset).padStart(4)}  ${String(member.size).padStart(4)} B  ${label ?? "(anonimo)"}`);
+        }
+        return 0;
     }
 
     if (typeName) {
