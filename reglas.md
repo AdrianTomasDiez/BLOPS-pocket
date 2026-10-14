@@ -310,3 +310,14 @@ Estado: **propuesta, sin código.** Según `prompts.md`, no se programa ninguna 
 **Bloqueo de 6a (2026-10-14):** la regla 7 exige formato verificado antes de implementar, y la búsqueda de documentación no lo confirmó. Fuentes leídas: [OpenAssetTools, documentación de zone files](https://openassettools.dev/reference/zone-file.html) (confirma nombres de categorías T5, no el layout binario) y [wiki de COD5 FastFile](https://wiki.zeroy.com/index.php?title=Call_of_Duty_5:_FastFile_Format) (es de WaW, no de BO1, no sirve como prueba). Sin fuente fiable no se escribe el lector de la tabla.
 
 **Decisión que necesito de ti:** aprobar este diseño y el orden de subfases, o pedir cambios. Si lo apruebas, empiezo por 6a, que no toca Metal y se puede verificar con la copia de prueba.
+
+**Pausa de la fase 6 (2026-10-14, decidida por Adri).** Hallazgos verificados en la referencia OpenAssetTools (solo lectura) y en la copia de prueba:
+
+- Cabecera de 12 bytes: `IWffu100`, versión 473. Desde el byte 12 hay un stream zlib continuo (`ProcessorInflate`).
+- Tras descomprimir: `u32` tamaño, `u32` tamaño externo, un `u32` por bloque XFile (7 bloques en T5) y luego el contenido.
+- La lista de assets (`XAssetList`) usa tokens de puntero de 32 bits con bloques y `FOLLOWING`/`INSERT`. Leerla exige reproducir `LoadWithFill` y `AddPointerLookup` de `ContentLoaderT5`.
+- Sin verificar: en `mp_firingrange.ff`, la suma de bloques difiere del tamaño total en ~2,8 MB. Sin explicar.
+
+No hay código del motor. Se retoma cuando se decida; el lanzador sigue siendo la versión de esta etapa.
+
+**Cierre de la fase 6 como pausada (2026-10-14).** Motivo: los cargadores de tipos de asset de T5 se generan desde plantillas de ZoneCodeGenerator (decenas de tipos). Listar nombres (6a) exige seguir los punteros de cada asset, y los cuerpos vienen en orden de stream, así que no basta con leer la tabla. Portar eso es un trabajo grande, sin garantía de cierre. Además, 6c–6e requieren Xcode y un iPhone, que no están disponibles en esta sesión. Estado: 6a, 6b, 6d y 6e no hechas; 6c no comprobable aquí. Pendiente sin resolver: la diferencia de ~2,8 MB en la suma de bloques de `mp_firingrange.ff`.

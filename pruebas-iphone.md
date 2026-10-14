@@ -14,16 +14,16 @@
 
 | # | Qué probar | Cómo | Qué debe pasar | Estado |
 |---|---|---|---|---|
-| 1 | Instalación | Instalar la IPA con SideStore y abrirla | La app abre, muestra "BLOPS pocket" y no se cierra. Si falla con el límite de 3 apps del perfil gratuito, liberar un hueco (ver el README) y reintentar | Pendiente |
-| 2 | Primera apertura sin juego | Abrir sin haber copiado nada | Explica dónde copiar el juego y ofrece el botón; no se queda en blanco ni se cierra | Pendiente |
-| 3 | Carpeta visible en Archivos | Abrir Archivos → En mi iPhone | Aparece **BLOPS pocket** con una carpeta **Games** dentro | Pendiente |
-| 4 | Copia de ~2,6 GiB | Copiar la carpeta del juego (con `zone/`) a `BLOPS pocket/Games` | La copia termina; apuntar cuánto tarda y si el iPhone avisa de falta de espacio | Pendiente |
-| 5 | Detección automática | Abrir la app con la copia hecha | "N zonas encontradas · X GB", origen "Copia dentro de la app", y N coincide con los archivos copiados | Pendiente |
-| 6 | Reparto por grupos | Mirar el resumen y la lista | Zombies con 5 zonas · 279,7 MiB (si copiaste `Common/`); los grupos cuadran con lo copiado | Pendiente |
-| 7 | Carpeta equivocada | Elegir una carpeta sin `zone/` | Mensaje claro ("Falta la subcarpeta zone…"), sin error ni cierre | Pendiente |
-| 8 | Carpeta externa | Elegir una carpeta de Archivos (p. ej. iCloud Drive) | La lista aparece; al cerrar y reabrir la app sigue recordando esa carpeta | Pendiente |
-| 9 | Olvidar carpeta | Pulsar "Olvidar la carpeta guardada" y reabrir | Deja de leerla y ofrece elegir otra | Pendiente |
-| 10 | Desinstalación | Desinstalar y volver a instalar la app | Se pierde la copia del juego dentro de `Games/` (comportamiento de iOS, ya documentado en el README) | Pendiente |
+| 1 | Instalación | Instalar la IPA con SideStore y abrirla | La app abre, muestra "BLOPS pocket" y no se cierra. Si falla con el límite de 3 apps del perfil gratuito, liberar un hueco (ver el README) y reintentar | Hecho |
+| 2 | Primera apertura sin juego | Abrir sin haber copiado nada | Explica dónde copiar el juego y ofrece el botón; no se queda en blanco ni se cierra | Hecho |
+| 3 | Carpeta visible en Archivos | Abrir Archivos → En mi iPhone | Aparece **BLOPS pocket** con una carpeta **Games** dentro | Hecho |
+| 4 | Copia de ~2,6 GiB | Copiar la carpeta del juego (con `zone/`) a `BLOPS pocket/Games` | La copia termina; apuntar cuánto tarda y si el iPhone avisa de falta de espacio | Hecho (tiempo sin anotar) |
+| 5 | Detección automática | Abrir la app con la copia hecha | "N zonas encontradas · X GB", origen "Copia dentro de la app", y N coincide con los archivos copiados | Hecho |
+| 6 | Reparto por grupos | Mirar el resumen y la lista | Zombies con 5 zonas · 279,7 MiB (si copiaste `Common/`); los grupos cuadran con lo copiado | Hecho |
+| 7 | Carpeta equivocada | Elegir una carpeta sin `zone/` | Mensaje claro ("Falta la subcarpeta zone…"), sin error ni cierre | Hecho |
+| 8 | Carpeta externa | Elegir una carpeta de Archivos (p. ej. iCloud Drive) | La lista aparece; al cerrar y reabrir la app sigue recordando esa carpeta | Hecho |
+| 9 | Olvidar carpeta | Pulsar "Olvidar la carpeta guardada" y reabrir | Deja de leerla y ofrece elegir otra | Hecho |
+| 10 | Desinstalación | Desinstalar y volver a instalar la app | Se pierde la copia del juego dentro de `Games/` (comportamiento de iOS, ya documentado en el README) | Hecho |
 | 11 | Memoria en reposo | — | Solo se puede medir cuando el motor descomprima zonas (fase 6); las sondas de `tools/` miden que `common_zombie.ff` ocupa 76 MiB descomprimido | Bloqueada por la fase 6 |
 | 12 | Cierre con el juego en curso | — | Necesita el motor (fase 6) | Bloqueada por la fase 6 |
 
