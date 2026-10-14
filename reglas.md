@@ -151,7 +151,10 @@ BLOPS pocket/
 ├── tools/                → sondas de verificación del formato (Node, sin dependencias)
 │   ├── ffprobe.mjs       → cabecera, descompresión y primeros bytes de una zona
 │   ├── zonescan.mjs      → catálogo de todas las zonas de una carpeta
-│   └── zonescan.test.mjs → 6 pruebas con archivos .ff sintéticos: `node --test tools/zonescan.test.mjs`
+│   ├── zoneassets.mjs    → lista de assets de un .ff, por tipo y sin tamaños
+│   ├── zrawfile.mjs      → decodifica los RAWFILE (comprimidos y no)
+│   ├── zsizeof.mjs       → mide sizeof/alineación de las cabeceras de assets
+│   └── *.test.mjs        → pruebas de cada sonda: `node --test tools/*.test.mjs`
 ├── engine/               → runtime (fase 6, sin decidir)
 └── .github/workflows/
     └── ios-ipa.yml       → compila y genera la IPA sin firmar (GitHub solo lee workflows desde esta ruta)
@@ -212,12 +215,12 @@ No crear carpetas hasta que la fase lo requiera. El bundle id definitivo es `com
 | 3 | Estructura del proyecto y CI para IPA sin firmar | Hecho. El CI en macOS ejecuta las pruebas de `tools/` y publica el artefacto `BLOPSPocket-unsigned`. Runs en verde (comprobados por Adri el 2026-10-13): `434f521`, `85cefbd`, `2564356`, `2f050ac`, `0683fa6` y `1a65063` |
 | 4 | Launcher: selección y validación de la carpeta del juego | Hecho. Dos vías: la copia en `Documents/Games` (principal, `GameFolderLocator.swift`) y una carpeta externa recordada con bookmark (`GameFolderBookmark.swift`). **Compilado en CI** (run de `2f050ac`, `success`). Sin probar en iPhone |
 | 5 | Lectura de archivos de BO1 (formato y carga) | **Hecho en lo verificable**: formato del contenedor documentado y medido (sección 3.5) y catálogo de zonas en la app (`ZoneFileHeader.swift`, `ZoneCatalog.swift`). **Compilado en CI** (run de `2564356`, `success`); falta probarlo en el iPhone. La tabla de assets queda para la fase 6 |
-| 6 | Motor en iOS (Metal, audio, entrada, memoria) | **En curso.** Diseño aprobado (motor propio en Metal, KisakBlack solo como referencia). **6a hecha** (lista de assets) y **6b en marcha**: RAWFILE decodificado al 100% y recorrido secuencial del stream iniciado (6b.1). **6c–6e pendientes**; requieren Xcode y un iPhone. Riesgos: memoria en iPhone, Metal y audio sin probar en iOS |
+| 6 | Motor en iOS (Metal, audio, entrada, memoria) | **En curso.** Diseño aprobado (motor propio en Metal, KisakBlack solo como referencia). **6a hecha** (lista de assets); **6b en marcha**: RAWFILE decodificado al 100%, modelo de serialización confirmado y **medidor de `sizeof`/alineación hecho** ([tools/zsizeof.mjs](tools/zsizeof.mjs)); falta el recorrido secuencial del stream (6b.1). **6c–6e pendientes**; requieren Xcode y un iPhone. Riesgos: memoria en iPhone, Metal y audio sin probar en iOS |
 | 7 | Pruebas en iPhone y documentación para el usuario | **Documentación hecha** (`README.md` y `pruebas-iphone.md`, 12 comprobaciones). Las pruebas en el iPhone están pendientes de que Adri pueda instalar la IPA |
 
 **Fase en curso:** 6 (motor), subfase 6b.1 (recorrido secuencial del stream). La verificación en CI de las fases 3–5 está completa. Las pruebas en iPhone de la fase 7 siguen pendientes de que Adri pueda instalar la IPA.
 **Verificado en dispositivo (Adri, 2026-10-13):** la copia del PC tiene 143 zonas, todas con versión `0x1D9`, y el grupo Zombies con 5 zonas · 279,7 MiB, igual que lo medido con `tools/`.
-**Próximo paso:** cerrar 6b (recorrido secuencial del stream) con el medidor de `sizeof`/alineación propio y la validación contra las 105 anclas de RAWFILE. En paralelo, Adri instala la IPA con SideStore y recorre `pruebas-iphone.md`. Las subfases 6c–6e quedan para cuando haya iPhone disponible.
+**Próximo paso:** cerrar 6b (recorrido secuencial del stream) con el medidor de `sizeof`/alineación **ya hecho** ([tools/zsizeof.mjs](tools/zsizeof.mjs)) y la validación contra las 105 anclas de RAWFILE. En paralelo, Adri restaura la copia del juego e instala la IPA con SideStore para recorrer `pruebas-iphone.md`. Las subfases 6c–6e quedan para cuando haya iPhone disponible.
 **Estado del repositorio:** todo commiteado y subido a `origin/main` (fases 4 y 5, y esta auditoría). **Sin commitear a propósito:** `.freebuff/`. El workflow del CI ejecuta también las pruebas de `tools/` antes de compilar.
 
 ## 8. Decisiones abiertas (por confirmar con Adri)
@@ -350,3 +353,15 @@ No hay código del motor. Se retoma cuando se decida; el lanzador sigue siendo l
 - **Qué falta para cerrar 6b.1:** reproducir el criterio del generador para los arrays following (recuento × `sizeof`, alineación y `Align` previo) y el tratamiento de `techniques`/shaders. Es el mismo trabajo que hace ZoneCodeGenerator; conviene portarlo y validar con las 105 anclas.
 - **Entorno:** no hay compilador para ejecutar OpenAssetTools y comparar.
 - **Nota de entorno:** la copia de prueba del juego ya no está en una carpeta normal; los `.ff` solo aparecen en la Papelera de reciclaje (`$Recycle.Bin/.../$R4QGBD9/zone/`). Se han leído de ahí, en solo lectura. Conviene restaurarlos antes de la prueba en iPhone.
+
+**Fase 6b.1: medidor de `sizeof`/alineación (2026-10-14, hecho).** Herramienta: [tools/zsizeof.mjs](tools/zsizeof.mjs).
+
+- **Qué hace:** lee la cabecera de assets como texto (no copia código de la referencia) y calcula el layout de cada struct/union con las reglas de C para el tamaño de puntero indicado. Uso: `node tools/zsizeof.mjs <cabecera.h> [--ptr 4] [--type Nombre] [--check]`. Códigos de salida: 0 correcto, 1 fallo de comprobación, 2 uso incorrecto.
+- **Qué soporta:** tipos de varias palabras (`unsigned char`, `long long`), punteros, arrays, bitfields en unidades del tipo base, uniones, structs y uniones anónimos (miembros de C11), enums con tipo base, typedefs con array y las macros de alineación (`type_align`/`gcc_align`/`tdef_align`, con y sin sufijo 32/64 según el puntero).
+- **Verificación objetiva (la cabecera trae su propia verdad):** `node tools/zsizeof.mjs T5_Assets.h --check` da **3 static_assert, 0 fallos** (`MaterialTextureDefSamplerState` 1, `GfxStateBitsLoadBits` 8, `GfxStateBitsLoadBitsStructured` 8). Es el compilador de la referencia quien fija esos números.
+- **Verificación contra datos reales:** reproduce las dos tallas que estaban ancladas en bytes de zona — `Material` = **192** (el nombre cae en 39994, tras `loadscreen_locked`) y `MaterialTechniqueSet` = **528** (región fija del primer asset) — y las demás derivadas a mano: `MaterialInfo` 40, `MaterialTextureDef` 16, `MaterialConstantDef` 32 (alineado a 16), `GfxStateBits` 8, `GfxDrawSurf` 8.
+- **Aviso de tipos sin resolver:** los tipos que no encuentra se asumen `int` y se **reportan** por stderr; en `T5_Assets.h` con puntero de 4 bytes no hay ninguno, lo que confirma que no quedan referencias adelantadas.
+- **Lo que el medidor NO resuelve:** cómo se escriben los arrays following (recuento × `sizeof` del elemento, con qué alineación previa). Eso sigue siendo el trabajo pendiente y **no** está derivado en esta fase; el medidor solo da los tamaños de las regiones fijas.
+- **Limitaciones conocidas:** (1) mantiene todas las ramas de los bloques `#if`/`#ifdef`, así que una cabecera con variantes por plataforma duplicaría tipos; (2) los tipos que no encuentra se asumen `int` (y se avisan); (3) el medidor no sustituye al generador: solo da tamaños. El criterio de qué punteros van a 0 y qué arrays se escriben sigue saliendo del generador.
+- **Pruebas:** [tools/zsizeof.test.mjs](tools/zsizeof.test.mjs), 9 casos con una cabecera sintética (tamaño de puntero, bitfields, uniones con struct anónimo, macros de alineación, `static_assert` correctos y fallidos). El CI ejecuta ahora los cuatro ficheros de prueba de `tools/`.
+- **Qué queda para cerrar 6b.1:** recorrer el stream asset a asset y validar contra las 105 anclas de RAWFILE. Las tallas de las regiones fijas ya no son un bloqueo; el bloqueo es ese recorrido.
