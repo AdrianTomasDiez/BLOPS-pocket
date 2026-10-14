@@ -4,9 +4,7 @@ Copyright 2026 Adrian Tomás Diez
 Este proyecto no incluye ni distribuye archivos del juego. Solo lee la copia
 de Call of Duty: Black Ops 1 que el usuario posee y aporta por su cuenta.
 
-Licencia del código propio de este repositorio: GNU General Public License v3.0
-(GPL-3.0, ver LICENSE). Se cambió de Apache 2.0 para poder adaptar KisakBlack
-(GPL-3.0); ver reglas.md, sección 6.
+Licencia del código propio de este repositorio: Apache License 2.0 (ver LICENSE).
 
 Referencias consultadas: de ninguna de ellas se ha copiado ni traducido código.
 
@@ -22,6 +20,6 @@ Referencias consultadas: de ninguna de ellas se ha copiado ni traducido código.
 
 Aviso para el futuro: si se reutiliza código de IW4-Pocket u otro proyecto, hay
 que conservar en NOTICE y en el README las atribuciones que exija su licencia.
-Como el proyecto ya es GPL-3.0, el código de KisakBlack, OpenAssetTools o
-ZoneTool puede adaptarse con su atribución. Si se reutiliza código de
-IW4-Pocket (Apache 2.0), hay que conservar su aviso en este NOTICE.
+Si se copia código de un proyecto GPL-3.0 (KisakBlack, OpenAssetTools,
+ZoneTool), este proyecto pasa a ser GPL-3.0 y la licencia de la app debe
+cambiar: la decisión registrada en reglas.md (sección 6) es no copiarlo.
