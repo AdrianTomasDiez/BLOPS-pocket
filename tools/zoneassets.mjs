@@ -87,9 +87,10 @@ export function parseAssetList(d) {
     }
 
     const typeCounts = new Array(T5_ASSET_TYPE_NAMES.length).fill(0);
+    const bodyOffset = pos + assetCount * ASSET_ENTRY_LEN; // donde empiezan los cuerpos
     if (assetCount > 0) {
         if (assetsPtr !== FOLLOWING) throw new Error("la tabla de assets no va inline");
-        if (pos + assetCount * ASSET_ENTRY_LEN > d.length) {
+        if (bodyOffset > d.length) {
             throw new Error("tabla de assets fuera del stream");
         }
         for (let i = 0; i < assetCount; i++) {
@@ -105,7 +106,7 @@ export function parseAssetList(d) {
         .filter((entry) => entry.count > 0)
         .sort((a, b) => b.count - a.count || a.id - b.id);
 
-    return { stringCount: strings.length, assetCount, types, strings };
+    return { stringCount: strings.length, assetCount, types, strings, bodyOffset };
 }
 
 /** Lee el archivo .ff, valida su cabecera e infla el stream para parsearlo. */
