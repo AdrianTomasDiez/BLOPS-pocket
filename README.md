@@ -80,7 +80,7 @@ La lista de comprobaciones manuales en dispositivo, con lo que se espera de cada
 ## Legal
 
 - Este proyecto **no distribuye** archivos, recursos ni datos de Call of Duty: Black Ops 1, y no incluye logotipos ni marcas de Activision o Treyarch. Necesitas una copia legítima de la que seas titular.
-- Código propio bajo **Apache License 2.0** (ver [LICENSE](LICENSE)); atribuciones y referencias consultadas en [NOTICE](NOTICE). De ninguna referencia se ha copiado código.
+- Código propio bajo **GNU GPL v3.0** (ver [LICENSE](LICENSE)); atribuciones y referencias consultadas en [NOTICE](NOTICE). De ninguna referencia se ha copiado código.
 - Antes de publicar la app en cualquier tienda o hacer distribución pública hace falta una revisión legal (regla 2.5 de `reglas.md`).
 
 ## Documentación del proyecto

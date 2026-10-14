@@ -143,7 +143,7 @@ BLOPS pocket/
 ├── .gitignore            → excluye datos del juego, build e IPA
 ├── README.md             → instrucciones para el usuario (fase 7, hecho)
 ├── pruebas-iphone.md     → comprobaciones manuales en el iPhone (fase 7)
-├── LICENSE               → Apache License 2.0 (texto oficial)
+├── LICENSE               → GNU GPL v3.0 (texto oficial)
 ├── NOTICE                → propiedad, licencia y atribuciones
 ├── launcher/
 │   ├── project.yml       → especificación de XcodeGen (genera el .xcodeproj)
@@ -197,6 +197,9 @@ No crear carpetas hasta que la fase lo requiera. El bundle id definitivo es `com
 | 2026-10-13 | `UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace` y carpeta `Documents/Games` | Para que el juego aparezca en Archivos → En mi iPhone → BLOPS pocket → Games |
 | 2026-10-13 | Bundle id definitivo: `com.adriantomasdiez.blopspocket` | Elegido por Adri; sustituye al provisional `com.example.blopspocket` |
 | 2026-10-13 | Se adelanta la fase 7 (README y pruebas manuales) antes de la fase 6 | Elegido por Adri. La documentación no depende del motor y desbloquea la prueba en el iPhone; el motor sigue sin decidir |
+| 2026-10-14 | Pruebas en iPhone completadas: la app lee la copia (143 zonas, 2,8 GB, Zombies 5) | Verificado por Adri con capturas |
+| 2026-10-14 | Estrategia del motor: adaptar KisakBlack | Elegido por Adri |
+| 2026-10-14 | Licencia de la app: GPL-3.0 (cambio desde Apache 2.0) | Elegido por Adri para poder adaptar KisakBlack. `LICENSE` (GPL-3.0 oficial, descargado de gnu.org) y `NOTICE` actualizados. La implementación del motor sigue pendiente de confirmación |
 
 ## 7. Estado actual
 
@@ -218,7 +221,7 @@ No crear carpetas hasta que la fase lo requiera. El bundle id definitivo es `com
 
 ## 8. Decisiones abiertas (por confirmar con Adri)
 
-- **Licencia de la app:** Apache 2.0 (decidido). Si más adelante se copia código de KisakBlack, habrá que cambiar a GPL-3.0.
+- **Licencia de la app:** GPL-3.0 (decidido por Adri el 2026-10-14, para poder adaptar KisakBlack).
 - **Nombre de la app:** BLOPS pocket (decidido, provisional).
 - **Dispositivo y entorno de build:** solo GitHub Actions, sin Mac (decidido).
 - **Distribución:** uso personal con SideStore (decidido).
