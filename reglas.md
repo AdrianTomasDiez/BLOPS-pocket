@@ -199,6 +199,7 @@ No crear carpetas hasta que la fase lo requiera. El bundle id definitivo es `com
 | 2026-10-13 | Se adelanta la fase 7 (README y pruebas manuales) antes de la fase 6 | Elegido por Adri. La documentación no depende del motor y desbloquea la prueba en el iPhone; el motor sigue sin decidir |
 | 2026-10-14 | Pruebas en iPhone completadas: la app lee la copia (143 zonas, 2,8 GB, Zombies 5) | Verificado por Adri con capturas |
 | 2026-10-14 | Estrategia del motor: adaptar KisakBlack | Elegido por Adri |
+| 2026-10-14 | Motor: estrategia propuesta = adaptar KisakBlack (GPL-3.0), sin escribir código todavía | Elegido por Adri como base; falta su confirmación final para implementar |
 | 2026-10-14 | Licencia de la app: GPL-3.0 (cambio desde Apache 2.0) | Elegido por Adri para poder adaptar KisakBlack. `LICENSE` (GPL-3.0 oficial, descargado de gnu.org) y `NOTICE` actualizados. La implementación del motor sigue pendiente de confirmación |
 
 ## 7. Estado actual
@@ -211,7 +212,7 @@ No crear carpetas hasta que la fase lo requiera. El bundle id definitivo es `com
 | 3 | Estructura del proyecto y CI para IPA sin firmar | Hecho. El CI en macOS ejecuta las pruebas de `tools/` y publica el artefacto `BLOPSPocket-unsigned`. Runs en verde (comprobados por Adri el 2026-10-13): `434f521`, `85cefbd`, `2564356`, `2f050ac`, `0683fa6` y `1a65063` |
 | 4 | Launcher: selección y validación de la carpeta del juego | Hecho. Dos vías: la copia en `Documents/Games` (principal, `GameFolderLocator.swift`) y una carpeta externa recordada con bookmark (`GameFolderBookmark.swift`). **Compilado en CI** (run de `2f050ac`, `success`). Sin probar en iPhone |
 | 5 | Lectura de archivos de BO1 (formato y carga) | **Hecho en lo verificable**: formato del contenedor documentado y medido (sección 3.5) y catálogo de zonas en la app (`ZoneFileHeader.swift`, `ZoneCatalog.swift`). **Compilado en CI** (run de `2564356`, `success`); falta probarlo en el iPhone. La tabla de assets queda para la fase 6 |
-| 6 | Motor en iOS (Metal, audio, entrada, memoria) | Pendiente y **aplazada**: se hace después de la fase 7 por decisión de Adri. No se implementa nada hasta decidir la estrategia y la licencia |
+| 6 | Motor en iOS (Metal, audio, entrada, memoria) | **Estrategia propuesta, pendiente de confirmación:** adaptar KisakBlack (GPL-3.0). Riesgos: memoria en iPhone (IW4-Pocket ya la tiene al límite), Metal y audio sin probar en iOS, y el juego debe leerse por zona sin cargar 2,8 GB. No se implementa nada hasta que Adri confirme |
 | 7 | Pruebas en iPhone y documentación para el usuario | **Documentación hecha** (`README.md` y `pruebas-iphone.md`, 12 comprobaciones). Las pruebas en el iPhone están pendientes de que Adri pueda instalar la IPA |
 
 **Fase en curso:** 7 (documentación hecha; faltan las pruebas en el iPhone). La verificación en CI de las fases 3–5 está completa. La fase 6 (motor) queda aplazada por decisión de Adri.
