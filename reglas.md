@@ -307,4 +307,6 @@ Estado: **propuesta, sin código.** Según `prompts.md`, no se programa ninguna 
 - **Formato:** la decodificación depende de documentación verificada; si no se encuentra fuente fiable, la subfase 6b se bloquea y se avisa.
 - **Licencia:** cualquier código de referencia que se copie cambia la licencia. Solo se aportan ideas y se escribe código propio.
 
+**Bloqueo de 6a (2026-10-14):** la regla 7 exige formato verificado antes de implementar, y la búsqueda de documentación no lo confirmó. Fuentes leídas: [OpenAssetTools, documentación de zone files](https://openassettools.dev/reference/zone-file.html) (confirma nombres de categorías T5, no el layout binario) y [wiki de COD5 FastFile](https://wiki.zeroy.com/index.php?title=Call_of_Duty_5:_FastFile_Format) (es de WaW, no de BO1, no sirve como prueba). Sin fuente fiable no se escribe el lector de la tabla.
+
 **Decisión que necesito de ti:** aprobar este diseño y el orden de subfases, o pedir cambios. Si lo apruebas, empiezo por 6a, que no toca Metal y se puede verificar con la copia de prueba.
