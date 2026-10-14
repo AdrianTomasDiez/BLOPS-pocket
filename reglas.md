@@ -276,3 +276,35 @@ Revisión de qué pedía cada fase contra lo que hay de verdad en el repositorio
 - **Decidido:** vía principal copiar el juego en `Documents/Games` (que aparece en Archivos como En mi iPhone → BLOPS pocket) y mantener el selector externo como alternativa. Implementado con `GameFolderLocator.swift` y las claves de Info.plist `UIFileSharingEnabled` y `LSSupportsOpeningDocumentsInPlace`.
 
 Fuentes: [Apple: acceso a directorios](https://developer.apple.com/documentation/uikit/providing-access-to-directories), [UIFileSharingEnabled](https://developer.apple.com/documentation/bundleresources/information-property-list/uifilesharingenabled), [capacidad del volumen](https://developer.apple.com/documentation/foundation/checking-volume-storage-capacity), [README de IW4-Pocket](https://github.com/MarkusSela/IW4-Pocket), [guía iOS de RetroArch](https://docs.libretro.com/guides/install-ios/).
+
+## 11. Diseño propuesto del motor en Metal (fase 6, pendiente de aprobación)
+
+Estado: **propuesta, sin código.** Según `prompts.md`, no se programa ninguna parte del motor hasta que Adri lo apruebe. Base decidida: motor propio en Metal, con KisakBlack solo como referencia (ver §6).
+
+**Principio:** no cargar el juego entero. Los FastFile de BO1 pesan varios GB; el motor lee solo el índice y los assets que pide la escena actual.
+
+**Capas:**
+
+1. **Índice de zona:** leer la cabecera (ya existe en `ZoneFileHeader.swift`) y la tabla de assets sin cargar el bloque de datos. Es lo que hace la fase 5 ya implementada en el catálogo.
+2. **Lector por rangos:** `FileHandle` con lecturas por desplazamiento a partir del índice. Un asset = una lectura, sin mapear el archivo completo.
+3. **Caché acotada:** LRU con tope de memoria fijo (propuesta inicial: 400 MB de assets decodificados). Al superar el tope se descarta lo menos usado. El tope se ajusta con medidas reales en el iPhone (fase 7).
+4. **Decodificación:** formato de compresión de los bloques, **por verificar** antes de escribir nada. Se documentará aquí con fuente propia, no con código copiado.
+5. **Render Metal:** un `MTKView`, buffers de vértices y texturas creados a demanda desde la caché. Sin shaders de terceros.
+6. **Audio:** AVAudioEngine para reproducción de efectos. Pendiente de decidir si entra en la fase 6 o queda para más adelante.
+
+**Subfases propuestas (cada una con criterio de salida):**
+
+- 6a. Leer y listar la tabla de assets de un archivo de zona de prueba. Salida: nombres y tamaños coinciden con las herramientas de referencia.
+- 6b. Decodificar un asset y comprobar que el tamaño descomprimido es correcto.
+- 6c. Dibujar un modelo estático en Metal en el simulador o en el iPhone.
+- 6d. Caché acotada: cargar y descargar assets sin superar el tope medido.
+- 6e. Escena mínima con varios assets y medida de memoria (Instruments en Mac, o contador interno si no hay Mac).
+
+**Riesgos:**
+
+- **Memoria en iPhone:** el sistema puede cerrar la app por presión de memoria. Mitigación: tope de caché y medición en fase 7.
+- **Metal y audio sin probar en iOS:** no hay CI para pruebas de render. Las pruebas de render serán manuales en el iPhone.
+- **Formato:** la decodificación depende de documentación verificada; si no se encuentra fuente fiable, la subfase 6b se bloquea y se avisa.
+- **Licencia:** cualquier código de referencia que se copie cambia la licencia. Solo se aportan ideas y se escribe código propio.
+
+**Decisión que necesito de ti:** aprobar este diseño y el orden de subfases, o pedir cambios. Si lo apruebas, empiezo por 6a, que no toca Metal y se puede verificar con la copia de prueba.
