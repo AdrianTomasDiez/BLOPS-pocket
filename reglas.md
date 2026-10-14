@@ -294,7 +294,7 @@ Estado: **propuesta, sin código.** Según `prompts.md`, no se programa ninguna 
 
 **Subfases propuestas (cada una con criterio de salida):**
 
-- 6a. Leer y listar la tabla de assets de un archivo de zona de prueba. Salida: nombres y tamaños coinciden con las herramientas de referencia.
+- 6a. Leer y listar la tabla de assets de un archivo de zona de prueba. Salida: nombres y conteos por tipo. Los tamaños por asset pasan a 6b (requieren decodificar cada tipo).
 - 6b. Decodificar un asset y comprobar que el tamaño descomprimido es correcto.
 - 6c. Dibujar un modelo estático en Metal en el simulador o en el iPhone.
 - 6d. Caché acotada: cargar y descargar assets sin superar el tope medido.
@@ -326,4 +326,6 @@ No hay código del motor. Se retoma cuando se decida; el lanzador sigue siendo l
 
 - Verificado: `node --test tools/zoneassets.test.mjs` pasa 6/6 con datos sintéticos. El CLI sobre `common_zombie.ff` da 2.693 assets y 858 cadenas, con 1.882 XANIMPARTS, 190 FX, 184 XMODEL, 150 MATERIAL, 105 RAWFILE, 83 TECHNIQUE_SET, 79 WEAPON, 13 STRINGTABLE, 4 IMAGE, 1 SOUND, 1 MENULIST y 1 IMPACT_FX. Uso incorrecto sale con código 2.
 - Aclarado: los tamaños de bloque XFile son memoria a reservar (`StepAllocXBlocks`), no bytes del stream. Por eso su suma (80,8 MB) supera el stream (79,66 MB) sin contradicción. Esto explica la diferencia pendiente de `mp_firingrange.ff`, aunque no se ha comprobado en ese archivo.
-- No verificado: tamaños por asset y comparación con una herramienta de referencia ejecutada (OpenAssetTools no se ha ejecutado aquí). El criterio de 6a pide nombres y tamaños, así que 6a queda **parcial**: los nombres y conteos sí, los tamaños no.
+- No verificado: comparación de nombres y conteos con una herramienta de referencia ejecutada (OpenAssetTools no se ha ejecutado aquí). Tamaños por asset: movidos a 6b.
+
+**6a cerrada (2026-10-14, decidida por Adri):** el criterio queda en nombres y conteos por tipo. Pendiente de 6b: tamaños por asset. Pendiente de verificación: comparar con OpenAssetTools sobre `common_zombie.ff`.
