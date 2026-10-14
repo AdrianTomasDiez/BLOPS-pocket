@@ -83,3 +83,17 @@ test("rechaza un bloque sin el separador esperado", () => {
     const stream = buildUncompressed("a.cfg", "datos").subarray(0, 12 + 6 + 5);
     assert.equal(decodeRawFile(stream, 0), null);
 });
+
+test("acepta un RAWFILE vacío al final del stream (último asset)", () => {
+    // [marca][tamaño 0][marca][nombre\0][separador 0x00], sin registro detrás.
+    const head = Buffer.alloc(12);
+    head.writeUInt32LE(FOLLOWING, 0);
+    head.writeUInt32LE(0, 4);
+    head.writeUInt32LE(FOLLOWING, 8);
+    const stream = Buffer.concat([head, Buffer.from("common_zombie\0", "latin1"), Buffer.from([0x00])]);
+    const record = decodeRawFile(stream, 0);
+    assert.equal(record.kind, "uncompressed");
+    assert.equal(record.name, "common_zombie");
+    assert.equal(record.len, 0);
+    assert.equal(readRawFileContent(stream, record).length, 0);
+});

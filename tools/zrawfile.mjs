@@ -49,7 +49,7 @@ export function decodeRawFile(d, p) {
     if (d.readUInt32LE(p) !== FOLLOWING) return null;
 
     const size = d.readUInt32LE(p + BLOB_HEADER_LEN - 4);
-    if (size === 0 || size > MAX_PAYLOAD) return null;
+    if (size > MAX_PAYLOAD) return null;
     if (d.readUInt32LE(p + BLOB_HEADER_LEN) !== FOLLOWING) return null;
 
     const nameStart = p + BLOB_HEADER_LEN + 4;
@@ -81,8 +81,11 @@ export function decodeRawFile(d, p) {
     }
 
     // Caso sin comprimir: el bloque son los propios bytes. Se exige el separador
-    // y la marca del registro siguiente para descartar falsos positivos.
-    if (payloadEnd < d.length && d[payloadEnd] === 0x00 && d.readUInt32LE(payloadEnd + 1) === FOLLOWING) {
+    // y, o bien la marca del registro siguiente, o bien el final del stream (el
+    // último asset de la zona no tiene registro detrás).
+    const closedByNext = payloadEnd + 1 < d.length && d.readUInt32LE(payloadEnd + 1) === FOLLOWING;
+    const closedByEnd = payloadEnd + 1 === d.length;
+    if (payloadEnd < d.length && d[payloadEnd] === 0x00 && (closedByNext || closedByEnd)) {
         return { offset: p, name, kind: "uncompressed", len: size, clen: 0, payloadStart, end: payloadEnd };
     }
 
