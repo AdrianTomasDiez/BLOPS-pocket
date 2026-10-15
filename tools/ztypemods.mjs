@@ -158,7 +158,13 @@ export function loadModel(root) {
     const { enumNames, mapping } = parseT5Header(readFileSync(t5Header, "utf8"));
     const { byStruct, desconocidas } = parseDirectives(xassets);
     const medidor = createMeasurer(4);
-    medidor.parse(readFileSync(assetsHeader, "utf8"));
+    const assetsText = readFileSync(assetsHeader, "utf8");
+    medidor.parse(assetsText);
+    /** Valor de un enum (`NOMBRE = 0xB,`) de T5_Assets.h; null si no existe. */
+    const enumValor = (nombre) => {
+        const m = new RegExp(`\\b${nombre}\\s*=\\s*(0x[0-9a-fA-F]+|\\d+)`).exec(assetsText);
+        return m ? Number(m[1]) : null;
+    };
 
     /** Struct del tipo de asset (por nombre del enum, sin ASSET_TYPE_). */
     const structOf = (tipo) => {
@@ -171,7 +177,7 @@ export function loadModel(root) {
         return struct ? byStruct.get(struct) ?? null : null;
     };
 
-    return { enumNames, mapping, byStruct, medidor, unknownDirectives: desconocidas, assetsHeader, structOf, directivesOf };
+    return { enumNames, mapping, byStruct, medidor, unknownDirectives: desconocidas, assetsHeader, structOf, directivesOf, enumValor };
 }
 
 function main() {

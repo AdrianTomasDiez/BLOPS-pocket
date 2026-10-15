@@ -66,6 +66,12 @@ test("valores negativos del propio asset", () => {
     assert.equal(evalExpr("negativo + 10", leer), 3);
 });
 
+test("comparación de igualdad, como semantic == TS_WATER_MAP", () => {
+    assert.equal(evalExpr("N == 4", leer), 1);
+    assert.equal(evalExpr("N == 3", leer), 0);
+    assert.equal(evalExpr("N + 1 == M + 2", leer), 1);
+});
+
 test("un miembro que no existe se propaga como error, no como cero", () => {
     assert.throws(() => evalExpr("inexistente + 1", leer), /miembro desconocido/);
 });

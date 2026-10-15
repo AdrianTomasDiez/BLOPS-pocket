@@ -28,6 +28,17 @@ import { parseAssetList, T5_ASSET_TYPE_NAMES } from "./zoneassets.mjs";
 
 const HEADER_LEN = 12; // cabecera del .ff (magic + versión)
 const FOLLOWING = 0xffffffff;
+const LOADDEF_FOLLOWING = 0xfffffffe;
+
+/**
+ * Cabecera fija de un `GfxImageLoadDef`: hasta el miembro flexible `data[1]`
+ * (sin el byte de relleno del struct). Los datos reales no entran aquí.
+ */
+function cabeceraLoadDef(modelo) {
+    const data = (modelo.miembros("GfxImageLoadDef") ?? []).find((x) => x.name === "data");
+    if (!data) throw new SinResolver("GfxImageLoadDef sin data");
+    return data.offset;
+}
 
 // ---------------------------------------------------------------------------
 // Miembros de los structs: qué tipo declara cada uno (zsizeof da tamaños y
@@ -114,7 +125,7 @@ class SinResolver extends Error {}
 
 function tokenize(expr) {
     const tokens = [];
-    const re = /[A-Za-z_][\w]*|\d+|::|[\s()+\-*/%\[\]]/g;
+    const re = /==|[A-Za-z_][\w]*|\d+|::|[\s()+\-*/%\[\]]/g;
     let m;
     while ((m = re.exec(expr)) !== null) {
         const t = m[0];
@@ -181,7 +192,13 @@ export function evalExpr(expr, leer) {
             else return v;
         }
     }
-    const valor = suma();
+    /** Igualdad: devuelve 1 si ambos lados son iguales, 0 si no. */
+    function comparacion() {
+        const a = suma();
+        if (come("==")) return a === suma() ? 1 : 0;
+        return a;
+    }
+    const valor = comparacion();
     if (i !== tokens.length) throw new SinResolver(`sobra "${tokens.slice(i).join(" ")}" en "${expr}"`);
     return valor;
 }
@@ -210,6 +227,11 @@ class Modelo {
     medidor() { return this.modelo.medidor; }
 
     /** Miembros del struct con offset y tamaño (de zsizeof) fusionados con el tipo declarado. */
+    /** Valor numérico de un enum de T5_Assets.h, o null si no existe. */
+    enumValor(nombre) {
+        return this.modelo.enumValor(nombre);
+    }
+
     miembros(struct) {
         const offsets = this.medidor().membersOf(struct);
         if (!offsets) return null;
@@ -260,7 +282,7 @@ class Modelo {
     }
 
     /** Recorre los miembros y añade los pasos; baja a sub-structs por valor. */
-    recogerPasos(struct, dir, pasos, faltas, prefijo) {
+    recogerPasos(struct, dir, pasos, faltas, prefijo, raiz = true) {
         const miembros = this.miembros(struct);
         if (!miembros) {
             faltas.push(`${struct}: sin layout (zsizeof no lo resuelve)`);
@@ -287,7 +309,7 @@ class Modelo {
             // Sub-directivas con el nombre de este miembro por delante (`info::name`).
             const subDir = dir ? this.subDirectivas(dir, m.name) : null;
             if (subDir) {
-                this.recogerPasos(m.type, subDir, pasos, faltas, "");
+                this.recogerPasos(m.type, subDir, pasos, faltas, "", false);
                 continue;
             }
             if (esTexto) {
@@ -299,6 +321,9 @@ class Modelo {
                     pasos.push({
                         clase: "count", struct, member: ruta, offset: m.offset,
                         expr: cuenta.expr, elemSize: this.elemSize(struct, m.name),
+                        // Puntero: sus datos solo van following si el marcador es 0xffffffff.
+                        puntero: raiz && m.ptr > 0,
+                        imagenes: raiz && m.ptr > 0 ? this.imagenesDe(m.type) : null,
                     });
                 } catch (error) {
                     faltas.push(`${ruta}: ${error.message}`);
@@ -315,6 +340,17 @@ class Modelo {
                 continue;
             }
         }
+    }
+
+    /**
+     * Elementos con una unión `u` cuya alternativa `image` (GfxImage) lleva datos
+     * following. La condición de la directiva (`u::water`) decide cuál es agua.
+     */
+    imagenesDe(tipoElem) {
+        const dirElem = this.modelo.byStruct.get(tipoElem);
+        const cond = dirElem ? (dirElem.scoped ?? []).find((s) => s.palabra === "condition" && s.path[0] === "u") : null;
+        if (!cond) return null;
+        return { struct: tipoElem, expr: cond.expr };
     }
 
     /** Directivas de un miembro concreto, vistas desde el struct que las contiene. */
@@ -390,6 +426,51 @@ class Medidor {
         throw new SinResolver(`ruta vacía`);
     }
 
+    /** Entero sin signo de 4 bytes en una posición del stream (los marcadores). */
+    valorEn(pos) {
+        if (pos + 4 > this.d.length) throw new SinResolver("marcador fuera del stream");
+        return this.d.readUInt32LE(pos);
+    }
+
+    /** Marcador de un puntero: true si sus datos van following en el stream. */
+    marcadorFollowing(pos) {
+        return this.valorEn(pos) === FOLLOWING;
+    }
+
+    /**
+     * Recorre los elementos de una tabla; las imágenes (no agua) con datos following
+     * se miden detrás de la tabla: GfxImage fijo + nombre + GfxImageLoadDef opcional.
+     * @returns posición tras las imágenes
+     */
+    medirImagenes(modelo, imag, elemSize, ini, n, cursor, detalle, miembro) {
+        const uM = (modelo.miembros(imag.struct) ?? []).find((x) => x.name === "u");
+        if (!uM) throw new SinResolver(`${imag.struct} sin unión u`);
+        const texM = (modelo.miembros("GfxImage") ?? []).find((x) => x.name === "texture");
+        if (!texM) throw new SinResolver("GfxImage sin texture");
+        const miembrosElem = modelo.miembros(imag.struct) ?? [];
+        for (let i = 0; i < n; i++) {
+            const e = ini + i * elemSize;
+            const agua = evalExpr(imag.expr, (ruta, index) => {
+                if (ruta.length === 1 && !miembrosElem.some((x) => x.name === ruta[0])) {
+                    const v = modelo.enumValor(ruta[0]);
+                    if (v === null) throw new SinResolver(`enum desconocido ${ruta[0]}`);
+                    return v;
+                }
+                return this.leerValor(modelo, imag.struct, e, ruta, index);
+            });
+            if (agua) continue;
+            if (!this.marcadorFollowing(e + uM.offset)) continue;
+            const fin = this.d.indexOf(0, cursor + modelo.sizeOf("GfxImage"));
+            if (fin === -1) throw new SinResolver(`nombre de imagen sin terminador en ${miembro}[${i}]`);
+            let fin2 = fin + 1;
+            // `GfxTexture` es una unión: 0xfffffffe marca un `loadDef` con datos following (medido en common_zombie).
+            if (this.valorEn(cursor + texM.offset) === LOADDEF_FOLLOWING) fin2 += cabeceraLoadDef(modelo);
+            detalle.push({ clase: "imagen", member: `${miembro}[${i}]::u::image`, bytes: fin2 - cursor });
+            cursor = fin2;
+        }
+        return cursor;
+    }
+
     leerEntero(pos, size, tipo) {
         if (pos + size > this.d.length) throw new SinResolver("lectura fuera del stream");
         switch (size) {
@@ -418,6 +499,11 @@ class Medidor {
                 continue;
             }
             if (paso.clase === "count") {
+                if (paso.puntero && !this.marcadorFollowing(base + paso.offset)) {
+                    // Puntero nulo: la tabla no va en el stream.
+                    detalle.push({ ...paso, valor: 0, bytes: 0 });
+                    continue;
+                }
                 let valor;
                 try {
                     valor = evalExpr(paso.expr, (ruta, index) => this.leerValor(modelo, paso.struct, base, ruta, index));
@@ -426,7 +512,15 @@ class Medidor {
                 }
                 const bytes = valor * paso.elemSize;
                 detalle.push({ ...paso, valor, bytes });
+                const ini = cursor;
                 cursor += bytes;
+                if (paso.imagenes && valor > 0) {
+                    try {
+                        cursor = this.medirImagenes(modelo, paso.imagenes, paso.elemSize, ini, valor, cursor, detalle, paso.member);
+                    } catch (error) {
+                        return { ok: false, fijo: plan.fijo, detalle, motivo: `${paso.member}: ${error.message}` };
+                    }
+                }
                 continue;
             }
             if (paso.clase === "arraysize") {

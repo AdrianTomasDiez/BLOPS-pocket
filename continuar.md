@@ -26,10 +26,10 @@ Todo esto está medido y es reproducible con las herramientas de la sección 3.
 | Modelo de tipos | 44 nombres del enum, **33 con struct + directiva + región fija**; 11 sin struct propio | `node tools/ztypemods.mjs <src>` |
 | Anclas RAWFILE | **105/105** cuadran en `common_zombie`; 468 leídas en `common_mp` | `node tools/zstreamwalk.mjs` |
 
-**Fallo abierto y medido (no un misterio):** entre `bodyOffset` y el primer RAWFILE hay **843** B y el recorrido del modelo mide **766** (−77). Los 77 son la pieza anidada: un `GfxImage` completo (52 fijos + 13 del nombre `popups_alpha`) más su `GfxImageLoadDef` (12). El modelo mide 234 del `MATERIAL` (192 + 18 de nombre + 16 de `textureTable[1]` + 8 de `stateBitsTable[1]`) y el binario ocupa 311.
+**Criterio de 6b.1 cumplido:** entre `bodyOffset` y el primer RAWFILE hay **843** B y el recorrido del modelo mide **843**. La pieza que faltaba era la imagen anidada de `textureTable[0]` (`u::image` con marcador `0xffffffff`, no agua): un `GfxImage` (52 fijos + nombre de 13) y su cabecera `GfxImageLoadDef` (12 B, sin el `data[1]` flexible). Un `texture` con valor `0xfffffffe` indica ese `loadDef`. El `MATERIAL` mide 311 (antes 234).
 
 ```bash
-# Comprobación que hoy FALLA a propósito (diferencia −77, salida 1):
+# Comprobación de cierre (sale con 0):
 node tools/zassetsize.mjs <src> common_zombie.ff --walk 0 1 --expect 843 --sep 0
 ```
 
@@ -48,12 +48,13 @@ node tools/zassetsize.mjs <src> common_zombie.ff --walk 0 1 --expect 843 --sep 0
 
 Códigos de salida en todas: **0** correcto, **1** error de formato/lectura o comprobación fallida, **2** uso incorrecto (y **3** discrepancias en `zstreamwalk`).
 
-**Pruebas:** `node --test tools/zonescan.test.mjs tools/zoneassets.test.mjs tools/zrawfile.test.mjs tools/zsizeof.test.mjs tools/zassetsize.test.mjs` → **38/38**. Ese mismo comando está en `.github/workflows/ios-ipa.yml`: al añadir un `.test.mjs` hay que añadirlo ahí también.
+**Pruebas:** `node --test tools/*.test.mjs` → **39/39**. Ese mismo comando está en `.github/workflows/ios-ipa.yml`: al añadir un `.test.mjs` hay que añadirlo ahí también.
 
 ## 4. Lo que falta para cerrar 6b.1, en orden
 
-1. **Expansión anidada según el marcador del stream.** En la región fija, un puntero con marca `0xffffffff` (FOLLOWING) lleva su dato detrás; un puntero real (p. ej. `techniqueSet` = `0x80004511`) **no lleva nada**. Al expandir hay que escribir el plan del tipo apuntado, sea un tipo asset (`GfxImage`) o un struct con plan propio (el `GfxImageLoadDef` que cuelga de `GfxTexture::loadDef`), con guarda contra recursión infinita. Ojo con el `+1` de `RawFile::buffer` (la directiva dice `len + 1` y el stream guarda `len`).
-2. **`condition` sobre miembros de elementos** (`u::water`, `u::literalConst`, `u::codeSampler`…): exige tener los **valores del enum** para comparar (`semantic == TS_WATER_MAP`). Los enums están en `T5_Assets.h`.
+1. ~~**Expansión anidada según el marcador del stream.**~~ Hecho solo para la imagen de `textureTable` (ver arriba). Pendiente generalizar: un puntero `0xffffffff` a otro struct debe seguirse con plan propio y guarda contra recursión. Ojo con el `+1` de `RawFile::buffer` (la directiva dice `len + 1` y el stream guarda `len`).
+2. ~~**`condition` con valores de enum.**~~ Hecho: el evaluador admite `==` y nombres de enum (`TS_WATER_MAP`) vía `enumValor`. Pendiente: otros usos de `condition` no probados.
+3. ~~Constante nula~~: el `count` solo suma si su puntero es `0xffffffff` (así `constantTable` con puntero 0 no suma).
 3. **El byte propio de los registros RAWFILE** y la semántica de `reusable` cuando no hay `count`.
 4. **Validar el recorrido completo** de los 2693 assets contra las 105 anclas con `zstreamwalk.mjs` (hoy solo se siembran 15 tramos) y con las 465 de `common_mp`.
 
