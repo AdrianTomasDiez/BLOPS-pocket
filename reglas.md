@@ -1,6 +1,6 @@
 # reglas.md: BLOPS pocket (Call of Duty: Black Ops 1 en iOS)
 
-> **Para el agente de IA:** lee este archivo COMPLETO antes de tocar código. Si hay conflicto entre reglas, prevalece la más restrictiva. Mantén la sección 7 (estado) al día al cerrar cada fase.
+> **Para el agente de IA:** antes de tocar código, lee completas las secciones 1, 2, 5, 6, 7 y 8. Las secciones 3, 10 y 11 (investigación, auditoría y bitácora del motor) se consultan bajo demanda, buscando por encabezado (cambio del 2026-10-17: el archivo ocupa unos 59 KB). Si hay conflicto entre reglas, prevalece la más restrictiva. Mantén la sección 7 (estado) al día al cerrar cada fase.
 
 ---
 
@@ -10,7 +10,7 @@ Lanzador para iPhone (iOS) que ejecute **Call of Duty: Black Ops 1** leyendo los
 
 - **Modo Zombies** es el objetivo principal (Adri lo quiere jugar en el móvil). Multijugador queda como opción posterior.
 - **Modelo de referencia de arquitectura:** [IW4-Pocket](https://github.com/MarkusSela/IW4-Pocket) (MW2 en iOS).
-- **Estado:** fases 0–5 hechas (launcher, acceso persistente a la carpeta y catálogo de zonas). El motor (fases 6–7) está pendiente de decisión.
+- **Estado:** fases 0–5 hechas (launcher, acceso persistente a la carpeta y catálogo de zonas) y probadas en el iPhone. La fase 6 (motor) está en curso, todavía solo con las herramientas de formato en Node: 6a hecha; en 6b.1 se cumple el criterio de los 843 B y falta el recorrido completo de los 2693 assets (ver §7).
 
 ## 2. Restricciones legales (obligatorias)
 
@@ -143,7 +143,7 @@ BLOPS pocket/
 ├── .gitignore            → excluye datos del juego, build e IPA
 ├── README.md             → instrucciones para el usuario (fase 7, hecho)
 ├── pruebas-iphone.md     → comprobaciones manuales en el iPhone (fase 7)
-├── LICENSE               → GNU GPL v3.0 (texto oficial)
+├── LICENSE               → Apache License 2.0 (texto oficial; decisión del 2026-10-14 en §6)
 ├── NOTICE                → propiedad, licencia y atribuciones
 ├── launcher/
 │   ├── project.yml       → especificación de XcodeGen (genera el .xcodeproj)
@@ -213,16 +213,17 @@ No crear carpetas hasta que la fase lo requiera. El bundle id definitivo es `com
 | 1 | Investigación de referencias | Hecho (este documento) |
 | 2 | Decisiones: licencia, nombre, base de código | Hecho (KisakBlack solo como referencia) |
 | 3 | Estructura del proyecto y CI para IPA sin firmar | Hecho. El CI en macOS ejecuta las pruebas de `tools/` y publica el artefacto `BLOPSPocket-unsigned`. Runs en verde (comprobados por Adri el 2026-10-13): `434f521`, `85cefbd`, `2564356`, `2f050ac`, `0683fa6` y `1a65063` |
-| 4 | Launcher: selección y validación de la carpeta del juego | Hecho. Dos vías: la copia en `Documents/Games` (principal, `GameFolderLocator.swift`) y una carpeta externa recordada con bookmark (`GameFolderBookmark.swift`). **Compilado en CI** (run de `2f050ac`, `success`). Sin probar en iPhone |
-| 5 | Lectura de archivos de BO1 (formato y carga) | **Hecho en lo verificable**: formato del contenedor documentado y medido (sección 3.5) y catálogo de zonas en la app (`ZoneFileHeader.swift`, `ZoneCatalog.swift`). **Compilado en CI** (run de `2564356`, `success`); falta probarlo en el iPhone. La tabla de assets queda para la fase 6 |
-| 6 | Motor en iOS (Metal, audio, entrada, memoria) | **En curso.** Diseño aprobado (motor propio en Metal, KisakBlack solo como referencia). **6a hecha** (lista de assets); **6b en marcha**: RAWFILE decodificado al 100%, modelo de serialización confirmado, **medidor de `sizeof`/alineación** ([tools/zsizeof.mjs](tools/zsizeof.mjs)), **modelo por tipo** ([tools/ztypemods.mjs](tools/ztypemods.mjs)) y **el modelo convertido en tamaños** ([tools/zassetsize.mjs](tools/zassetsize.mjs)): el asset 0 cuadra a byte y el `MATERIAL` se queda a **−77** de su talla real (la pieza anidada). Falta el recorrido completo (6b.1). **6c–6e pendientes**; requieren Xcode y un iPhone. Riesgos: memoria en iPhone, Metal y audio sin probar en iOS |
-| 7 | Pruebas en iPhone y documentación para el usuario | **Documentación hecha** (`README.md` y `pruebas-iphone.md`, 12 comprobaciones). Las pruebas en el iPhone están pendientes de que Adri pueda instalar la IPA |
+| 4 | Launcher: selección y validación de la carpeta del juego | Hecho. Dos vías: la copia en `Documents/Games` (principal, `GameFolderLocator.swift`) y una carpeta externa recordada con bookmark (`GameFolderBookmark.swift`). **Compilado en CI** (run de `2f050ac`, `success`). **Probado en iPhone** (pruebas 1–3 y 7–10 de `pruebas-iphone.md`) |
+| 5 | Lectura de archivos de BO1 (formato y carga) | **Hecho en lo verificable**: formato del contenedor documentado y medido (sección 3.5) y catálogo de zonas en la app (`ZoneFileHeader.swift`, `ZoneCatalog.swift`). **Compilado en CI** (run de `2564356`, `success`). **Probado en iPhone** (pruebas 4–6). La tabla de assets queda para la fase 6 |
+| 6 | Motor en iOS (Metal, audio, entrada, memoria) | **En curso.** Diseño aprobado (motor propio en Metal, KisakBlack solo como referencia). **6a hecha** (lista de assets); **6b.1 y 6b.2 hechas**: RAWFILE decodificado al 100%, medidor completo ([tools/zsizeof.mjs](tools/zsizeof.mjs), [tools/ztypemods.mjs](tools/ztypemods.mjs), [tools/zassetsize.mjs](tools/zassetsize.mjs), [tools/zvalidarbloques.mjs](tools/zvalidarbloques.mjs)) validado en `common_zombie.ff` (2693/2693, 105/105 anclas) y `zombie_theater.ff` (assets de mundo sincronizados). **6c.0, 6c.1, 6c.2 y 6c.3 implementadas**: decodificador de `XModel` ([tools/zxmodel.mjs](tools/zxmodel.mjs)) y reconstructor espacial de `GFXWORLD` ([tools/zgfxworld.mjs](tools/zgfxworld.mjs)) + visor 3D Metal (`MTKView`) con salas PVS (`GfxCell`), `dpvs::surfaces` (`firstVertex`), 812 materiales (`materialMemory`), texturas inline (`GfxImageLoadDef`), combinación de salas de Kino der Toten, 3.326 instancias de modelos estáticos (`smodelDrawInsts` colocados en coordenadas del mundo) y cámara interactiva en 1ª persona (FPS) con cruceta D-pad y spawn automático en [launcher/BLOPSPocket/XModelMesh.swift](launcher/BLOPSPocket/XModelMesh.swift) y [launcher/BLOPSPocket/XModelMetalView.swift](launcher/BLOPSPocket/XModelMetalView.swift). **6c.4–6e pendientes** |
+| 7 | Pruebas en iPhone y documentación para el usuario | **Hecho salvo lo que depende del motor**: `README.md` y `pruebas-iphone.md`; 10 de 12 pruebas superadas en el iPhone (las 11 y 12 esperan al motor) |
 
-**Fase en curso:** 6 (motor), subfase 6b.1 (recorrido secuencial del stream). La verificación en CI de las fases 3–5 está completa. Las pruebas en iPhone de la fase 7 siguen pendientes solo de los puntos 11 y 12 de `pruebas-iphone.md`, que dependen del motor.
+**Fase en curso:** 6 (motor), subfase 6c.3 terminada (modelos estáticos y cámara libre FPS). La verificación en CI de las fases 3–5 está completa. Las pruebas en iPhone de la fase 7 siguen pendientes solo de los puntos 11 y 12 de `pruebas-iphone.md`, que dependen del motor.
 **Verificado en dispositivo (Adri, 2026-10-13):** la copia del PC tiene 143 zonas, todas con versión `0x1D9`, y el grupo Zombies con 5 zonas · 279,7 MiB, igual que lo medido con `tools/`.
-**Punto de retorno: [continuar.md](continuar.md).** Resume el estado, los comandos exactos de cada herramienta, las reglas que faltan para cerrar 6b.1, los tres problemas duros del motor, **la estimación de avance (~10 %)** y **el plan por pasos** (secciones 8 y 9). Leerlo antes de retomar.
-**Próximo paso:** cerrar 6b.1. El criterio está medido y falla por un motivo conocido: falta la **expansión anidada según el marcador del stream** (puntero `0xffffffff` → su dato va detrás; puntero real → no va nada), más las `condition` con valores de enum y el byte propio de los RAWFILE. La comprobación que lo cierra es `node tools/zassetsize.mjs <src> common_zombie.ff --walk 0 1 --expect 843 --sep 0` (hoy mide 766 y sale con 1). Después, el recorrido completo de los 2693 assets contra las 105 anclas de RAWFILE.
-**Estado del repositorio (2026-10-15, 6b.1):** los commits de las fases 4, 5 y la auditoría están en `origin/main`. **Pendiente de commitear:** `reglas.md`, `.github/workflows/ios-ipa.yml`, `continuar.md` y las herramientas nuevas `tools/ztypemods.mjs`, `tools/zassetsize.mjs`, `tools/zassetsize.test.mjs` y `tools/zstreamwalk.mjs`. **Sin commitear a propósito:** `.freebuff/`. El workflow del CI ejecuta también las pruebas de `tools/` antes de compilar.
+**Punto de retorno: [continuar.md](continuar.md).** Resume el estado, los comandos exactos de cada herramienta, los tres problemas duros del motor, **la estimación de avance (~10 %)** y **el plan por pasos** (secciones 8 y 9). Leerlo antes de retomar.
+**Próximo paso:** probar en iPhone la exploración en primera persona con props estáticos (6c.3) y avanzar a la malla de colisión de `clipMap_t` y física básica del jugador (6c.4).
+**Recorrido completo, geometría XModel, reconstrucción espacial de Kino e instancias estáticas, medidos el 2026-10-18:** en `common_zombie.ff` los 27 bloques (**2.693 de 2.693 assets**) cuadran con **105 de 105 anclas `RAWFILE` exactas** y **184 de 184 `XMODEL` inline** con geometría e índices válidos (`zombie_skull` @ `45575900`, 3233 vértices, 3454 triángulos). En `zombie_theater.ff`, `GFXWORLD` (39.558.229 B), `GAMEWORLD_SP` (736.432 B) y `CLIPMAP` (5.653.022 B) sincronizan de forma continua, el asset 601 (`maps/_zombiemode_ai_quad.gsc`) cuadra en offset exacto `97141921` con diferencia 0, los **242 de 242 `XMODEL` inline** decodifican sus superficies sin errores, `GFXWORLD` reconstruye sus **33 celdas PVS (`GfxCell` @ `49357924`)**, **9.141 superficies (`dpvs::surfaces` @ `87577496`)** con desplazamiento `srfTriangles_t::firstVertex` sobre **471.280 vértices (@ `57609643`)** y **1.015.134 índices (@ `78825671`)**, **812 materiales (`materialMemory` @ `86663605`)**, texturas inline `GfxImageLoadDef`, y **3.326 instancias de modelos estáticos (`smodelDrawInsts` @ `88308776`)**, de las cuales **3.070 se resuelven a XModel inline (92,3 %)** mediante `((modelPtr & 0x1FFFFFFF) - 17137) / 8` y se orientan mediante ejes 3×3 y escala en coordenadas del mundo.
+**Estado del repositorio (2026-10-18):** `main` va 2 commits por delante de `origin/main` (sin push). `node --test tools/*.test.mjs` pasa 51/51 tests. `git diff --check` limpio. Sin commitear a propósito: `.freebuff/`.
 
 ## 8. Decisiones abiertas (por confirmar con Adri)
 
@@ -234,19 +235,16 @@ No crear carpetas hasta que la fase lo requiera. El bundle id definitivo es `com
 
 ### Pendientes abiertos
 
-- Probar en el iPhone el catálogo de zonas y la persistencia del acceso (fases 4 y 5).
-- Probar la IPA en un iPhone con SideStore (instalación y selección de carpeta). Hoy solo sabemos que compila.
-- Probar en el iPhone las dos vías de carpeta: la copia en `Documents/Games` y el selector externo con bookmark.
-- Recorrer `pruebas-iphone.md` en el iPhone y anotar los resultados (incluye el aviso de que desinstalar borra la copia y la comprobación de espacio).
-- Decidir la estrategia del motor (fase 6) cuando Adri quiera: es la única decisión técnica abierta que queda.
-- Comprobar el resultado del CI de la fase 4/5 (aquí no hay `gh` ni token: se mira en GitHub Actions).
-- Revisar el CI en cada cambio: el primer run tardó por la cola de runners macOS arm64.
+- Hecho (2026-10-14): pruebas 1–10 de `pruebas-iphone.md` en el iPhone, con las dos vías de carpeta, la persistencia y la desinstalación. Las 11 y 12 esperan al motor.
+- Hecho (2026-10-14): estrategia del motor decidida (motor propio en Metal, §6).
+- Abiertos: probar xtool para compilar `.metal`/Swift sin runner macOS (paso B.7 de `continuar.md`) y definir el primer hito visual (B.8).
+- Revisar el CI en cada push: aquí no hay `gh` ni token, se mira en GitHub Actions. El primer run tardó por la cola de runners macOS arm64.
 
 Hecho: repositorio remoto creado y commits subidos a origin (ramas `main`).
 
 ## 9. Problemas conocidos
 
-- La cabecera interna de la zona (prefijo de 36 bytes) y la tabla de assets **no** están decodificadas: el launcher enumera zonas, no assets.
+- La cabecera interna (36 B) y la tabla de assets ya se decodifican en `tools/` (6a), pero solo en Node. El launcher en Swift sigue enumerando zonas, no assets, y el recorrido de los cuerpos aún no es completo (§7).
 - Las zonas traducidas `Spanish/sp_*.ff` (20 MiB) se listan, pero aún no se sabe cómo elige el juego entre `Common/` y `Spanish/`.
 - Sin Xcode ni Mac en el entorno de desarrollo: el Swift solo se compila en GitHub Actions, así que el resultado de un `push` tarda y no se puede comprobar desde aquí.
 - Los tres repositorios de referencia están en Windows o son experimentales. Ninguno está probado en iOS.

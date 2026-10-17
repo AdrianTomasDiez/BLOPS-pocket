@@ -6,6 +6,8 @@ struct ContentView: View {
     @State private var message: String?
     @State private var isValid = false
     @State private var catalog: ZoneCatalog?
+    @State private var gameFolderURL: URL?
+    @State private var selectedEntryFor3D: ZoneEntry?
     @State private var folderName: String?
     @State private var origin: FolderOrigin?
     @State private var hasSavedFolder = false
@@ -59,8 +61,12 @@ struct ContentView: View {
             }
 
             if let catalog {
-                ZoneCatalogView(catalog: catalog)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ZoneCatalogView(catalog: catalog) { entry in
+                    if entry.isSupported {
+                        selectedEntryFor3D = entry
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 Spacer()
             }
@@ -86,6 +92,11 @@ struct ContentView: View {
         ) { result in
             handle(result)
         }
+        .sheet(item: $selectedEntryFor3D) { entry in
+            if let gameFolderURL {
+                ZoneXModelInspectorView(gameFolder: gameFolderURL, entry: entry)
+            }
+        }
         .task {
             prepareFolder()
         }
@@ -108,6 +119,7 @@ struct ContentView: View {
         case .failure:
             isValid = false
             catalog = nil
+            gameFolderURL = nil
             message = "No se pudo abrir la carpeta. Vuelve a intentarlo."
         case .success(let urls):
             guard let url = urls.first else { return }
@@ -137,6 +149,7 @@ struct ContentView: View {
             }
             let catalog = ZoneCatalog.build(in: url)
             self.catalog = catalog
+            self.gameFolderURL = url
             self.folderName = url.lastPathComponent
             self.origin = origin
             isValid = !catalog.entries.isEmpty
@@ -144,10 +157,12 @@ struct ContentView: View {
         case .notAFolder:
             isValid = false
             catalog = nil
+            gameFolderURL = nil
             message = "La selección no es una carpeta."
         case .missingZoneFolder:
             isValid = false
             catalog = nil
+            gameFolderURL = nil
             message = "Falta la subcarpeta zone dentro de la carpeta elegida. Copia la carpeta del juego completa."
         }
     }
@@ -160,6 +175,7 @@ struct ContentView: View {
             return
         }
         catalog = nil
+        gameFolderURL = nil
         folderName = nil
         origin = nil
         isValid = false
@@ -181,6 +197,13 @@ struct ContentView: View {
 /// Inventario de zonas: resumen y listado por grupo.
 private struct ZoneCatalogView: View {
     let catalog: ZoneCatalog
+    let onSelectEntry: (ZoneEntry) -> Void
+
+    private var preferredZombieZone: ZoneEntry? {
+        catalog.supported.first { $0.name.lowercased() == "common_zombie.ff" }
+            ?? catalog.supported.first { $0.name.lowercased() == "zombie_theater.ff" }
+            ?? catalog.zombies.first(where: \.isSupported)
+    }
 
     var body: some View {
         List {
@@ -191,23 +214,49 @@ private struct ZoneCatalogView: View {
                 if !catalog.unsupported.isEmpty {
                     row("Versión inesperada", "\(catalog.unsupported.count)")
                 }
+                if let target = preferredZombieZone {
+                    Button {
+                        onSelectEntry(target)
+                    } label: {
+                        HStack {
+                            Image(systemName: "cube.transparent.fill")
+                            Text("Visor 3D Metal (\(target.name))")
+                                .fontWeight(.semibold)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
             } header: {
                 Text("Resumen")
             } footer: {
-                Text("Solo se leen los 12 bytes de cabecera de cada archivo: no se descomprime ni se carga nada del juego.")
+                Text("El inventario solo lee los 12 bytes de cabecera. Toca una zona compatible para descomprimirla en memoria y ver sus XModels 3D con Metal.")
             }
 
             ForEach(catalog.presentGroups, id: \.self) { group in
                 Section(group.displayName) {
                     ForEach(entries(in: group), id: \.relativePath) { entry in
-                        HStack {
-                            Text(entry.name)
-                                .font(.subheadline)
-                            Spacer()
-                            Text(sizeLabel(for: entry))
-                                .font(.caption)
-                                .foregroundColor(entry.isSupported ? .secondary : .red)
+                        Button {
+                            onSelectEntry(entry)
+                        } label: {
+                            HStack {
+                                Text(entry.name)
+                                    .font(.subheadline)
+                                    .foregroundColor(.primary)
+                                Spacer()
+                                Text(sizeLabel(for: entry))
+                                    .font(.caption)
+                                    .foregroundColor(entry.isSupported ? .secondary : .red)
+                                if entry.isSupported {
+                                    Image(systemName: "cube")
+                                        .font(.caption)
+                                        .foregroundColor(.accentColor)
+                                }
+                            }
                         }
+                        .disabled(!entry.isSupported)
                     }
                 }
             }

@@ -2,9 +2,9 @@
 
 Lanzador para iPhone que ejecuta **Call of Duty: Black Ops 1** leyendo los archivos del juego que tú mismo aportas. Ni este repositorio ni la app incluyen ninguna copia del juego: la app solo lee la carpeta que tú elijas.
 
-> **Estado: el juego todavía no se ejecuta.** El launcher ya valida la carpeta del juego y lista sus zonas (con tamaños y grupos), pero el motor está pendiente (fase 6 de `reglas.md`). Hoy la app sirve para comprobar que tu copia está completa y en el sitio correcto, no para jugar.
+> **Estado: el juego todavía no se ejecuta.** El launcher ya valida la carpeta del juego y lista sus zonas (con tamaños y grupos). El motor (fase 6 de `reglas.md`) está empezando: por ahora solo existen herramientas que decodifican el formato de las zonas en el PC. Hoy la app sirve para comprobar que tu copia está completa y en el sitio correcto, no para jugar.
 >
-> **No ha sido probada todavía en un iPhone.** Se compila en GitHub Actions; la primera prueba real en dispositivo está en [pruebas-iphone.md](pruebas-iphone.md).
+> **Probada en un iPhone:** 10 de las 12 pruebas de [pruebas-iphone.md](pruebas-iphone.md) están superadas. Las dos que faltan necesitan el motor.
 
 ## Requisitos
 
@@ -68,7 +68,7 @@ Solo se leen **12 bytes de cabecera** por archivo: abrir la app no descomprime n
 
 ## Limitaciones conocidas
 
-- Sin probar en un iPhone; la compilación se ha verificado solo en el CI.
+- Solo se ha probado en el iPhone de Adri. El Swift compila únicamente en el CI de GitHub Actions.
 - Solo se han medido archivos de la versión de **PC (Steam)**.
 - Las zonas traducidas (`Spanish/sp_*.ff`) se listan, pero aún no se sabe cómo elige el juego entre ellas.
 - El consumo de memoria real (lo que más ha hecho fallar a proyectos parecidos en iOS) solo se podrá medir cuando exista el motor.

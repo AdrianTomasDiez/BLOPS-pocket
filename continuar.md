@@ -1,37 +1,44 @@
 # continuar.md: por dónde vamos y cómo seguir
 
-> **Para el agente de IA o para Adri al retomar:** este archivo es el punto de entrada rápido. Las **reglas y la legalidad** están en [reglas.md](reglas.md) (leerlo completo antes de tocar código) y las **pruebas en el iPhone** en [pruebas-iphone.md](pruebas-iphone.md). Aquí solo va el estado del trabajo y el siguiente paso exacto.
+> **Para el agente de IA o para Adri al retomar:** este archivo es el punto de entrada rápido. Las **reglas y la legalidad** están en [reglas.md](reglas.md) (secciones 1, 2 y 5–8 antes de tocar código; el resto bajo demanda) y las **pruebas en el iPhone** en [pruebas-iphone.md](pruebas-iphone.md). Aquí solo va el estado del trabajo y el siguiente paso exacto.
 
-Fecha de esta anotación: **2026-10-15**.
+Fecha de esta anotación: **2026-10-18**. **Actualización del 2026-10-18 (Fase 6c.3):** Integración de instancias de modelos estáticos (`smodelDrawInsts`) y modo de cámara libre en primera persona (FPS) en iOS/Metal. Se resolvió la aritmética de punteros virtuales de ZoneCode: `assetIndex = ((modelPtr & 0x1FFFFFFF) - 17137) / 8` sobre la tabla `XAssetList` @ 17135 de `zombie_theater.ff`, enlazando **3.070 de 3.326 instancias (92,3 %)** directamente con los 242 `XModel` inline del mapa (las 256 restantes son modelos externos declarados en `common_zombie.ff`). Cada instancia se transforma al espacio del mundo con `origin + scale * (vertex * axis)`. Se añadieron pruebas unitarias en [tools/zgfxworld.test.mjs](tools/zgfxworld.test.mjs) (51/51 tests pasan). En SwiftUI/Metal ([launcher/BLOPSPocket/XModelMetalView.swift](launcher/BLOPSPocket/XModelMetalView.swift)), se implementó el selector de cámara (`Orbital` vs `1ª Persona (FPS)`), proyección perspectiva a 65° FOV, control de mirada táctil (pitch/yaw), cruceta virtual D-pad para desplazamiento horizontal y elevación vertical en Z, ajuste de paso (50–600 u), botón de spawn automático a altura de ojos (`mins.z + 65.0`) y badge con coordenadas `(X, Y, Z)` en tiempo real.
 
 ---
 
 ## 1. Resumen en dos frases
 
-Fases **0–5 hechas**: launcher iOS, acceso persistente a la carpeta del juego y catálogo de las 143 zonas (probado en el iPhone salvo los dos puntos que dependen del motor). El **motor (fase 6) está empezando**: 6a hecha (lista de assets), **6b.1 en marcha** (leer tamaños y nombres de cada asset del stream) y **6c–6e pendientes**, que son la parte grande y necesitan Xcode y un iPhone.
+Fases **0–5 hechas**: launcher iOS, acceso persistente a la carpeta del juego y catálogo de las 143 zonas. El **motor (fase 6) avanza**: 6a (lista de assets), 6b.1/6b.2 (medición secuencial completa y assets de mundo), **6c.0 (primer modelo 3D real XModel en Metal)**, **6c.1 (geometría `GFXWORLD`)**, **6c.2 (reconstrucción espacial de salas PVS y texturas inline)** y **6c.3 (instancias de modelos estáticos `smodelDrawInsts` y cámara libre en 1ª persona en Metal)** implementadas en código Swift/Metal y herramientas Node verificables.
 
-**Todavía no se puede jugar.** Lo que hay es un launcher que valida y cataloga la copia del juego, más herramientas que decodifican el formato.
+**Todavía no se puede jugar.** Lo que hay es un launcher con catálogo, visor 3D nativo en Metal capaz de renderizar modelos, salas espaciales combinables de Kino der Toten con props estáticos posicionados en coordenadas de mapa, modo de cámara libre FPS interactivo con cruceta táctil, y herramientas que decodifican el formato.
 
-## 2. Estado verificado (byte a byte sobre `common_zombie.ff`)
+## 2. Estado verificado (byte a byte sobre `common_zombie.ff` y `zombie_theater.ff`)
 
 Todo esto está medido y es reproducible con las herramientas de la sección 3.
 
 | Dato | Valor | Cómo se comprueba |
 |---|---|---|
 | `common_zombie.ff` | 2693 assets, 858 cadenas, `bodyOffset` **39270** | `node tools/zoneassets.mjs common_zombie.ff` |
-| Asset 0 (`TECHNIQUE_SET`) | **532** B = 528 fijos + `name` (4, `",2d\0`), empieza en 39270 | `node tools/zassetsize.mjs <src> common_zombie.ff --type TECHNIQUE_SET --sep 0` |
-| Asset 1 (`MATERIAL`) | empieza en **39802** = 39270 + 532 | el ancla anterior |
-| `MATERIAL` real | **311** B (39802..40112) | descomposición medida en reglas.md §6 |
-| Primer RAWFILE | **40113** = 39802 + 311 | `node tools/zrawfile.mjs common_zombie.ff` |
-| Modelo de tipos | 44 nombres del enum, **33 con struct + directiva + región fija**; 11 sin struct propio | `node tools/ztypemods.mjs <src>` |
-| Anclas RAWFILE | **105/105** cuadran en `common_zombie`; 468 leídas en `common_mp` | `node tools/zstreamwalk.mjs` |
+| `common_zombie.ff` completo | **2693/2693 assets**, 27/27 bloques, **105/105 anclas exactas** | `node tools/zvalidarbloques.mjs <src> common_zombie.ff` |
+| `zombie_theater.ff` | 908 assets, 788 cadenas, `bodyOffset` **24399** | `node tools/zoneassets.mjs <archivo.ff>` |
+| `zombie_theater.ff` mundo | `GFXWORLD` (39.558.229 B), `GAMEWORLD_SP` (736.432 B), `CLIPMAP` (5.653.022 B) | `node tools/zassetsize.mjs <src> <archivo.ff> --walk 538 542 --sep 0` |
+| `GFXWORLD` layout exacto (Kino) | `cells` (33 @ `49357924`), `vertices` (471.280 @ `57609643`), `indices` (1.015.134 @ `78825671`), `materialMemory` (812 @ `86663605`), `sortedSurfIndex` (8289 @ `87427878`), `surfaces` (9141 @ `87577496`), `smodels` (3326 @ `88308776`) | `node tools/zgfxworld.mjs <archivo.ff> --json` |
+| Modelos estáticos Kino (`smodelDrawInsts`) | **3.326 instancias** (76 B c/u @ `88308776`); **3.070 resueltas a XModel inline** (92,3 %) con posición, orientación 3×3 y escala | `node tools/zgfxworld.mjs <archivo.ff> --smodels` |
+| Sala 0 Kino (Lobby, celdas 15–19) | **790 superficies visibles**, **49.831 vértices**, **37.012 triángulos**, mins `[-572, -1500, -8]`, maxs `[580, -80, 536]`, **487 modelos estáticos** | `node tools/zgfxworld.mjs <archivo.ff> --room 0` |
+| Sala 2 Kino (Auditorio y Escenario, celdas 1, 2, 7) | **580 superficies visibles**, **78.120 vértices**, **57.525 triángulos**, mins `[-928, 1216, -24]`, maxs `[808, 2232, 576]`, **367 modelos estáticos** | `node tools/zgfxworld.mjs <archivo.ff> --room 2` |
+| Asset 601 `zombie_theater` | Offset exacto **97141921**, diferencia 0 B (`maps/_zombiemode_ai_quad.gsc`) | `node tools/zvalidarbloques.mjs <src> <archivo.ff>` |
+| RAWFILEs en `zombie_theater` | 50 assets reales (48 con anclas exactas; 6 falsos positivos de firma explicados) | `node tools/zrawfile.mjs <archivo.ff>` |
+| `XMODEL` en `common_zombie` y `zombie_theater` | **184/184** y **242/242** modelos inline con geometría e índices válidos | `node tools/zxmodel.mjs <archivo.ff>` |
+| Modelo `zombie_skull` (`common_zombie.ff`) | Offset `45575900`, 1 sup, **3233 vértices**, **3454 triángulos** (LOD 0) | `node tools/zxmodel.mjs <archivo.ff> --model zombie_skull` |
+| Modelo de tipos | 44 nombres de enum T5, parsing de directivas y `sizeof`/offsets | `node tools/ztypemods.mjs <src>` |
+| Pruebas unitarias | **51/51 pasan** | `node --test tools/*.test.mjs` |
 
-**Criterio de 6b.1 cumplido:** entre `bodyOffset` y el primer RAWFILE hay **843** B y el recorrido del modelo mide **843**. La pieza que faltaba era la imagen anidada de `textureTable[0]` (`u::image` con marcador `0xffffffff`, no agua): un `GfxImage` (52 fijos + nombre de 13) y su cabecera `GfxImageLoadDef` (12 B, sin el `data[1]` flexible). Un `texture` con valor `0xfffffffe` indica ese `loadDef`. El `MATERIAL` mide 311 (antes 234).
-
-```bash
-# Comprobación de cierre (sale con 0):
-node tools/zassetsize.mjs <src> common_zombie.ff --walk 0 1 --expect 843 --sep 0
-```
+**Criterios de 6b.1, 6b.2, 6c.0, 6c.1, 6c.2 y 6c.3 cumplidos:**
+- 6b.1: `common_zombie.ff` recorre los 2693 assets secuencialmente de principio a fin sin perder el paso en ninguno de los 105 RAWFILE.
+- 6b.2: `zombie_theater.ff` valida la serialización de assets masivos de mundo (`GFXWORLD`, `GAMEWORLD_SP`, `CLIPMAP`), resolviendo `XFILE_BLOCK_RUNTIME`, punteros indexados y condiciones complementarias de uniones.
+- 6c.0: Extracción verificada de `XModel`/`XSurface`/`GfxPackedVertex` en Node ([tools/zxmodel.mjs](tools/zxmodel.mjs)) y visor 3D Metal nativo en iOS ([launcher/BLOPSPocket/XModelMesh.swift](launcher/BLOPSPocket/XModelMesh.swift) y [launcher/BLOPSPocket/XModelMetalView.swift](launcher/BLOPSPocket/XModelMetalView.swift)).
+- 6c.1 y 6c.2: Reconstrucción espacial de `GFXWORLD` (`zombie_theater.ff`) por salas PVS (`GfxCell` + `dpvs::sortedSurfIndex` + `dpvs::surfaces` con `firstVertex`), mapeo exacto de los 812 materiales (`materialMemory`), decodificación de texturas inline `GfxImageLoadDef` (`lightmaps`, `reflectionProbes`, `outdoorImage`) y carga progresiva/combinada de salas en Metal.
+- 6c.3: Decodificación y colocación de 3.326 instancias de modelos estáticos (`smodelDrawInsts` @ `88308776`), resolución de punteros virtuales de ZoneCode (`modelPtr & 0x1FFFFFFF`) a los 242 `XModel` inline del mapa, transformación a coordenadas del mundo y modo de cámara libre en 1ª persona (FPS) con cruceta D-pad y spawn automático en iOS/Metal.
 
 ## 3. Herramientas (todas en Node, sin dependencias)
 
@@ -44,19 +51,24 @@ node tools/zassetsize.mjs <src> common_zombie.ff --walk 0 1 --expect 843 --sep 0
 | [tools/zsizeof.mjs](tools/zsizeof.mjs) | `sizeof` y offsets de los structs de `T5_Assets.h` | `node tools/zsizeof.mjs <T5_Assets.h> [--fields Tipo] [--check]` |
 | [tools/ztypemods.mjs](tools/ztypemods.mjs) | Modelo por tipo: enum, struct, directivas, región fija | `node tools/ztypemods.mjs <src de la referencia> [--type TIPO] [--json]` |
 | [tools/zassetsize.mjs](tools/zassetsize.mjs) | **Convierte el modelo en tamaños**: plan de cada tipo y medición del stream | `node tools/zassetsize.mjs <src> <archivo.ff> --plan TIPO \| --type TIPO \| --walk A B [--expect N] [--sep N]` |
+| [tools/zvalidarbloques.mjs](tools/zvalidarbloques.mjs) | Validación por bloques de 100 contra anclas RAWFILE | `node tools/zvalidarbloques.mjs <src> <archivo.ff> [progreso.json]` |
+| [tools/zxmodel.mjs](tools/zxmodel.mjs) | Decodifica `XMODEL` inline (`XSurface`, `GfxPackedVertex`, `triIndices`) y exporta OBJ en memoria | `node tools/zxmodel.mjs <archivo.ff> [--model <nombre>] [--obj <nombre>]` |
+| [tools/zgfxworld.mjs](tools/zgfxworld.mjs) | Reconstruye salas PVS (`GfxCell`), superficies (`dpvs::surfaces` + `firstVertex`), materiales, texturas inline e instancias estáticas (`smodelDrawInsts`) de `GFXWORLD` | `node tools/zgfxworld.mjs <archivo.ff> [--room <0..7>] [--smodels] [--obj [room]]` |
 | [tools/zstreamwalk.mjs](tools/zstreamwalk.mjs) | Recorrido por tramos de RAWFILE contra las anclas | `node tools/zstreamwalk.mjs <archivo.ff> [--json]` |
 
 Códigos de salida en todas: **0** correcto, **1** error de formato/lectura o comprobación fallida, **2** uso incorrecto (y **3** discrepancias en `zstreamwalk`).
 
-**Pruebas:** `node --test tools/*.test.mjs` → **39/39**. Ese mismo comando está en `.github/workflows/ios-ipa.yml`: al añadir un `.test.mjs` hay que añadirlo ahí también.
+**Pruebas:** `node --test tools/*.test.mjs` → **51/51**. Ese mismo comando está en `.github/workflows/ios-ipa.yml`.
 
-## 4. Lo que falta para cerrar 6b.1, en orden
+## 4. Estado de las fases de medición y transición a motor
 
-1. ~~**Expansión anidada según el marcador del stream.**~~ Hecho solo para la imagen de `textureTable` (ver arriba). Pendiente generalizar: un puntero `0xffffffff` a otro struct debe seguirse con plan propio y guarda contra recursión. Ojo con el `+1` de `RawFile::buffer` (la directiva dice `len + 1` y el stream guarda `len`).
-2. ~~**`condition` con valores de enum.**~~ Hecho: el evaluador admite `==` y nombres de enum (`TS_WATER_MAP`) vía `enumValor`. Pendiente: otros usos de `condition` no probados.
-3. ~~Constante nula~~: el `count` solo suma si su puntero es `0xffffffff` (así `constantTable` con puntero 0 no suma).
-3. **El byte propio de los registros RAWFILE** y la semántica de `reusable` cuando no hay `count`.
-4. **Validar el recorrido completo** de los 2693 assets contra las 105 anclas con `zstreamwalk.mjs` (hoy solo se siembran 15 tramos) y con las 465 de `common_mp`.
+1. ~~**Fase 6b.1 (Medición secuencial de `common_zombie.ff`)**~~: Completa (2693/2693 assets, 105/105 anclas exactas).
+2. ~~**Fase 6b.2 (Assets de mundo en mapas como `zombie_theater.ff`)**~~: Completa (`GFXWORLD`, `GAMEWORLD_SP`, `CLIPMAP` sincronizados, asset 601 en offset exacto 97141921 con diferencia 0).
+3. ~~**Fase 6c.0 (Primer modelo 3D real en iPhone con Metal)**~~: Implementada (`tools/zxmodel.mjs` + lector Swift `XModelMesh.swift` y renderizador `MTKView` en `XModelMetalView.swift`).
+4. ~~**Fase 6c.1 (Geometría real del mapa `GFXWORLD` en Metal)**~~: Implementada (`tools/zgfxworld.mjs` + extractor Swift y modo mapa en `XModelMetalView.swift`).
+5. ~~**Fase 6c.2 (Reconstrucción visual y espacial de Kino der Toten, materiales y texturas inline)**~~: Implementada (`srfTriangles_t::firstVertex`, 33 celdas PVS agrupadas en salas reconocibles, acumulación progresiva de salas, 812 materiales mapeados y textura `GfxImageLoadDef` decodificada en `MTLTexture`).
+6. ~~**Fase 6c.3 (Instancias de modelos estáticos `smodelDrawInsts` y cámara libre en 1ª persona FPS)**~~: Implementada (3.326 smodels decodificados, 3.070 enlazados a XModel inline, colocación en mundo por matriz de ejes y escala, y controles de cámara FPS interactivos con cruceta táctil en Metal).
+7. **Fase 6c.4 (Malla de colisión de `clipMap_t` y física básica de jugador / caminar sobre el suelo)**: Siguiente paso para impedir atravesar paredes y mantener los pies sobre las superficies transitables de Kino der Toten.
 
 Criterio de cierre de 6b.1: `--walk 0 1 --expect 843 --sep 0` sale con 0 y el recorrido de `common_zombie` no necesita las anclas para avanzar.
 
@@ -66,11 +78,10 @@ Criterio de cierre de 6b.1: `--walk 0 1 --expect 843 --sep 0` sale con 0 y el re
 - **`common_zombie.ff`** se lee de la raíz del proyecto; `*.ff` está en `.gitignore`, así que no puede acabar en un commit por descuido (regla 1 de reglas.md §2).
 - Sin Xcode ni Mac aquí: el Swift solo compila en GitHub Actions. El iPhone lo usa Adri.
 
-## 6. Estado del repositorio (nada commiteado de esta fase)
+## 6. Estado del repositorio (2026-10-17)
 
-- Modificados: [reglas.md](reglas.md) y [.github/workflows/ios-ipa.yml](.github/workflows/ios-ipa.yml).
-- Nuevos, sin seguimiento: este [continuar.md](continuar.md), [tools/zassetsize.mjs](tools/zassetsize.mjs), [tools/zassetsize.test.mjs](tools/zassetsize.test.mjs), [tools/ztypemods.mjs](tools/ztypemods.mjs) y [tools/zstreamwalk.mjs](tools/zstreamwalk.mjs). También `.freebuff/` (se deja sin commitear a propósito) y un fichero basura `h origin main` que conviene borrar.
-- **Recomendado al retomar:** commitear `tools/` + `reglas.md` + el workflow + este archivo antes de seguir, para que el punto de retorno no dependa de una carpeta temporal.
+- Las herramientas, `reglas.md`, el workflow y este archivo ya están commiteados (HEAD `769765b`). `main` va **2 commits por delante** de `origin/main`, sin push.
+- Sin commitear: cambios en [tools/zassetsize.mjs](tools/zassetsize.mjs) y el nuevo [tools/zvalidarbloques.mjs](tools/zvalidarbloques.mjs) (valida el recorrido por bloques de 100 contra las anclas), además de `AGENTS.md` y los ajustes de documentación del 2026-10-17. `.freebuff/` se deja sin commitear a propósito.
 
 ## 7. Después de 6b: el motor (lo grande)
 

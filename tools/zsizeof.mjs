@@ -70,7 +70,7 @@ function extractStaticAsserts(src) {
 /** Convierte el texto en una lista de tokens. */
 function tokenize(src) {
     const tokens = [];
-    const re = /[A-Za-z_][A-Za-z_0-9]*|\d+|[{}()[\];,:*]|\.\.\.|\S/g;
+    const re = /0x[0-9a-fA-F]+|[A-Za-z_][A-Za-z_0-9]*|\d+|[{}()[\];,:*]|\.\.\.|\S/g;
     let match;
     while ((match = re.exec(src)) !== null) tokens.push(match[0]);
     return tokens;
@@ -87,6 +87,7 @@ function readAlignArg(tokens, i) {
 export function createMeasurer(pointerSize = 4) {
     const types = new Map(); // nombre → { size, align, kind, members? }
     const enums = new Set();
+    const constants = new Map(); // identificador de enum → valor numérico
     const unknown = new Set();
 
     function primitive(name) {
@@ -202,13 +203,15 @@ export function createMeasurer(pointerSize = 4) {
         }
         i++;
         // Arrays en el typedef: `typedef char ByteVec[3];`
+        let esArray = false;
         while (tokens[i] === "[") {
             const count = Number(tokens[i + 1]);
             size *= count;
             i += 3;
+            esArray = true;
         }
         if (tokens[i] === ";") i++;
-        if (name && /^[A-Za-z_]/.test(name)) types.set(name, { size, align, kind: "typedef" });
+        if (name && /^[A-Za-z_]/.test(name)) types.set(name, { size, align, kind: "typedef", target: ptr === 0 && !esArray ? base : null });
         return i;
     }
 
@@ -330,6 +333,14 @@ export function createMeasurer(pointerSize = 4) {
         }
         const { base, next } = readTypeName(tokens, j);
         j = next;
+        if (tokens[j] === "(" && tokens[j + 1] === "*") {
+            const name = tokens[j + 2];
+            j += 3;
+            if (tokens[j] === ")") j++;
+            while (j < tokens.length && tokens[j] !== ";") j++;
+            if (tokens[j] === ";") j++;
+            return { member: { size: pointerSize, align: pointerSize, name }, next: j };
+        }
         let ptr = 0;
         while (tokens[j] === "*") { ptr++; j++; }
         if (ptr > 0) {
@@ -354,7 +365,11 @@ export function createMeasurer(pointerSize = 4) {
         let size = baseType.size;
         let align = baseType.align;
         while (tokens[i] === "[") {
-            const count = Number(tokens[i + 1]);
+            const rawToken = tokens[i + 1];
+            let count = Number(rawToken);
+            if (!Number.isFinite(count) && constants.has(rawToken)) {
+                count = constants.get(rawToken);
+            }
             size *= Number.isFinite(count) ? count : 1;
             i += 3;
         }
@@ -375,12 +390,36 @@ export function createMeasurer(pointerSize = 4) {
             i = named.next;
         }
         if (tokens[i] === "{") {
-            let depth = 0;
-            while (i < tokens.length) {
-                if (tokens[i] === "{") depth++;
-                if (tokens[i] === "}") { depth--; if (depth === 0) { i++; break; } }
-                i++;
+            i++; // '{'
+            let currentVal = 0;
+            while (i < tokens.length && tokens[i] !== "}") {
+                if (/^[A-Za-z_]/.test(tokens[i])) {
+                    const constName = tokens[i];
+                    i++;
+                    if (tokens[i] === "=") {
+                        i++; // '='
+                        const valStr = tokens[i];
+                        i++;
+                        let val;
+                        if (valStr.startsWith("0x") || valStr.startsWith("0X")) val = parseInt(valStr, 16);
+                        else if (/^\d+$/.test(valStr)) val = parseInt(valStr, 10);
+                        else if (constants.has(valStr)) val = constants.get(valStr);
+                        else val = Number(valStr);
+                        if (Number.isFinite(val)) {
+                            constants.set(constName, val);
+                            currentVal = val + 1;
+                        }
+                    } else {
+                        constants.set(constName, currentVal);
+                        currentVal++;
+                    }
+                } else if (tokens[i] === ",") {
+                    i++;
+                } else {
+                    i++;
+                }
             }
+            if (tokens[i] === "}") i++;
         }
         if (tokens[i] !== ";") { /* enum con instancia: se salta */ }
         if (tokens[i] === ";") i++;
@@ -407,6 +446,9 @@ export function createMeasurer(pointerSize = 4) {
         },
         unknowns() {
             return [...unknown].sort();
+        },
+        constantOf(name) {
+            return constants.has(name) ? constants.get(name) : null;
         },
         all() {
             return types;

@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Probar las herramientas (Node)
-        run: node --test tools/zonescan.test.mjs tools/zoneassets.test.mjs tools/zrawfile.test.mjs tools/zsizeof.test.mjs tools/zassetsize.test.mjs
+        run: node --test tools/zonescan.test.mjs tools/zoneassets.test.mjs tools/zrawfile.test.mjs tools/zsizeof.test.mjs tools/zassetsize.test.mjs tools/zxmodel.test.mjs tools/zgfxworld.test.mjs
 
       - name: Instalar XcodeGen
         run: brew install xcodegen

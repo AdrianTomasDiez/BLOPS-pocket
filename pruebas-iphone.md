@@ -1,6 +1,6 @@
 # pruebas-iphone.md: comprobaciones manuales en el iPhone
 
-> Fase 7 de `reglas.md`. Lo que se puede automatizar ya se ejecuta sin dispositivo: `node --test tools/zonescan.test.mjs` (6 pruebas, en el CI en cada push). Todo lo de la tabla de abajo necesita el iPhone.
+> Fase 7 de `reglas.md`. Lo que se puede automatizar ya se ejecuta sin dispositivo: `node --test tools/*.test.mjs` (39 pruebas en 5 archivos, también en el CI en cada push). Todo lo de la tabla de abajo necesita el iPhone.
 
 **Cómo usarla:** instala la IPA con SideStore y ve marcando. Si algo falla, apunta el número, lo que esperabas y lo que ha pasado; una captura de pantalla vale más que la descripción. El estado de cada fila se actualiza aquí al terminar.
 
@@ -40,4 +40,4 @@
 - La lógica del catálogo (grupos, versiones inesperadas, archivos truncados y la garantía de que **no se descomprime**): `node --test tools/zonescan.test.mjs`.
 - El launcher **compila** en GitHub Actions: los runs de `2564356` (fase 5), `2f050ac` (fase 4), `0683fa6` (auditoría) y `1a65063` (fase 7) están en verde, y los dos últimos ya ejecutan `node --test` antes de compilar.
 - La copia de Adri en el PC coincide con lo esperado: 143 zonas, todas `0x1D9`, Zombies 5 zonas · 279,7 MiB.
-- Lo que **no** está verificado es nada en dispositivo: eso es lo que cubre esta tabla.
+- Lo que en su momento no se podía verificar sin dispositivo es lo que cubre la tabla de arriba (pruebas 1–10 superadas por Adri el 2026-10-14).

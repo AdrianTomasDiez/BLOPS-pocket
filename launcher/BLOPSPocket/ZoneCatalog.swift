@@ -50,7 +50,8 @@ enum ZoneGroup: String, CaseIterable {
 }
 
 /// Una zona (`.ff`) encontrada en la carpeta del usuario.
-struct ZoneEntry {
+struct ZoneEntry: Identifiable {
+    var id: String { relativePath }
     /// Ruta relativa a la carpeta `zone`, con `/` como separador.
     let relativePath: String
     /// Tamaño del archivo comprimido en disco.

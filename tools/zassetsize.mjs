@@ -30,6 +30,28 @@ const HEADER_LEN = 12; // cabecera del .ff (magic + versión)
 const FOLLOWING = 0xffffffff;
 const LOADDEF_FOLLOWING = 0xfffffffe;
 
+function combinarDirectivas(sub, def) {
+    if (!sub && !def) return null;
+    if (!sub) return def;
+    if (!def) return sub;
+    return {
+        struct: sub.struct, file: sub.file || def.file,
+        strings: [...new Set([...sub.strings, ...def.strings])],
+        counts: [...sub.counts, ...def.counts.filter((c) => !sub.counts.some((sc) => sc.member === c.member))],
+        arraysizes: [...sub.arraysizes, ...def.arraysizes.filter((c) => !sub.arraysizes.some((sc) => sc.member === c.member))],
+        reusables: [...new Set([...sub.reusables, ...def.reusables])],
+        conditions: [...sub.conditions, ...def.conditions.filter((c) => !sub.conditions.some((sc) => sc.member === c.member))],
+        scriptstrings: [...new Set([...sub.scriptstrings, ...def.scriptstrings])],
+        assetrefs: [...new Set([...sub.assetrefs, ...def.assetrefs])],
+        blocks: [...new Set([...sub.blocks, ...def.blocks])],
+        runtimeBlocks: [...new Set([...(sub.runtimeBlocks ?? []), ...(def.runtimeBlocks ?? [])])],
+        allocaligns: [...new Set([...sub.allocaligns, ...def.allocaligns])],
+        actions: [...new Set([...sub.actions, ...def.actions])],
+        reorder: sub.reorder && sub.reorder.length ? sub.reorder : def.reorder,
+        scoped: [...(sub.scoped ?? []), ...(def.scoped ?? [])],
+    };
+}
+
 /**
  * Cabecera fija de un `GfxImageLoadDef`: hasta el miembro flexible `data[1]`
  * (sin el byte de relleno del struct). Los datos reales no entran aquí.
@@ -50,7 +72,7 @@ function parseMemberDecls(source) {
         .replace(/\/\/[^\n]*/g, "");
     const decls = new Map(); // struct → [{ type, ptr, dims, name }]
 
-    for (const m of clean.matchAll(/(?:^|\n)\s*(?:struct|union)\s+([A-Za-z_][\w]*)\s*\{/g)) {
+    for (const m of clean.matchAll(/(?:^|\n)\s*(?:struct|union)\s+(?:(?:type_align|gcc_align|tdef_align)(?:32|64)?\s*\(\s*\d+\s*\)\s*)*([A-Za-z_][\w]*)\s*\{/g)) {
         const nombre = m[1];
         const abre = m.index + m[0].length - 1;
         let nivel = 0;
@@ -90,12 +112,23 @@ function parseOneDecl(declaracion) {
     const resultado = [];
     for (let i = 0; i < partes.length; i++) {
         const parte = i === 0 ? partes[i] : partes[i];
+        // Puntero a array: `const float (*name)[4]` → el puntero apunta a `float[4]`.
+        const aArr = /^([\s\S]*?)\(\s*\*\s*([A-Za-z_][\w]*)\s*\)\s*((?:\[\s*\d*\s*\]\s*)*)$/.exec(parte);
+        if (aArr) {
+            const base = aArr[1].replace(/^(const|volatile|struct|union|enum|signed)\s+/g, "")
+                .replace(/\s+(const|volatile)$/g, "").trim();
+            if (base !== "" && !base.includes("(")) {
+                const pointeeDims = [...aArr[3].matchAll(/\[\s*(\d*)\s*\]/g)].map((m) => (m[1] === "" ? null : Number(m[1])));
+                resultado.push({ type: base, ptr: 1, dims: [], name: aArr[2], pointeeDims, anon: false, bruto: declaracion });
+                continue;
+            }
+        }
         const dims = [];
         let resto = parte;
-        const dimMatch = /\[\s*(\d*)\s*\]\s*$/g;
-        while (dimMatch.test(resto)) {
-            const m = /\[\s*(\d*)\s*\]\s*$/.exec(resto);
-            dims.unshift(m[1] === "" ? null : Number(m[1]));
+        while (/\[\s*(\w*)\s*\]\s*$/.test(resto)) {
+            const m = /\[\s*(\w*)\s*\]\s*$/.exec(resto);
+            const val = m[1] === "" ? null : (Number.isFinite(Number(m[1])) ? Number(m[1]) : m[1]);
+            dims.unshift(val);
             resto = resto.slice(0, m.index).trim();
         }
         const nameMatch = /([A-Za-z_][\w]*)\s*$/.exec(resto);
@@ -125,7 +158,7 @@ class SinResolver extends Error {}
 
 function tokenize(expr) {
     const tokens = [];
-    const re = /==|[A-Za-z_][\w]*|\d+|::|[\s()+\-*/%\[\]]/g;
+    const re = /<=|>=|==|!=|&&|\|\||0[xX][0-9a-zA-Z_]*|[A-Za-z_][\w]*|\d+|::|[\s()+\-*/%\[\]<>!]/g;
     let m;
     while ((m = re.exec(expr)) !== null) {
         const t = m[0];
@@ -147,12 +180,16 @@ export function evalExpr(expr, leer) {
     function primario() {
         if (come("-")) return -primario();
         if (come("(")) {
-            const v = suma();
+            const v = oLogica();
             if (!come(")")) throw new SinResolver(`paréntesis sin cerrar en "${expr}"`);
             return v;
         }
         const t = ve();
         if (t === undefined) throw new SinResolver(`expresión incompleta "${expr}"`);
+        if (/^0[xX][0-9a-fA-F]+$/.test(t)) {
+            i++;
+            return parseInt(t, 16);
+        }
         if (/^\d+$/.test(t)) {
             i++;
             return Number(t);
@@ -192,13 +229,30 @@ export function evalExpr(expr, leer) {
             else return v;
         }
     }
-    /** Igualdad: devuelve 1 si ambos lados son iguales, 0 si no. */
+    /** Comparaciones: `==`, `!=`, `<`, `<=`, `>`, `>=` (devuelven 1 o 0). */
     function comparacion() {
         const a = suma();
         if (come("==")) return a === suma() ? 1 : 0;
+        if (come("!=")) return a !== suma() ? 1 : 0;
+        if (come("<=")) return a <= suma() ? 1 : 0;
+        if (come(">=")) return a >= suma() ? 1 : 0;
+        if (come("<")) return a < suma() ? 1 : 0;
+        if (come(">")) return a > suma() ? 1 : 0;
         return a;
     }
-    const valor = comparacion();
+    /** Y lógico (`&&`). */
+    function yLogica() {
+        let v = comparacion();
+        while (come("&&")) { const r = comparacion(); v = v !== 0 && r !== 0 ? 1 : 0; }
+        return v;
+    }
+    /** O lógico (`||`). */
+    function oLogica() {
+        let v = yLogica();
+        while (come("||")) { const r = yLogica(); v = v !== 0 || r !== 0 ? 1 : 0; }
+        return v;
+    }
+    const valor = oLogica();
     if (i !== tokens.length) throw new SinResolver(`sobra "${tokens.slice(i).join(" ")}" en "${expr}"`);
     return valor;
 }
@@ -213,15 +267,19 @@ const ENTEROS_CON_SIGNO = new Set(["int", "int8_t", "int16_t", "int32_t", "short
 const PRIMITIVOS = new Map([
     ["void", 1], ["bool", 1], ["char", 1], ["int8_t", 1], ["uint8_t", 1],
     ["short", 2], ["int16_t", 2], ["uint16_t", 2],
+    ["unsigned char", 1], ["unsigned short", 2], ["unsigned int", 4],
+    ["long long", 8], ["unsigned long", 4], ["unsigned long long", 8],
     ["int", 4], ["unsigned", 4], ["long", 4], ["int32_t", 4], ["uint32_t", 4], ["float", 4],
     ["int64_t", 8], ["uint64_t", 8], ["double", 8],
 ]);
 
-class Modelo {
+export class Modelo {
     constructor(src) {
         this.modelo = loadModel(src);
         this.decls = parseMemberDecls(readFileSync(this.modelo.assetsHeader, "utf8"));
+        this.assetStructs = new Set(this.modelo.mapping.values());
         this.planes = new Map();
+        this.planesStruct = new Map();
     }
 
     medidor() { return this.modelo.medidor; }
@@ -232,10 +290,22 @@ class Modelo {
         return this.modelo.enumValor(nombre);
     }
 
+    /** Directivas de un struct por su nombre (las regiones anidadas las necesitan). */
+    directivesOfStruct(struct) {
+        if (this.modelo.byStruct.has(struct)) return this.modelo.byStruct.get(struct);
+        const t = this.medidor().all().get(struct)?.target;
+        return t ? (this.modelo.byStruct.get(t) ?? null) : null;
+    }
+
     miembros(struct) {
-        const offsets = this.medidor().membersOf(struct);
+        let real = struct;
+        let offsets = this.medidor().membersOf(real);
+        if (!offsets) {
+            const t = this.medidor().all().get(real)?.target;
+            if (t) { real = t; offsets = this.medidor().membersOf(real); }
+        }
         if (!offsets) return null;
-        const declarados = this.decls.get(struct) ?? [];
+        const declarados = this.decls.get(real) ?? [];
         const porNombre = new Map(declarados.map((d) => [d.name, d]));
         return offsets.map((m) => ({ ...m, ...(porNombre.get(m.name) ?? { type: null, ptr: 0, dims: [] }) }));
     }
@@ -251,6 +321,7 @@ class Modelo {
         const lista = this.miembros(struct);
         const m = lista ? lista.find((x) => x.name === member) : null;
         if (!m) throw new SinResolver(`no está el miembro ${struct}::${member}`);
+        if (m.ptr >= 2) return 4;
         if (m.ptr === 0) {
             // `count` sobre un array inline: el elemento es el tipo base.
             const base = this.sizeOf(m.type);
@@ -281,63 +352,202 @@ class Modelo {
         return plan;
     }
 
+    /**
+     * Plan de following de un struct cualquiera. Es lo que permite medir las
+     * regiones anidadas (un `MaterialTechnique` dentro de un `TECHNIQUE_SET`,
+     * una `MaterialPass` dentro de una técnica, …).
+     */
+    planStruct(struct, dir) {
+        const clave = `struct:${struct}`;
+        const guardado = this.planesStruct.get(clave);
+        if (guardado) return guardado;
+        const pasos = [];
+        const faltas = [];
+        this.recogerPasos(struct, dir, pasos, faltas, "");
+        const dinamico = pasos.some((p) => p.clase === "arraysize");
+        const fijo = dinamico
+            ? Math.min(...pasos.filter((p) => p.clase === "arraysize" || p.clase === "hojaUnion").map((p) => p.offset))
+            : this.sizeOf(struct);
+        const plan = { struct, fijo, dinamico, pasos, faltas };
+        this.planesStruct.set(clave, plan);
+        return plan;
+    }
+
     /** Recorre los miembros y añade los pasos; baja a sub-structs por valor. */
-    recogerPasos(struct, dir, pasos, faltas, prefijo, raiz = true) {
+    recogerPasos(struct, dir, pasos, faltas, prefijo, raiz = true, desp = 0, cadenaPadre = null, condPadre = null) {
+        // Ámbito de resolución de las expresiones: el struct actual y sus padres
+        // (una directiva `streamInfo::x n` puede citar un miembro del padre).
+        const cadena = [{ struct, desp }, ...(cadenaPadre ?? [])];
         const miembros = this.miembros(struct);
         if (!miembros) {
             faltas.push(`${struct}: sin layout (zsizeof no lo resuelve)`);
             return;
         }
-        let orden = miembros;
+        let orden = [...miembros];
         if (dir && dir.reorder.length) {
             const porNombre = new Map(miembros.map((m) => [m.name, m]));
-            const primeros = dir.reorder.map((n) => porNombre.get(n)).filter(Boolean);
-            const resto = miembros.filter((m) => !dir.reorder.includes(m.name));
-            orden = [...primeros, ...resto];
+            if (!dir.reorder.includes("...")) {
+                const primeros = dir.reorder.map((n) => porNombre.get(n)).filter(Boolean);
+                const resto = orden.filter((m) => !dir.reorder.includes(m.name));
+                orden = [...primeros, ...resto];
+            } else {
+                const bloques = [];
+                let actual = null;
+                for (const item of dir.reorder) {
+                    if (item === "...") {
+                        actual = { elipsis: true, items: [] };
+                        bloques.push(actual);
+                    } else {
+                        if (!actual) {
+                            actual = { elipsis: false, items: [] };
+                            bloques.push(actual);
+                        }
+                        actual.items.push(item);
+                    }
+                }
+                for (const b of bloques) {
+                    if (!b.items.length) continue;
+                    const objs = b.items.map((n) => porNombre.get(n)).filter(Boolean);
+                    if (!b.elipsis) {
+                        const resto = orden.filter((m) => !b.items.includes(m.name));
+                        orden = [...objs, ...resto];
+                    } else {
+                        const primero = b.items[0];
+                        const movidos = new Set(b.items.slice(1));
+                        const sinMovidos = orden.filter((m) => !movidos.has(m.name));
+                        const idx = sinMovidos.findIndex((m) => m.name === primero);
+                        if (idx !== -1) {
+                            sinMovidos.splice(idx + 1, 0, ...objs.slice(1));
+                            orden = sinMovidos;
+                        }
+                    }
+                }
+            }
         }
 
+        const condsExplicitPorOffset = new Map();
         for (const m of orden) {
             const ruta = `${prefijo}${m.name}`;
-            const cond = dir ? dir.conditions.find((c) => c.member === ruta) : null;
-            if (cond && cond.expr.trim() === "never") continue;
+            const condPropio = dir ? dir.conditions.find((c) => c.member === m.name || c.member === ruta) : null;
+            if (condPropio && condPropio.expr.trim() !== "never") {
+                const prev = condsExplicitPorOffset.get(m.offset) ?? [];
+                prev.push(condPropio.expr);
+                condsExplicitPorOffset.set(m.offset, prev);
+            }
+        }
 
-            const esTexto = dir ? dir.strings.includes(ruta) || dir.scriptstrings.includes(ruta) : false;
-            const cuenta = dir ? dir.counts.find((c) => c.member === ruta) : null;
-            const asize = dir ? dir.arraysizes.find((c) => c.member === ruta) : null;
-            const reutilizable = dir ? dir.reusables.includes(ruta) : false;
+        const condPorOffset = new Map();
+        for (const m of orden) {
+            const ruta = `${prefijo}${m.name}`;
+            const condPropio = dir ? dir.conditions.find((c) => c.member === m.name || c.member === ruta) : null;
+            if (condPropio && condPropio.expr.trim() === "never") continue;
+            let condLocal = condPropio ? condPropio.expr : null;
+            if (condLocal) {
+                const prev = condPorOffset.get(m.offset);
+                if (prev) {
+                    const negPrev = `(${prev}) == 0`;
+                    condPorOffset.set(m.offset, `(${prev}) || (${condLocal})`);
+                    condLocal = `(${negPrev}) && (${condLocal})`;
+                } else {
+                    condPorOffset.set(m.offset, condLocal);
+                }
+            } else if (condPorOffset.has(m.offset)) {
+                condLocal = `(${condPorOffset.get(m.offset)}) == 0`;
+            } else if (condsExplicitPorOffset.has(m.offset)) {
+                const exprs = condsExplicitPorOffset.get(m.offset);
+                condLocal = exprs.map((c) => `(${c}) == 0`).join(" && ");
+            }
+            const condEfectiva = condPadre && condLocal ? `(${condPadre}) && (${condLocal})` : (condLocal ?? condPadre);
 
-            // Sub-directivas con el nombre de este miembro por delante (`info::name`).
-            const subDir = dir ? this.subDirectivas(dir, m.name) : null;
-            if (subDir) {
-                this.recogerPasos(m.type, subDir, pasos, faltas, "", false);
+            const esTexto = dir ? dir.strings.includes(m.name) || dir.strings.includes(ruta) : false;
+            const cuenta = dir ? dir.counts.find((c) => c.member === m.name || c.member === ruta) : null;
+            const asize = dir ? dir.arraysizes.find((c) => c.member === m.name || c.member === ruta) : null;
+            const reutilizable = dir ? dir.reusables.includes(m.name) || dir.reusables.includes(ruta) : false;
+
+            if (asize) {
+                pasos.push({ clase: "arraysize", struct, member: ruta, offset: desp + m.offset, expr: asize.expr, ambito: cadena, elemSize: this.elemSize(struct, m.name), elemType: m.type, dims: m.dims, cond: condEfectiva });
                 continue;
             }
-            if (esTexto) {
-                pasos.push({ clase: "string", struct, member: ruta, offset: m.offset });
+
+            const subDir = dir ? this.subDirectivas(dir, m.name) : null;
+            const dirTipo = this.directivesOfStruct(m.type);
+            const subEfectivo = combinarDirectivas(subDir, dirTipo);
+            if (m.ptr === 0 && (subEfectivo || (this.miembros(m.type) && !PRIMITIVOS.has(m.type)))) {
+                const lenAntes = pasos.length;
+                this.recogerPasos(m.type, subEfectivo, pasos, faltas, `${ruta}::`, false, desp + m.offset, cadena, condEfectiva);
+                if (pasos.length === lenAntes && condLocal !== null && this.medidor().all().get(struct)?.kind === "union" && pasos.some((p) => p.clase === "arraysize" && p.offset >= desp + m.offset)) {
+                    pasos.push({ clase: "hojaUnion", struct, member: ruta, offset: desp + m.offset, size: m.size, ambito: cadena, cond: condEfectiva });
+                }
                 continue;
             }
             if (cuenta) {
+                const esRuntime = dir ? dir.runtimeBlocks && (dir.runtimeBlocks.includes(m.name) || dir.runtimeBlocks.includes(ruta)) : false;
+                if (esRuntime) continue;
                 try {
                     pasos.push({
-                        clase: "count", struct, member: ruta, offset: m.offset,
+                        clase: "count", struct, member: ruta, offset: desp + m.offset,
                         expr: cuenta.expr, elemSize: this.elemSize(struct, m.name),
                         // Puntero: sus datos solo van following si el marcador es 0xffffffff.
-                        puntero: raiz && m.ptr > 0,
+                        puntero: m.ptr > 0, ptrDepth: m.ptr, elemString: esTexto,
+                        ambito: cadena,
+                        elemType: m.type, dims: m.dims,
                         imagenes: raiz && m.ptr > 0 ? this.imagenesDe(m.type) : null,
+                        cond: condEfectiva,
                     });
                 } catch (error) {
                     faltas.push(`${ruta}: ${error.message}`);
                 }
                 continue;
             }
-            if (asize) {
-                pasos.push({ clase: "arraysize", struct, member: ruta, offset: m.offset, expr: asize.expr });
+            if (m.dims && m.dims.length === 1 && m.ptr === 1 && dir) {
+                const tieneIndexados = dir.counts.some((c) => c.member.startsWith(`${m.name}[`) || c.member.startsWith(`${ruta}[`));
+                if (tieneIndexados) {
+                    const dim = m.dims[0];
+                    for (let idx = 0; idx < dim; idx++) {
+                        const idxNombre = `${m.name}[${idx}]`;
+                        const idxRuta = `${ruta}[${idx}]`;
+                        const cIdx = dir.counts.find((c) => c.member === idxNombre || c.member === idxRuta);
+                        const idxRuntime = dir.runtimeBlocks && (dir.runtimeBlocks.includes(idxNombre) || dir.runtimeBlocks.includes(idxRuta) || dir.runtimeBlocks.includes(m.name) || dir.runtimeBlocks.includes(ruta));
+                        if (idxRuntime) continue;
+                        if (!cIdx) continue;
+                        try {
+                            pasos.push({
+                                clase: "count", struct, member: idxRuta, offset: desp + m.offset + idx * 4,
+                                expr: cIdx.expr, elemSize: this.elemSize(struct, m.name),
+                                puntero: true, ptrDepth: 1, elemString: esTexto,
+                                ambito: cadena,
+                                elemType: m.type, dims: [],
+                                imagenes: raiz ? this.imagenesDe(m.type) : null,
+                                cond: condEfectiva,
+                            });
+                        } catch (error) {
+                            faltas.push(`${idxRuta}: ${error.message}`);
+                        }
+                    }
+                    continue;
+                }
+            }
+            if (esTexto) {
+                pasos.push({ clase: "string", struct, member: ruta, offset: desp + m.offset, puntero: m.ptr > 0, ambito: cadena, cond: condEfectiva });
                 continue;
             }
-            if (reutilizable) {
-                // Reutilizable sin `count`: su tabla no va inline (técnicas, etc.).
-                pasos.push({ clase: "reusable", struct, member: ruta, offset: m.offset });
+            if (reutilizable || (m.ptr === 1 && (this.assetStructs.has(m.type) || dirTipo !== null))) {
+                // Reutilizable: su tabla solo va inline cuando el marcador del puntero
+                // es 0xffffffff. Si es un puntero de zona real, el escritor la deduplica
+                // y no ocupa stream.
+                const pointeeDims = m.pointeeDims ?? [];
+                const baseTipo = m.type === null ? null : this.sizeOf(m.type);
+                const hojaBytes = baseTipo === null
+                    ? null
+                    : baseTipo * pointeeDims.reduce((a, b) => a * (b || 1), 1);
+                pasos.push({
+                    clase: "reusable", struct, member: ruta, offset: desp + m.offset,
+                    tipo: m.type, ptr: m.ptr > 0, dims: m.dims, ambito: cadena, hojaBytes, cond: condEfectiva,
+                });
                 continue;
+            }
+            if (m.ptr === 0 && condLocal !== null && this.medidor().all().get(struct)?.kind === "union" && pasos.some((p) => p.clase === "arraysize" && p.offset >= desp + m.offset)) {
+                pasos.push({ clase: "hojaUnion", struct, member: ruta, offset: desp + m.offset, size: m.size, ambito: cadena, cond: condEfectiva });
             }
         }
     }
@@ -347,8 +557,13 @@ class Modelo {
      * following. La condición de la directiva (`u::water`) decide cuál es agua.
      */
     imagenesDe(tipoElem) {
+        // Solo la unión del agua: `set condition u::water …`. Otras uniones con
+        // `u::` (literalConst, loadSnd, frames…) llevan datos following normales
+        // y las trata el recorrido genérico, no esta medición especial de imagen.
         const dirElem = this.modelo.byStruct.get(tipoElem);
-        const cond = dirElem ? (dirElem.scoped ?? []).find((s) => s.palabra === "condition" && s.path[0] === "u") : null;
+        const cond = dirElem
+            ? (dirElem.scoped ?? []).find((s) => s.palabra === "condition" && s.path[0] === "u" && s.path.includes("water"))
+            : null;
         if (!cond) return null;
         return { struct: tipoElem, expr: cond.expr };
     }
@@ -361,7 +576,7 @@ class Modelo {
         const sub = {
             struct: `sub:${miembro}`, file: dir.file,
             strings: [], counts: [], arraysizes: [], reusables: [], conditions: [],
-            scriptstrings: [], assetrefs: [], blocks: [], allocaligns: [], actions: [], reorder: [], scoped: [],
+            scriptstrings: [], assetrefs: [], blocks: [], runtimeBlocks: [], allocaligns: [], actions: [], reorder: [], scoped: [],
         };
         for (const s of suyos) {
             const resto = s.path.slice(1);
@@ -374,6 +589,11 @@ class Modelo {
                 case "arraysize": sub.arraysizes.push({ member: nombre, expr: s.expr }); break;
                 case "reusable": sub.reusables.push(nombre); break;
                 case "condition": sub.conditions.push({ member: nombre, expr: s.expr }); break;
+                case "block": {
+                    sub.blocks.push(s.expr ? `${nombre} ${s.expr}` : nombre);
+                    if (s.expr === "XFILE_BLOCK_RUNTIME") sub.runtimeBlocks.push(nombre);
+                    break;
+                }
                 default: break;
             }
             if (resto.length > 1) sub.scoped.push({ ...s, path: resto });
@@ -393,17 +613,44 @@ function avisosDeDirectiva(declarados, dir) {
         ...dir.strings, ...dir.scriptstrings, ...dir.assetrefs, ...dir.reusables,
         ...dir.counts.map((c) => c.member), ...dir.arraysizes.map((c) => c.member),
     ];
-    return [...new Set(citados.filter((n) => !n.includes("::") && !nombres.has(n)))]
-        .map((n) => `${dir.struct}: directiva sobre un miembro que no existe (${n})`);
+    return [...new Set(citados.filter((n) => {
+        if (n.includes("::")) return false;
+        const baseNombre = n.replace(/\[\d+\]/g, "");
+        return !nombres.has(n) && !nombres.has(baseNombre);
+    }))].map((n) => `${dir.struct}: directiva sobre un miembro que no existe (${n})`);
 }
 
 // ---------------------------------------------------------------------------
 // Medir un asset del stream.
 // ---------------------------------------------------------------------------
-class Medidor {
+export class Medidor {
     constructor(stream, sep) {
         this.d = stream;
         this.sep = sep;
+    }
+
+    /**
+     * Valor de un miembro resolviendo la ruta en el ámbito más cercano que la contenga
+     * (el struct actual y luego sus padres, cada uno con su desplazamiento en el asset).
+     */
+    leerEnAmbito(modelo, ambito, base, ruta, index, ctxPadre = []) {
+        if (ruta.length > 1) {
+            const espLocal = ambito.find((a) => a.struct === ruta[0]);
+            if (espLocal) return this.leerValor(modelo, espLocal.struct, base + espLocal.desp, ruta.slice(1), index);
+            const espPadre = ctxPadre.find((a) => a.struct === ruta[0]);
+            if (espPadre) return this.leerValor(modelo, espPadre.struct, espPadre.base, ruta.slice(1), index);
+        }
+        for (const { struct, desp } of ambito) {
+            const lista = modelo.miembros(struct) ?? [];
+            if (lista.some((x) => x.name === ruta[0] && (ruta.length > 1 || index !== null || x.size <= 4))) {
+                return this.leerValor(modelo, struct, base + desp, ruta, index);
+            }
+        }
+        if (ruta.length === 1) {
+            const v = modelo.enumValor(ruta[0]);
+            if (v !== null) return v;
+        }
+        throw new SinResolver(`no está ${ruta.join("::")} en el ámbito ${ambito.map((a) => a.struct).join(" < ")}`);
     }
 
     /** Valor de un miembro del asset (por ruta), leído de su región fija. */
@@ -416,12 +663,15 @@ class Medidor {
             const m = lista.find((x) => x.name === ruta[i]);
             if (!m) throw new SinResolver(`no está ${actualStruct}::${ruta[i]}`);
             let salto = m.offset;
+            let tam = m.size;
             if (i === ruta.length - 1 && index !== null && m.dims && m.dims.length) {
-                salto += index * modelo.sizeOf(m.type);
+                const elemTam = modelo.sizeOf(m.type);
+                salto += index * elemTam;
+                tam = elemTam;
             }
             offset += salto;
             if (i < ruta.length - 1) actualStruct = m.type;
-            else return this.leerEntero(base + offset, m.size, m.type);
+            else return this.leerEntero(base + offset, tam, m.type);
         }
         throw new SinResolver(`ruta vacía`);
     }
@@ -447,6 +697,8 @@ class Medidor {
         if (!uM) throw new SinResolver(`${imag.struct} sin unión u`);
         const texM = (modelo.miembros("GfxImage") ?? []).find((x) => x.name === "texture");
         if (!texM) throw new SinResolver("GfxImage sin texture");
+        const nameM = (modelo.miembros("GfxImage") ?? []).find((x) => x.name === "name");
+        if (!nameM) throw new SinResolver("GfxImage sin name");
         const miembrosElem = modelo.miembros(imag.struct) ?? [];
         for (let i = 0; i < n; i++) {
             const e = ini + i * elemSize;
@@ -458,14 +710,27 @@ class Medidor {
                 }
                 return this.leerValor(modelo, imag.struct, e, ruta, index);
             });
+            if (process.env.ZDBG) console.error("ELEM", miembro, i, e, agua, this.marcadorFollowing(e + uM.offset), uM.offset, elemSize, n);
             if (agua) continue;
             if (!this.marcadorFollowing(e + uM.offset)) continue;
-            const fin = this.d.indexOf(0, cursor + modelo.sizeOf("GfxImage"));
-            if (fin === -1) throw new SinResolver(`nombre de imagen sin terminador en ${miembro}[${i}]`);
-            let fin2 = fin + 1;
+            // El nombre va following solo si su puntero tiene marcador 0xffffffff;
+            // si no, el nombre vive en la tabla de cadenas y no ocupa stream.
+            let fin2 = cursor + modelo.sizeOf("GfxImage");
+            if (this.marcadorFollowing(cursor + nameM.offset)) {
+                const fin = this.d.indexOf(0, fin2);
+                if (fin === -1) throw new SinResolver(`nombre de imagen sin terminador en ${miembro}[${i}]`);
+                fin2 = fin + 1;
+            }
             // `GfxTexture` es una unión: 0xfffffffe marca un `loadDef` con datos following (medido en common_zombie).
-            if (this.valorEn(cursor + texM.offset) === LOADDEF_FOLLOWING) fin2 += cabeceraLoadDef(modelo);
+            // Su región son la cabecera (hasta `data`) más `resourceSize` bytes de datos.
+            if (this.valorEn(cursor + texM.offset) === LOADDEF_FOLLOWING) {
+                const resM = (modelo.miembros("GfxImageLoadDef") ?? []).find((x) => x.name === "resourceSize");
+                if (!resM) throw new SinResolver("GfxImageLoadDef sin resourceSize");
+                const resourceSize = this.leerEntero(fin2 + resM.offset, resM.size, resM.type);
+                fin2 += cabeceraLoadDef(modelo) + resourceSize;
+            }
             detalle.push({ clase: "imagen", member: `${miembro}[${i}]::u::image`, bytes: fin2 - cursor });
+            if (process.env.ZDBG) console.error("DBG", miembro, i, cursor, fin2 - cursor, this.valorEn(cursor + texM.offset).toString(16), nameM.offset);
             cursor = fin2;
         }
         return cursor;
@@ -488,68 +753,169 @@ class Medidor {
     medir(modelo, tipo, base) {
         const plan = modelo.plan(tipo);
         const detalle = [];
-        let cursor = base + plan.fijo;
-
-        for (const paso of plan.pasos) {
-            if (paso.clase === "string") {
-                const fin = this.d.indexOf(0, cursor);
-                if (fin === -1) return { ok: false, fijo: plan.fijo, detalle, motivo: `cadena sin terminador en ${paso.member}` };
-                detalle.push({ ...paso, bytes: fin + 1 - cursor });
-                cursor = fin + 1;
-                continue;
-            }
-            if (paso.clase === "count") {
-                if (paso.puntero && !this.marcadorFollowing(base + paso.offset)) {
-                    // Puntero nulo: la tabla no va en el stream.
-                    detalle.push({ ...paso, valor: 0, bytes: 0 });
-                    continue;
-                }
-                let valor;
-                try {
-                    valor = evalExpr(paso.expr, (ruta, index) => this.leerValor(modelo, paso.struct, base, ruta, index));
-                } catch (error) {
-                    return { ok: false, fijo: plan.fijo, detalle, motivo: `${paso.member}: ${error.message}` };
-                }
-                const bytes = valor * paso.elemSize;
-                detalle.push({ ...paso, valor, bytes });
-                const ini = cursor;
-                cursor += bytes;
-                if (paso.imagenes && valor > 0) {
-                    try {
-                        cursor = this.medirImagenes(modelo, paso.imagenes, paso.elemSize, ini, valor, cursor, detalle, paso.member);
-                    } catch (error) {
-                        return { ok: false, fijo: plan.fijo, detalle, motivo: `${paso.member}: ${error.message}` };
-                    }
-                }
-                continue;
-            }
-            if (paso.clase === "arraysize") {
-                let valor;
-                try {
-                    valor = evalExpr(paso.expr, (ruta, index) => this.leerValor(modelo, paso.struct, base, ruta, index));
-                } catch (error) {
-                    return { ok: false, fijo: plan.fijo, detalle, motivo: `${paso.member}: ${error.message}` };
-                }
-                detalle.push({ ...paso, valor, bytes: valor });
-                cursor += valor;
-                continue;
-            }
-            if (paso.clase === "reusable") {
-                detalle.push({ ...paso, bytes: 0 });
-                continue;
-            }
+        let cursor;
+        try {
+            cursor = this.medirRegion(modelo, plan.struct, plan.directivas, base, base, detalle, "", 0);
+        } catch (error) {
+            return { ok: false, fijo: plan.fijo, detalle, motivo: error.message };
         }
 
         cursor += this.sep;
         if (cursor > this.d.length) return { ok: false, fijo: plan.fijo, detalle, motivo: "el asset se sale del stream" };
         return { ok: true, fijo: plan.fijo, total: cursor - base, detalle };
     }
+
+    /**
+     * Mide la región fija del struct en `base` y, detrás, sus datos following.
+     * Es recursiva: un miembro `reusable` con marcador `0xffffffff` anida el plan
+     * entero del tipo apuntado, y cada elemento de una tabla `count` anida el suyo.
+     * @returns {number} posición tras los datos following
+     */
+    medirRegion(modelo, struct, dir, base, cursor, detalle, etiqueta, nivel, ctxPadre = []) {
+        const plan = modelo.planStruct(struct, dir);
+        if (plan.fijo === null || plan.fijo === undefined) throw new SinResolver(`${struct} sin tamaño (zsizeof no lo resuelve)`);
+        if (nivel > 24) throw new SinResolver(`anidamiento demasiado profundo en ${struct}`);
+        let c = Math.max(cursor, base + plan.fijo);
+        const ctx = [{ struct, base }, ...ctxPadre];
+
+        for (const paso of plan.pasos) {
+            if (paso.cond) {
+                const activa = evalExpr(paso.cond, (ruta, index) => this.leerEnAmbito(modelo, paso.ambito, base, ruta, index, ctx));
+                if (!activa) continue;
+            }
+            const etq = etiqueta ? `${etiqueta}::${paso.member}` : paso.member;
+            if (paso.clase === "string") {
+                // Cadena following: solo si el puntero lleva marcador (si no, es nulo o deducido).
+                if (paso.puntero && this.valorEn(base + paso.offset) !== FOLLOWING) {
+                    detalle.push({ clase: "string", struct, member: etq, offset: paso.offset, bytes: 0 });
+                    continue;
+                }
+                const fin = this.d.indexOf(0, c);
+                if (fin === -1) throw new SinResolver(`cadena sin terminador en ${etq}`);
+                detalle.push({ clase: "string", struct, member: etq, offset: paso.offset, bytes: fin + 1 - c });
+                c = fin + 1;
+                continue;
+            }
+            if (paso.clase === "hojaUnion") {
+                const finHoja = base + paso.offset + paso.size;
+                detalle.push({ ...paso, member: etq, bytes: finHoja - c });
+                c = finHoja;
+                continue;
+            }
+            if (paso.clase === "count") {
+                if (paso.puntero && !this.marcadorFollowing(base + paso.offset)) {
+                    // Puntero nulo o deducido: la tabla no va en el stream.
+                    detalle.push({ ...paso, member: etq, valor: 0, bytes: 0 });
+                    continue;
+                }
+                const valor = evalExpr(paso.expr, (ruta, index) => this.leerEnAmbito(modelo, paso.ambito, base, ruta, index, ctx));
+                const dirElem = (!paso.imagenes && !paso.elemString && (!paso.ptrDepth || paso.ptrDepth < 2) && paso.elemType)
+                    ? modelo.directivesOfStruct(paso.elemType)
+                    : null;
+                const planElem = (dirElem && modelo.miembros(paso.elemType) && !PRIMITIVOS.has(paso.elemType))
+                    ? modelo.planStruct(paso.elemType, dirElem)
+                    : null;
+                if (planElem && planElem.dinamico) {
+                    const ini = c;
+                    for (let i = 0; i < valor; i++) {
+                        c = this.medirRegion(modelo, paso.elemType, dirElem, c, c, detalle, `${etq}[${i}]`, nivel + 1, ctx);
+                    }
+                    detalle.push({ ...paso, member: etq, valor, bytes: c - ini });
+                    continue;
+                }
+                const bytes = valor * paso.elemSize;
+                detalle.push({ ...paso, member: etq, valor, bytes });
+                const ini = c;
+                c += bytes;
+                if (valor <= 0) continue;
+                if (paso.imagenes) {
+                    c = this.medirImagenes(modelo, paso.imagenes, paso.elemSize, ini, valor, c, detalle, etq);
+                } else if (paso.elemString) {
+                    for (let i = 0; i < valor; i++) {
+                        if (this.valorEn(ini + i * 4) !== FOLLOWING) continue;
+                        const fin = this.d.indexOf(0, c);
+                        if (fin === -1) throw new SinResolver(`cadena sin terminador en ${etq}[${i}]`);
+                        detalle.push({ clase: "string", struct, member: `${etq}[${i}]`, offset: i * 4, bytes: fin + 1 - c });
+                        c = fin + 1;
+                    }
+                } else if (paso.ptrDepth && paso.ptrDepth >= 2 && paso.elemType) {
+                    const dirElemPtr = modelo.directivesOfStruct(paso.elemType);
+                    const tamElem = modelo.sizeOf(paso.elemType);
+                    for (let i = 0; i < valor; i++) {
+                        if (this.valorEn(ini + i * 4) !== FOLLOWING) continue;
+                        if (dirElemPtr) {
+                            c = this.medirRegion(modelo, paso.elemType, dirElemPtr, c, c, detalle, `${etq}[${i}]`, nivel + 1, ctx);
+                        } else if (tamElem !== null) {
+                            detalle.push({ clase: "hoja", struct, member: `${etq}[${i}]`, bytes: tamElem });
+                            c += tamElem;
+                        }
+                    }
+                } else if (paso.elemType) {
+                    const tienePasos = dirElem || (modelo.miembros(paso.elemType) && !PRIMITIVOS.has(paso.elemType) && modelo.planStruct(paso.elemType, null).pasos.length > 0);
+                    if (tienePasos) {
+                        for (let i = 0; i < valor; i++) {
+                            c = this.medirRegion(modelo, paso.elemType, dirElem, ini + i * paso.elemSize, c, detalle, `${etq}[${i}]`, nivel + 1, ctx);
+                        }
+                    }
+                }
+                continue;
+            }
+            if (paso.clase === "arraysize") {
+                const valor = evalExpr(paso.expr, (ruta, index) => this.leerEnAmbito(modelo, paso.ambito, base, ruta, index, ctx));
+                const elem = paso.elemSize ?? 1;
+                const finArray = base + paso.offset + valor * elem;
+                detalle.push({ ...paso, member: etq, valor, bytes: finArray - c });
+                c = finArray;
+                if (valor > 0 && paso.elemType) {
+                    const dirElem = modelo.directivesOfStruct(paso.elemType);
+                    const tienePasos = dirElem || (modelo.miembros(paso.elemType) && !PRIMITIVOS.has(paso.elemType) && modelo.planStruct(paso.elemType, null).pasos.length > 0);
+                    if (tienePasos) {
+                        for (let i = 0; i < valor; i++) {
+                            c = this.medirRegion(modelo, paso.elemType, dirElem, base + paso.offset + i * elem, c, detalle, `${etq}[${i}]`, nivel + 1, ctx);
+                        }
+                    }
+                }
+                continue;
+            }
+            if (paso.clase === "reusable") {
+                const dim = paso.dims && paso.dims.length ? paso.dims[0] : 1;
+                let anidados = 0;
+                const dirTipo = paso.tipo ? modelo.directivesOfStruct(paso.tipo) : null;
+                const tienePasos = dirTipo || (paso.tipo && modelo.miembros(paso.tipo) && !PRIMITIVOS.has(paso.tipo) && modelo.planStruct(paso.tipo, null).pasos.length > 0);
+                const tamTipo = paso.hojaBytes ?? (paso.tipo ? modelo.sizeOf(paso.tipo) : null);
+                for (let i = 0; i < dim; i++) {
+                    const marcador = this.valorEn(base + paso.offset + i * 4);
+                    if (marcador !== FOLLOWING && marcador !== LOADDEF_FOLLOWING) continue;
+                    if (paso.tipo === "GfxImageLoadDef") {
+                        const resM = (modelo.miembros("GfxImageLoadDef") ?? []).find((x) => x.name === "resourceSize");
+                        if (!resM) throw new SinResolver("GfxImageLoadDef sin resourceSize");
+                        const resourceSize = this.leerEntero(c + resM.offset, resM.size, resM.type);
+                        const tam = cabeceraLoadDef(modelo) + resourceSize;
+                        detalle.push({ clase: "reusable", struct: paso.tipo, member: dim > 1 ? `${etq}[${i}]` : etq, bytes: tam });
+                        c += tam;
+                    } else if (tienePasos) {
+                        c = this.medirRegion(modelo, paso.tipo, dirTipo, c, c, detalle, dim > 1 ? `${etq}[${i}]` : etq, nivel + 1, ctx);
+                    } else if (tamTipo !== null) {
+                        // Tipo hoja sin directivas: se escribe su región fija tal cual.
+                        detalle.push({ clase: "hoja", struct, member: dim > 1 ? `${etq}[${i}]` : etq, bytes: tamTipo });
+                        c += tamTipo;
+                    } else {
+                        throw new SinResolver(`${etq}: ${paso.tipo} anidado sin tamaño ni directivas`);
+                    }
+                    anidados++;
+                }
+                detalle.push({ ...paso, member: etq, bytes: 0, anidados });
+                continue;
+            }
+        }
+        return c;
+    }
 }
 
 // ---------------------------------------------------------------------------
 // CLI
 // ---------------------------------------------------------------------------
-function cargarStream(archivo) {
+export function cargarStream(archivo) {
     const raw = readFileSync(archivo);
     const stream = inflateSync(raw.subarray(HEADER_LEN));
     const lista = parseAssetList(stream); // valida cabecera, tamaños y cadenas
@@ -690,7 +1056,7 @@ function main(argv) {
 }
 
 /** Camina los assets 0..hasta acumulando tamaños; para al primer fallo. */
-function caminar(modelo, medidor, datos, desde, hasta) {
+export function caminar(modelo, medidor, datos, desde, hasta) {
     const resultados = [];
     const offsets = [];
     let cursor = datos.bodyOffset;

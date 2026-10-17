@@ -44,6 +44,7 @@ export function parseDirectives(directory) {
                 struct: name, file: null,
                 strings: [], counts: [], arraysizes: [], reusables: [],
                 conditions: [], scriptstrings: [], assetrefs: [], blocks: [], allocaligns: [], actions: [],
+                runtimeBlocks: [],
                 reorder: [], scoped: [],
             });
         }
@@ -58,7 +59,7 @@ export function parseDirectives(directory) {
             let line = lines[i].replace(/\/\/.*$/, "").trim();
             if (pendiente !== null) {
                 line = `${pendiente} ${line}`;
-                if (!line.endsWith(";")) continue;
+                if (!line.endsWith(";")) { pendiente = line; continue; }
                 pendiente = null;
             } else if (line.startsWith("set ") && !line.endsWith(";")) {
                 // Las condiciones largas vienen partidas por `||` en varias líneas.
@@ -72,14 +73,16 @@ export function parseDirectives(directory) {
                 actual.file = file;
                 continue;
             }
-            if (line.startsWith("reorder:")) {
-                const target = actual ?? entry("?");
+            const mReorder = /^reorder(?:\s+([A-Za-z_]\w*))?\s*:$/.exec(line);
+            if (mReorder) {
+                const target = mReorder[1] ? entry(mReorder[1]) : (actual ?? entry("?"));
+                if (mReorder[1] && target.file === null) target.file = file;
                 for (let j = i + 1; j < lines.length; j++) {
                     const item = lines[j].replace(/\/\/.*$/, "").trim();
                     if (item === "") continue;
                     if (/^(set|use|reorder)\b/.test(item)) break;
                     const nombre = item.replace(/;$/, "").trim();
-                    if (!/^[A-Za-z_][A-Za-z0-9_:]*$/.test(nombre)) break;
+                    if (nombre !== "..." && !/^[A-Za-z_][A-Za-z0-9_:]*$/.test(nombre)) break;
                     target.reorder.push(nombre);
                     if (item.endsWith(";")) { i = j; break; }
                 }
@@ -116,7 +119,15 @@ export function parseDirectives(directory) {
                 case "condition": target.conditions.push({ member: miembro, expr: restoExpr }); break;
                 case "scriptstring": target.scriptstrings.push(miembro); break;
                 case "assetref": target.assetrefs.push(miembro); break;
-                case "block": target.blocks.push(resto); break;
+                case "block": {
+                    target.blocks.push(resto);
+                    const mBlk = /^([A-Za-z_]\w*(?:\[\d+\])?)\s+([A-Za-z0-9_]+)$/.exec(miembro ? `${miembro} ${restoExpr}` : resto);
+                    if (mBlk) {
+                        const [, mb, blk] = mBlk;
+                        if (blk === "XFILE_BLOCK_RUNTIME") target.runtimeBlocks.push(mb);
+                    }
+                    break;
+                }
                 case "allocalign": target.allocaligns.push(resto); break;
                 case "action": target.actions.push(resto); break;
                 default: break;
@@ -160,8 +171,10 @@ export function loadModel(root) {
     const medidor = createMeasurer(4);
     const assetsText = readFileSync(assetsHeader, "utf8");
     medidor.parse(assetsText);
-    /** Valor de un enum (`NOMBRE = 0xB,`) de T5_Assets.h; null si no existe. */
+    /** Valor de un enum de T5_Assets.h; null si no existe. */
     const enumValor = (nombre) => {
+        const c = medidor.constantOf?.(nombre);
+        if (c !== null && c !== undefined) return c;
         const m = new RegExp(`\\b${nombre}\\s*=\\s*(0x[0-9a-fA-F]+|\\d+)`).exec(assetsText);
         return m ? Number(m[1]) : null;
     };

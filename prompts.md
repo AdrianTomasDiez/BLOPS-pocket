@@ -1,6 +1,6 @@
 # prompts.md: BLOPS pocket
 
-> Usa un prompt por fase. Antes de cada fase, lee `reglas.md` completo. Al terminar, actualiza la sección 7 de `reglas.md`.
+> Usa un prompt por fase. Antes de cada fase, lee `continuar.md` y las secciones 1, 2 y 5–8 de `reglas.md`; el resto, bajo demanda. Al terminar, actualiza la sección 7 de `reglas.md`.
 
 ---
 
@@ -44,7 +44,7 @@ Investiga y documenta en reglas.md el formato de los archivos de zona de Black O
 
 ---
 
-## Prompt 6: Motor en iOS (aplazado por decisión de Adri: se hace después de la fase 7)
+## Prompt 6: Motor en iOS (en curso: estrategia aprobada el 2026-10-14; 6a hecha y 6b en marcha, ver reglas.md §7)
 
 ```
 Define en reglas.md la estrategia del motor (adaptar KisakBlack bajo GPL, reescribir desde cero, o usar otro enfoque) con sus riesgos de memoria y licencia. Espera mi confirmación antes de implementar cualquier parte del motor.
@@ -52,7 +52,7 @@ Define en reglas.md la estrategia del motor (adaptar KisakBlack bajo GPL, reescr
 
 ---
 
-## Prompt 7: Pruebas en iPhone y documentación (documentación hecha; pruebas pendientes en el iPhone)
+## Prompt 7: Pruebas en iPhone y documentación (hecho: 10/12 pruebas en el iPhone; las 11 y 12 esperan al motor)
 
 ```
 Escribe el README para el usuario (requisitos, cómo copiar la carpeta del juego con SideStore, limitaciones conocidas) y una lista de pruebas manuales en iPhone: arranque, validación de la carpeta, uso de memoria y cierre con el juego en curso. Ejecuta lo que se pueda automatizar y dime qué debo probar yo.
@@ -65,7 +65,7 @@ Escribe el README para el usuario (requisitos, cómo copiar la carpeta del juego
 ### Retomar tras perder contexto
 
 ```
-Has perdido el contexto. Lee BLOPS pocket/reglas.md completo. Resúmeme en 10 líneas: en qué fase estamos, qué falta y cuál es el siguiente paso. No escribas código hasta que yo confirme.
+Has perdido el contexto. Lee BLOPS pocket/continuar.md y las secciones 1, 2 y 5–8 de reglas.md. Resúmeme en 10 líneas: en qué fase estamos, qué falta y cuál es el siguiente paso. No escribas código hasta que yo confirme.
 ```
 
 ### Cierre de fase
