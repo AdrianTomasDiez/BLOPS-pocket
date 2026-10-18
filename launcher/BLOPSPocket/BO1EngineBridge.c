@@ -29,3 +29,10 @@ __attribute__((weak, visibility("default")))
 void bo1_ios_execute_command(const char *cmd) {
     // Inyección de comandos Treyarch
 }
+
+typedef void (*BO1_iOS_PresentCallback)(void);
+__attribute__((weak, visibility("default")))
+void bo1_ios_set_present_callback(BO1_iOS_PresentCallback cb) {
+    // Registro de callback de presentación de pantalla
+}
+
