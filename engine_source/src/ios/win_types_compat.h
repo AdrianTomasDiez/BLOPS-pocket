@@ -30,6 +30,74 @@
 #define _vsnprintf vsnprintf
 #endif
 
+static inline char *_itoa(int value, char *buffer, int radix) {
+    if (!buffer) return NULL;
+    if (radix == 10) {
+        sprintf(buffer, "%d", value);
+    } else if (radix == 16) {
+        sprintf(buffer, "%x", (unsigned int)value);
+    } else if (radix == 8) {
+        sprintf(buffer, "%o", (unsigned int)value);
+    } else {
+        char *p = buffer;
+        unsigned int uval = (radix == 10 && value < 0) ? (unsigned int)(-value) : (unsigned int)value;
+        if (radix == 10 && value < 0) {
+            *p++ = '-';
+        }
+        char temp[64];
+        int i = 0;
+        do {
+            int rem = uval % radix;
+            temp[i++] = (rem < 10) ? ('0' + rem) : ('a' + rem - 10);
+            uval /= radix;
+        } while (uval > 0);
+        while (i > 0) {
+            *p++ = temp[--i];
+        }
+        *p = '\0';
+    }
+    return buffer;
+}
+
+static inline char *_ltoa(long value, char *buffer, int radix) {
+    return _itoa((int)value, buffer, radix);
+}
+
+static inline char *_ui64toa(uint64_t value, char *buffer, int radix) {
+    if (!buffer) return NULL;
+    if (radix == 10) {
+        sprintf(buffer, "%llu", (unsigned long long)value);
+    } else if (radix == 16) {
+        sprintf(buffer, "%llx", (unsigned long long)value);
+    } else if (radix == 8) {
+        sprintf(buffer, "%llo", (unsigned long long)value);
+    } else {
+        char *p = buffer;
+        char temp[64];
+        int i = 0;
+        do {
+            int rem = (int)(value % radix);
+            temp[i++] = (rem < 10) ? ('0' + rem) : ('a' + rem - 10);
+            value /= radix;
+        } while (value > 0);
+        while (i > 0) {
+            *p++ = temp[--i];
+        }
+        *p = '\0';
+    }
+    return buffer;
+}
+
+static inline char *_i64toa(int64_t value, char *buffer, int radix) {
+    if (!buffer) return NULL;
+    if (radix == 10) {
+        sprintf(buffer, "%lld", (long long)value);
+    } else {
+        return _ui64toa((uint64_t)value, buffer, radix);
+    }
+    return buffer;
+}
+
 // Desactivar static_assert específicos de tamaño de puntero de 32 bits en arquitecturas 64-bit
 #if defined(__LP64__) || defined(_WIN64) || defined(__aarch64__)
 #define static_assert(...)
