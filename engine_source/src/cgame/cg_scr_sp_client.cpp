@@ -22,7 +22,13 @@
 #include <clientscript/cscr_stringlist.h>
 #include <stringed/stringed_hooks.h>
 #include <universal/com_math_anglevectors.h>
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
 #include <emmintrin.h>
+#define BO1_ROUND_TIME(t) _mm_cvtsd_si32(_mm_set_sd((double)(t) + 9.313225746154785e-10))
+#else
+#include <cmath>
+#define BO1_ROUND_TIME(t) ((int)lrintf((float)(t)))
+#endif
 #include <qcommon/cmd.h>
 #include <qcommon/com_clients.h>
 #include <client_mp/cl_input_mp.h>
@@ -114,7 +120,7 @@ static void __cdecl CScr_TriggerFX()
     {
         // SP stores the product as float, adds the double epsilon, then uses FISTP.
         float time = (float)(Scr_GetFloat(1, SCRIPTINSTANCE_CLIENT) * 1000.0f);
-        cent->nextState.time2 = _mm_cvtsd_si32(_mm_set_sd((double)time + 9.313225746154785e-10));
+        cent->nextState.time2 = BO1_ROUND_TIME(time);
         return;
     }
     cent->nextState.time2 = cgameGlob->time;
@@ -831,7 +837,7 @@ static void __cdecl CScr_SetShaderConstant(scr_entref_t entref)
 static int CScr_SP_VisionSeconds(unsigned int index)
 {
     float ms = (float)(Scr_GetFloat(index, SCRIPTINSTANCE_CLIENT) * 1000.0f);
-    return _mm_cvtsd_si32(_mm_set_sd((double)ms + 9.313225746154785e-10));
+    return BO1_ROUND_TIME(ms);
 }
 
 // zombies: setvolfog (SP 0x00895340): BO1Zombies's CScr_SetClientVolumetricFog checks, but no cg_clientVolFog store:
