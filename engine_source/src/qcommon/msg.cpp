@@ -4,6 +4,7 @@
 #include "sv_msg_write.h"
 
 #include <cstring>
+#include <cmath>
 
 // zombies: snapshot float quantization (SP 0x00536E90). The decompiler turned
 // FISTP into a truncating cast, shifting negative integer origins by one unit.
@@ -11,6 +12,7 @@
 int __cdecl MSG_RoundFloatToInt(float value)
 {
     const double bias = 9.313225746154785e-10;
+#if defined(_MSC_VER) && (defined(_M_IX86) || defined(_X86_))
     int result;
     __asm
     {
@@ -19,6 +21,9 @@ int __cdecl MSG_RoundFloatToInt(float value)
         fistp result
     }
     return result;
+#else
+    return (int)lrint((double)value + bias);
+#endif
 }
 
 int __cdecl MSG_ReadValueNoXor(msg_t *msg, int bits)
