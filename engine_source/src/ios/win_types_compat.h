@@ -33,6 +33,7 @@ struct HMODULE__ { int unused; };
 typedef struct HMODULE__* HMODULE;
 
 typedef void*         LPVOID;
+typedef void*         PVOID;
 typedef const void*   LPCVOID;
 typedef char*         LPSTR;
 typedef const char*   LPCSTR;
@@ -132,11 +133,20 @@ static inline void DeleteCriticalSection(CRITICAL_SECTION *cs) {
     pthread_mutex_destroy(cs);
 }
 
-// ----- Operaciones atómicas -----
+// ----- Operaciones atómicas y barreras de memoria -----
 #define InterlockedIncrement(x) __sync_add_and_fetch((x), 1)
 #define InterlockedDecrement(x) __sync_sub_and_fetch((x), 1)
 #define InterlockedExchange(target, value) __sync_lock_test_and_set((target), (value))
 #define InterlockedCompareExchange(destination, exchange, comperand) __sync_val_compare_and_swap((destination), (comperand), (exchange))
+#define _InterlockedCompareExchange(destination, exchange, comperand) __sync_val_compare_and_swap((destination), (comperand), (exchange))
+
+#ifndef MemoryBarrier
+#define MemoryBarrier() __sync_synchronize()
+#endif
+
+#ifndef _ReadWriteBarrier
+#define _ReadWriteBarrier() __asm__ __volatile__("" ::: "memory")
+#endif
 
 // ----- Hilos y tiempo -----
 static inline void Sleep(DWORD dwMilliseconds) {
