@@ -196,6 +196,7 @@ typedef void*         PVOID;
 typedef const void*   LPCVOID;
 typedef char*         LPSTR;
 typedef const char*   LPCSTR;
+typedef char          CHAR;
 typedef wchar_t       WCHAR;
 typedef wchar_t*      LPWSTR;
 typedef const wchar_t* LPCWSTR;
@@ -446,6 +447,23 @@ static inline BOOL SystemTimeToFileTime(const SYSTEMTIME *lpSystemTime, LPFILETI
     return 1;
 }
 
+static inline void GetSystemTime(SYSTEMTIME *lpSystemTime) {
+    if (!lpSystemTime) return;
+    time_t rawtime;
+    time(&rawtime);
+    struct tm *ti = gmtime(&rawtime);
+    if (ti) {
+        lpSystemTime->wYear = ti->tm_year + 1900;
+        lpSystemTime->wMonth = ti->tm_mon + 1;
+        lpSystemTime->wDayOfWeek = ti->tm_wday;
+        lpSystemTime->wDay = ti->tm_mday;
+        lpSystemTime->wHour = ti->tm_hour;
+        lpSystemTime->wMinute = ti->tm_min;
+        lpSystemTime->wSecond = ti->tm_sec;
+        lpSystemTime->wMilliseconds = 0;
+    }
+}
+
 #ifndef TRUE
 #define TRUE 1
 #endif
@@ -679,6 +697,66 @@ static inline HANDLE OpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWO
 
 static inline void OutputDebugStringA(const char *lpOutputString) {
     fputs(lpOutputString, stderr);
+}
+
+#ifndef MAX_PATH
+#define MAX_PATH 260
+#endif
+
+typedef struct _WIN32_FIND_DATAA {
+    DWORD    dwFileAttributes;
+    FILETIME ftCreationTime;
+    FILETIME ftLastAccessTime;
+    FILETIME ftLastWriteTime;
+    DWORD    nFileSizeHigh;
+    DWORD    nFileSizeLow;
+    DWORD    dwReserved0;
+    DWORD    dwReserved1;
+    CHAR     cFileName[MAX_PATH];
+    CHAR     cAlternateFileName[14];
+} WIN32_FIND_DATAA, *PWIN32_FIND_DATAA, *LPWIN32_FIND_DATAA;
+
+static inline HANDLE FindFirstFileA(LPCSTR lpFileName, LPWIN32_FIND_DATAA lpFindFileData) {
+    (void)lpFileName; (void)lpFindFileData;
+    return (HANDLE)(intptr_t)-1;
+}
+
+static inline BOOL FindNextFileA(HANDLE hFindFile, LPWIN32_FIND_DATAA lpFindFileData) {
+    (void)hFindFile; (void)lpFindFileData;
+    return 0;
+}
+
+static inline BOOL FindClose(HANDLE hFindFile) {
+    (void)hFindFile;
+    return 1;
+}
+
+static inline BOOL DeleteFileA(LPCSTR lpFileName) {
+    if (!lpFileName) return 0;
+    return unlink(lpFileName) == 0;
+}
+
+static inline BOOL RemoveDirectoryA(LPCSTR lpPathName) {
+    if (!lpPathName) return 0;
+    return rmdir(lpPathName) == 0;
+}
+
+static inline DWORD GetFullPathNameA(LPCSTR lpFileName, DWORD nBufferLength, LPSTR lpBuffer, LPSTR *lpFilePart) {
+    if (!lpFileName || !lpBuffer || nBufferLength == 0) return 0;
+    if (realpath(lpFileName, lpBuffer)) {
+        if (lpFilePart) {
+            char *lastSlash = strrchr(lpBuffer, '/');
+            *lpFilePart = lastSlash ? lastSlash + 1 : lpBuffer;
+        }
+        return (DWORD)strlen(lpBuffer);
+    }
+    strncpy(lpBuffer, lpFileName, nBufferLength - 1);
+    lpBuffer[nBufferLength - 1] = '\0';
+    if (lpFilePart) {
+        char *lastSlash = strrchr(lpBuffer, '/');
+        *lpFilePart = lastSlash ? lastSlash + 1 : lpBuffer;
+    }
+    return (DWORD)strlen(lpBuffer);
 }
 
 #ifndef CREATE_SUSPENDED
