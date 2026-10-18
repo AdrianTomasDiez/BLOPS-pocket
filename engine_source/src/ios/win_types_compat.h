@@ -18,6 +18,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <time.h>
+#include <sys/time.h>
 
 #ifndef _time64
 #define _time64 time
@@ -184,6 +185,46 @@ typedef struct _OVERLAPPED {
 } OVERLAPPED, *LPOVERLAPPED;
 
 typedef void (*LPOVERLAPPED_COMPLETION_ROUTINE)(DWORD dwErrorCode, DWORD dwNumberOfBytesTransfered, LPOVERLAPPED lpOverlapped);
+
+typedef struct _FILETIME {
+    DWORD dwLowDateTime;
+    DWORD dwHighDateTime;
+} FILETIME, *PFILETIME, *LPFILETIME;
+
+typedef struct _SYSTEMTIME {
+    WORD wYear;
+    WORD wMonth;
+    WORD wDayOfWeek;
+    WORD wDay;
+    WORD wHour;
+    WORD wMinute;
+    WORD wSecond;
+    WORD wMilliseconds;
+} SYSTEMTIME, *PSYSTEMTIME, *LPSYSTEMTIME;
+
+static inline void GetSystemTimeAsFileTime(LPFILETIME lpSystemTimeAsFileTime) {
+    if (!lpSystemTimeAsFileTime) return;
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    uint64_t t = ((uint64_t)tv.tv_sec * 10000000ULL) + ((uint64_t)tv.tv_usec * 10ULL) + 116444736000000000ULL;
+    lpSystemTimeAsFileTime->dwLowDateTime = (DWORD)t;
+    lpSystemTimeAsFileTime->dwHighDateTime = (DWORD)(t >> 32);
+}
+
+static inline LONG CompareFileTime(const FILETIME *lpFileTime1, const FILETIME *lpFileTime2) {
+    if (!lpFileTime1 || !lpFileTime2) return 0;
+    uint64_t t1 = ((uint64_t)lpFileTime1->dwHighDateTime << 32) | lpFileTime1->dwLowDateTime;
+    uint64_t t2 = ((uint64_t)lpFileTime2->dwHighDateTime << 32) | lpFileTime2->dwLowDateTime;
+    if (t1 < t2) return -1;
+    if (t1 > t2) return 1;
+    return 0;
+}
+
+static inline BOOL SystemTimeToFileTime(const SYSTEMTIME *lpSystemTime, LPFILETIME lpFileTime) {
+    if (!lpFileTime) return 0;
+    GetSystemTimeAsFileTime(lpFileTime);
+    return 1;
+}
 
 struct HMONITOR__ { int unused; };
 typedef struct HMONITOR__* HMONITOR;
