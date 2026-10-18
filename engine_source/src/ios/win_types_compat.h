@@ -519,6 +519,7 @@ static inline void OutputDebugStringA(const char *lpOutputString) {
 #define INFINITE 0xFFFFFFFF
 #endif
 
+typedef struct Win32Event Win32Event;
 struct Win32Event {
     pthread_mutex_t mutex;
     pthread_cond_t cond;
@@ -607,6 +608,7 @@ static inline DWORD WaitForSingleObject(HANDLE hHandle, DWORD dwMilliseconds) {
 
 typedef DWORD (WINAPI *LPTHREAD_START_ROUTINE)(LPVOID lpThreadParameter);
 
+typedef struct Win32Thread Win32Thread;
 struct Win32Thread {
     pthread_t thread;
     LPTHREAD_START_ROUTINE startRoutine;
