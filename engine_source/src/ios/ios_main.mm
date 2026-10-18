@@ -105,10 +105,6 @@ void bo1_ios_frame(void)
 {
     if (s_engineInitialized)
     {
-        threadId[0] = Sys_GetCurrentThreadId();
-        if (!g_dwTlsIndex) {
-            g_dwTlsIndex = g_threadValues[0];
-        }
         Com_Frame();
     }
 }
