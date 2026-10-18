@@ -121,23 +121,33 @@ class EngineViewController: UIViewController {
         return .landscape
     }
 
+    private var engineReady = false
+
     private func setupEngine() {
         guard let folder = gameFolderURL else { return }
         print("[Engine] Inicializando motor nativo BO1 Zombies con carpeta: \(folder.path)")
-
-        folder.path.withCString { cPath in
-            bo1_ios_init(cPath)
-        }
 
         // Configurar CADisplayLink para el refresco por frame a 60/120 Hz
         displayLink = CADisplayLink(target: self, selector: #selector(engineTick))
         displayLink?.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 120, preferred: 60)
         displayLink?.add(to: .main, forMode: .common)
+
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            folder.path.withCString { cPath in
+                bo1_ios_init(cPath)
+            }
+            DispatchQueue.main.async {
+                self?.engineReady = true
+                print("[Engine] Motor de Treyarch listo. Iniciando rendering de Kino der Toten.")
+            }
+        }
     }
 
     @objc private func engineTick() {
-        // En cada tick de refresco de pantalla se llama al Com_Frame() del motor C++
-        bo1_ios_frame()
+        // En cada tick de refresco de pantalla se llama al Com_Frame() del motor C++ una vez inicializado
+        if engineReady {
+            bo1_ios_frame()
+        }
     }
 
     deinit {

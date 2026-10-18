@@ -883,6 +883,17 @@ static inline HANDLE CreateFileA(const char *lpFileName, DWORD dwDesiredAccess, 
     int flags = O_RDONLY;
     if (dwDesiredAccess & 0x40000000) {
         flags = O_RDWR | O_CREAT;
+        // Asegurar que el directorio padre existe para escrituras
+        char dir[1024];
+        strncpy(dir, path, sizeof(dir) - 1);
+        dir[sizeof(dir) - 1] = '\0';
+        char *lastSlash = strrchr(dir, '/');
+        if (lastSlash) {
+            *lastSlash = '\0';
+            char tmp[1024];
+            snprintf(tmp, sizeof(tmp), "mkdir -p \"%s\"", dir);
+            system(tmp);
+        }
     }
     int fd = open(path, flags, 0644);
     if (fd < 0) {

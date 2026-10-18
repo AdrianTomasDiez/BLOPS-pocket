@@ -102,6 +102,17 @@ int __cdecl Sys_Milliseconds()
 void __cdecl Sys_Print(char *msg)
 {
     fputs(msg, stdout);
+
+    const char *home = getenv("HOME");
+    if (home) {
+        char logPath[1024];
+        snprintf(logPath, sizeof(logPath), "%s/Documents/Games/bo1_console.log", home);
+        FILE *f = fopen(logPath, "a");
+        if (f) {
+            fputs(msg, f);
+            fclose(f);
+        }
+    }
 }
 
 void Sys_Error(char *error, ...)
@@ -113,6 +124,18 @@ void Sys_Error(char *error, ...)
     va_end(argptr);
 
     fprintf(stderr, "\n[BO1 NATIVE FATAL ERROR]: %s\n\n", buffer);
+
+    const char *home = getenv("HOME");
+    if (home) {
+        char logPath[1024];
+        snprintf(logPath, sizeof(logPath), "%s/Documents/Games/bo1_error.log", home);
+        FILE *f = fopen(logPath, "a");
+        if (f) {
+            fprintf(f, "\n[BO1 NATIVE FATAL ERROR]: %s\n\n", buffer);
+            fclose(f);
+        }
+    }
+
     abort();
 }
 
