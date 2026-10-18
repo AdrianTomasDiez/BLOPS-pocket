@@ -129,12 +129,6 @@ if(APPLE)
         "-framework AudioToolbox"
         "-framework AVFoundation"
     )
-    set_target_properties(BO1Zombies PROPERTIES
-        MACOSX_BUNDLE TRUE
-        MACOSX_BUNDLE_GUI_IDENTIFIER "com.adriantomasdiez.blopspocket"
-        MACOSX_BUNDLE_BUNDLE_NAME "BLOPS pocket"
-        XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
-    )
 endif()
 
 # Set the VS debugger's working directory to the build-output dir for whichever config is active 

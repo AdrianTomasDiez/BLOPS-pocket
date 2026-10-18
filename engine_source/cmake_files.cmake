@@ -3007,7 +3007,11 @@ else()
 	)
 endif()
 
-add_executable(${BIN_NAME}
+if(APPLE)
+	add_library(${BIN_NAME} STATIC
+else()
+	add_executable(${BIN_NAME}
+endif()
 	${DW_DEMONWAREROOT_FILES}
 	${DW_BDCORE_FILES}
 	${DW_BDPLATFORM_FILES}

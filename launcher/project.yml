@@ -9,12 +9,23 @@ targets:
     platform: iOS
     sources:
       - BLOPSPocket
+    dependencies:
+      - framework: Metal.framework
+      - framework: MetalKit.framework
+      - framework: GameController.framework
+      - framework: AudioToolbox.framework
+      - framework: AVFoundation.framework
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.adriantomasdiez.blopspocket
         MARKETING_VERSION: "0.0.1"
         CURRENT_PROJECT_VERSION: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        LIBRARY_SEARCH_PATHS:
+          - "$(SRCROOT)/../engine_build/build/Build/Products/Release-iphoneos"
+          - "$(SRCROOT)/../engine_build/Release-iphoneos"
+        OTHER_LDFLAGS:
+          - "-weak_library $(SRCROOT)/../engine_build/build/Build/Products/Release-iphoneos/libBO1Zombies.a"
     info:
       path: BLOPSPocket/Info.plist
       properties:

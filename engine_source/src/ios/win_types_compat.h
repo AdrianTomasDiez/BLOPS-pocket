@@ -19,6 +19,8 @@
 #include <arpa/inet.h>
 #include <time.h>
 #include <sys/time.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <ctype.h>
 #include <strings.h>
 #include <setjmp.h>
