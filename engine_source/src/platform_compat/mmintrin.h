@@ -8,6 +8,7 @@
 typedef uint64_t __m64;
 
 static inline void _mm_empty(void) {}
+static inline void _m_empty(void) {}
 
 #endif // __arm64__
 

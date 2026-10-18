@@ -965,6 +965,8 @@ static inline HWND CreateWindowExA(DWORD dwExStyle, const char *lpClassName, con
 #ifndef _mm_prefetch
 #define _mm_prefetch(p, hint) __builtin_prefetch((p))
 #endif
+static inline void _mm_empty(void) {}
+static inline void _m_empty(void) {}
 #endif
 
 #endif // __APPLE__
