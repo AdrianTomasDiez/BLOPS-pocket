@@ -376,6 +376,89 @@ static inline LONG GetWindowLongA(HWND hWnd, int nIndex) {
     return 0;
 }
 
+static inline LONG SetWindowLongA(HWND hWnd, int nIndex, LONG dwNewLong) {
+    (void)hWnd; (void)nIndex; (void)dwNewLong;
+    return 0;
+}
+
+#ifndef WS_POPUP
+#define WS_POPUP 0x80000000L
+#endif
+
+#ifndef SWP_NOSIZE
+#define SWP_NOSIZE 0x0001
+#endif
+#ifndef SWP_NOMOVE
+#define SWP_NOMOVE 0x0002
+#endif
+#ifndef SWP_NOZORDER
+#define SWP_NOZORDER 0x0004
+#endif
+#ifndef SWP_SHOWWINDOW
+#define SWP_SHOWWINDOW 0x0040
+#endif
+
+static inline BOOL AdjustWindowRectEx(LPRECT lpRect, DWORD dwStyle, BOOL bMenu, DWORD dwExStyle) {
+    (void)lpRect; (void)dwStyle; (void)bMenu; (void)dwExStyle;
+    return 1;
+}
+
+static inline BOOL SetWindowPos(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags) {
+    (void)hWnd; (void)hWndInsertAfter; (void)X; (void)Y; (void)cx; (void)cy; (void)uFlags;
+    return 1;
+}
+
+static inline BOOL ShowWindow(HWND hWnd, int nCmdShow) {
+    (void)hWnd; (void)nCmdShow;
+    return 1;
+}
+
+static inline BOOL IsWindow(HWND hWnd) {
+    (void)hWnd;
+    return 1;
+}
+
+static inline BOOL DestroyWindow(HWND hWnd) {
+    (void)hWnd;
+    return 1;
+}
+
+static inline BOOL IsIconic(HWND hWnd) {
+    (void)hWnd;
+    return 0;
+}
+
+static inline HWND GetForegroundWindow(void) {
+    static struct HWND__ dummyHwnd;
+    return &dummyHwnd;
+}
+
+static inline BOOL IsProcessDPIAware(void) {
+    return 1;
+}
+
+typedef const RECT *LPCRECT;
+typedef BOOL (*MONITORENUMPROC)(HMONITOR, HDC, LPRECT, LPARAM);
+
+static inline BOOL EnumDisplayMonitors(HDC hdc, LPCRECT lprcClip, MONITORENUMPROC lpfnEnum, LPARAM dwData) {
+    (void)hdc; (void)lprcClip;
+    if (lpfnEnum) {
+        RECT rc = { 0, 0, 1920, 1080 };
+        lpfnEnum((HMONITOR)(intptr_t)1, (HDC)(intptr_t)1, &rc, dwData);
+    }
+    return 1;
+}
+
+static inline HMODULE GetModuleHandleA(LPCSTR lpModuleName) {
+    (void)lpModuleName;
+    return (HMODULE)(intptr_t)1;
+}
+
+static inline void *GetProcAddress(HMODULE hModule, LPCSTR lpProcName) {
+    (void)hModule; (void)lpProcName;
+    return NULL;
+}
+
 typedef struct tagMSG {
     HWND   hwnd;
     UINT   message;
