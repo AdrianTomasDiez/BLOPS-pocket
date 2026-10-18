@@ -63,6 +63,9 @@ typedef int (*_CoreCrtNonSecureSearchSortCompareFunction)(const void *, const vo
 #define _vsnprintf vsnprintf
 #endif
 
+#define strcpy_s(dst, size, src) strncpy((dst), (src), (size))
+#define sprintf_s(buf, size, ...) snprintf((buf), (size), __VA_ARGS__)
+
 #ifndef _stricmp
 #define _stricmp strcasecmp
 #endif
@@ -205,6 +208,7 @@ typedef DWORD*        LPDWORD;
 typedef BOOL*         LPBOOL;
 typedef BYTE*         LPBYTE;
 typedef LONG*         PLONG;
+typedef ULONG*        PULONG;
 
 struct NVDX_ObjectHandle__ { int unused; };
 typedef struct NVDX_ObjectHandle__* NVDX_ObjectHandle;

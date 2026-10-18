@@ -4871,6 +4871,7 @@ long long s_ktRefreshQpc;
 int s_ktRefreshes;
 bool s_ktRefreshed; // this frame (the snapshot costs ~25 ms on the render thread)
 
+#ifdef _WIN32
 void RB_BO1ThreadStart(HANDLE h, char *out, int size)
 {
     typedef LONG(WINAPI * NtQueryInformationThreadFn)(HANDLE, int, PVOID, ULONG, PULONG);
@@ -4897,7 +4898,6 @@ void RB_BO1ThreadStart(HANDLE h, char *out, int size)
     }
 }
 
-#ifdef _WIN32
 void RB_BO1ThreadsRefresh()
 {
     HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
@@ -5000,6 +5000,7 @@ void RB_BO1ThreadsBefore(long long now, double toMs) { (void)now; (void)toMs; }
 void RB_BO1ThreadsAfter(char *out, int size, double cyclesPerMs) { (void)cyclesPerMs; if (out && size > 0) out[0] = 0; }
 #endif
 
+#ifdef _WIN32
 long long RB_BO1PresentBegin()
 {
     if (!s_kgqInit)
@@ -5073,6 +5074,10 @@ void RB_BO1PresentEnd(long long presentStart)
     RB_BO1GpuPoll();
     RB_BO1GpuFrameBegin();
 }
+#else
+long long RB_BO1PresentBegin() { return 0; }
+void RB_BO1PresentEnd(long long presentStart) { (void)presentStart; }
+#endif
 }
 
 // First issue per frame of GPU phase mark idx (the main view; later views of the frame do not move it).
@@ -5114,6 +5119,7 @@ static bool RB_BO1TestLostDeviceBegin()
     return true;
 }
 
+#ifdef _WIN32
 static HRESULT RB_BO1TestLostDeviceFilter(HRESULT hr)
 {
     if ( !s_bo1TestLostActive || hr < 0 )
@@ -5229,6 +5235,10 @@ static void RB_BO1FocusLossFrame(HRESULT presentHr)
     PostMessageA(hwnd, WM_ACTIVATE, WA_ACTIVE, 0);
     s_bo1FocusPhase = 2;
 }
+#else
+static HRESULT RB_BO1TestLostDeviceFilter(HRESULT hr) { return hr; }
+static void RB_BO1FocusLossFrame(HRESULT presentHr) { (void)presentHr; }
+#endif
 
 void RB_SwapBuffers()
 {
