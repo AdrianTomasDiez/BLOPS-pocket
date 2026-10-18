@@ -1,4 +1,6 @@
 // (Aislop) - (from BO1Cod4)
+#if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64)
+
 // shared between KCOD4 and KBLOPS.
 // (COD4) Before ~(580us) -- After ~(25us).
 // (BLOPS) Before ~(85us) -- After ~(45us).
@@ -473,3 +475,5 @@ void __cdecl R_SkinXSurfaceSkinnedSse(const XSurface *xsurf, const DObjSkelMat *
             R_SkinXSurfaceRigidSse(xsurf, xsurf->vertCount, boneMatrix, skinVerticesOut);
     }
 }
+
+#endif // __i386__ || __x86_64__
