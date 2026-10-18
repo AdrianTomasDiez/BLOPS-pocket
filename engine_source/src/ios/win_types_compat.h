@@ -53,6 +53,8 @@ static inline char *_ctime64(const int64_t *t) {
 #include <new>
 #endif
 
+typedef int (*_CoreCrtNonSecureSearchSortCompareFunction)(const void *, const void *);
+
 #ifndef _snprintf
 #define _snprintf snprintf
 #endif

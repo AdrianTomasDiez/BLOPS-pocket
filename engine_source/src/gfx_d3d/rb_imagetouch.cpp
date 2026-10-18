@@ -36,7 +36,7 @@ void __cdecl RB_TouchAllImages()
   if ( tess.indexCount )
     RB_EndTessSurface();
   R_GetImageList(&imageList);
-  qsort(imageList.image, imageList.count, 4u, (_CoreCrtNonSecureSearchSortCompareFunction)RB_CompareTouchImages);
+  qsort(imageList.image, imageList.count, sizeof(GfxImage *), (_CoreCrtNonSecureSearchSortCompareFunction)RB_CompareTouchImages);
   v9 = 0;
   for ( i = 0; i < imageList.count && imageList.image[i]->semantic; ++i )
   {
@@ -87,6 +87,19 @@ void __cdecl RB_TouchImage(GfxImage *image)
 
 int __cdecl RB_CompareTouchImages(int *e0, int *e1)
 {
+#if defined(__LP64__) || defined(_WIN64) || defined(__aarch64__)
+    GfxImage *img0 = *(GfxImage **)e0;
+    GfxImage *img1 = *(GfxImage **)e1;
+    if ( !img1 || !img1->semantic )
+        return -1;
+    if ( !img0 || !img0->semantic )
+        return 1;
+    if ( img1->cardMemory.platform[0] != img0->cardMemory.platform[0] )
+        return img1->cardMemory.platform[0] - img0->cardMemory.platform[0];
+    if ( img0->semantic == img1->semantic )
+        return 0;
+    return (int)img0->semantic - (int)img1->semantic;
+#else
     int image; // [esp+0h] [ebp-Ch]
     int image_4; // [esp+4h] [ebp-8h]
 
@@ -101,5 +114,6 @@ int __cdecl RB_CompareTouchImages(int *e0, int *e1)
     if ( *(unsigned __int8 *)(image + 5) == *(unsigned __int8 *)(image_4 + 5) )
         return 0;
     return *(unsigned __int8 *)(image + 5) - *(unsigned __int8 *)(image_4 + 5);
+#endif
 }
 
