@@ -209,12 +209,6 @@ static inline LONG CompareFileTime(const FILETIME *lpFileTime1, const FILETIME *
     return 0;
 }
 
-static inline BOOL SystemTimeToFileTime(const SYSTEMTIME *lpSystemTime, LPFILETIME lpFileTime) {
-    if (!lpFileTime) return 0;
-    GetSystemTimeAsFileTime(lpFileTime);
-    return 1;
-}
-
 struct HMONITOR__ { int unused; };
 typedef struct HMONITOR__* HMONITOR;
 
@@ -268,6 +262,12 @@ typedef struct _SYSTEMTIME {
     WORD wSecond;
     WORD wMilliseconds;
 } SYSTEMTIME, *PSYSTEMTIME, *LPSYSTEMTIME;
+
+static inline BOOL SystemTimeToFileTime(const SYSTEMTIME *lpSystemTime, LPFILETIME lpFileTime) {
+    if (!lpFileTime) return 0;
+    GetSystemTimeAsFileTime(lpFileTime);
+    return 1;
+}
 
 #ifndef TRUE
 #define TRUE 1
