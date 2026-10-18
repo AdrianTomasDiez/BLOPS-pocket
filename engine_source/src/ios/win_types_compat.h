@@ -180,6 +180,9 @@ typedef struct HINSTANCE__* HINSTANCE;
 struct HMODULE__ { int unused; };
 typedef struct HMODULE__* HMODULE;
 
+struct HMENU__ { int unused; };
+typedef struct HMENU__* HMENU;
+
 typedef void*         LPVOID;
 typedef void*         PVOID;
 typedef const void*   LPCVOID;
