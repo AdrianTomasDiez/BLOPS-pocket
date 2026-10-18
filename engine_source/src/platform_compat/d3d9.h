@@ -341,6 +341,16 @@ typedef struct _D3DSURFACE_DESC {
     UINT                Height;
 } D3DSURFACE_DESC;
 
+typedef struct _D3DVOLUME_DESC {
+    D3DFORMAT           Format;
+    DWORD               Type;
+    DWORD               Usage;
+    D3DPOOL             Pool;
+    UINT                Width;
+    UINT                Height;
+    UINT                Depth;
+} D3DVOLUME_DESC;
+
 typedef struct _D3DGAMMARAMP {
     WORD                red[256];
     WORD                green[256];
@@ -508,10 +518,24 @@ struct IDirect3DTexture9 : public IDirect3DBaseTexture9 {
 };
 struct IDirect3DCubeTexture9 : public IDirect3DBaseTexture9 {
     virtual HRESULT GetCubeMapSurface(D3DCUBEMAP_FACES FaceType, UINT Level, IDirect3DSurface9 **ppCubeMapSurface) { return 0; }
+    virtual HRESULT GetLevelDesc(UINT Level, D3DSURFACE_DESC *pDesc) {
+        if (pDesc) {
+            memset(pDesc, 0, sizeof(*pDesc));
+            pDesc->Format = D3DFMT_A8R8G8B8;
+        }
+        return 0;
+    }
     virtual HRESULT LockRect(D3DCUBEMAP_FACES FaceType, UINT Level, D3DLOCKED_RECT *pLockedRect, const RECT *pRect, DWORD Flags) { return 0; }
     virtual HRESULT UnlockRect(D3DCUBEMAP_FACES FaceType, UINT Level) { return 0; }
 };
 struct IDirect3DVolumeTexture9 : public IDirect3DBaseTexture9 {
+    virtual HRESULT GetLevelDesc(UINT Level, D3DVOLUME_DESC *pDesc) {
+        if (pDesc) {
+            memset(pDesc, 0, sizeof(*pDesc));
+            pDesc->Format = D3DFMT_A8R8G8B8;
+        }
+        return 0;
+    }
     virtual HRESULT LockBox(UINT Level, D3DLOCKED_BOX *pLockedVolumeBox, const D3DBOX *pBox, DWORD Flags) {
         if (pLockedVolumeBox) {
             memset(pLockedVolumeBox, 0, sizeof(*pLockedVolumeBox));
