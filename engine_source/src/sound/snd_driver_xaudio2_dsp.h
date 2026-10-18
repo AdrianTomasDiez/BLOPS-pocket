@@ -7,6 +7,7 @@
 
 #define SDXA2_MAX_FRAME_COUNT 480
 
+#if !defined(__APPLE__)
 static const GUID HACK_IID_IXAPOParameters = { 0xA90BC001, 0xE897, 0xE897, { 0x55, 0xE4, 0x9E, 0x47, 0x00, 0x00, 0x00, 0x01 } };
 
 //struct SDXA2Effect : public CXAPOParametersBase  // sizeof=0x3C80
@@ -87,6 +88,7 @@ struct SDXA2Effect : public CXAPOBase, public IXAPOParameters // sizeof=0x3C80
     
     virtual void Process(unsigned int channelCount, unsigned int frameCount, float *data) = 0;
 };
+#endif // !__APPLE__
 
 struct snd_dsp_master_params // sizeof=0x60
 {                                       // XREF: SDXA2MasterBusEffect/r
@@ -255,6 +257,7 @@ struct snd_dsp_source_state // sizeof=0x4C
     snd_dsp_futz_state futz;
 };
 
+#if !defined(__APPLE__)
 struct SDXA2SourceEffect : public SDXA2Effect // sizeof=0x5B80
 {                                       // XREF: SoundState/r
     snd_dsp_source_params params;
@@ -285,6 +288,7 @@ struct SDXA2MasterNoVoiceBusEffect : SDXA2Effect // sizeof=0xB900
         float *data);
     void STDMETHODCALLTYPE SetParameters(const void *pParams, unsigned int cbParams);
 };
+#endif // !__APPLE__
 
 
 

@@ -2520,6 +2520,12 @@ source_group("sound" FILES ${SRC_SOUND})
 set(SOUND_FILES
 	${SRC_SOUND}
 )
+if(APPLE)
+	list(REMOVE_ITEM SOUND_FILES
+		"${SRC_DIR}/sound/snd_driver_xaudio2.cpp"
+		"${SRC_DIR}/sound/snd_driver_xaudio2_dsp.cpp"
+	)
+endif()
 
 # ----- src/speex -----
 set(SRC_SPEEX

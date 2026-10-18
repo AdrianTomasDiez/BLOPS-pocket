@@ -5,7 +5,7 @@
 #include <ios/win_types_compat.h>
 #include <platform_compat/d3d9.h>
 
-typedef struct WAVEFORMATEX {
+typedef struct tWAVEFORMATEX {
     WORD        wFormatTag;
     WORD        nChannels;
     DWORD       nSamplesPerSec;
@@ -13,9 +13,7 @@ typedef struct WAVEFORMATEX {
     WORD        nBlockAlign;
     WORD        wBitsPerSample;
     WORD        cbSize;
-} WAVEFORMATEX;
-
-typedef struct tWAVEFORMATEX WAVEFORMATEX;
+} WAVEFORMATEX, *PWAVEFORMATEX, *LPWAVEFORMATEX;
 
 struct IXAudio2 : public IUnknown {};
 struct IXAudio2SourceVoice : public IUnknown {};
