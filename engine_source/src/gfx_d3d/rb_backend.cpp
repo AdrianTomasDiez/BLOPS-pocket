@@ -4691,7 +4691,9 @@ void __cdecl RB_EndFrame(char drawType)
     }
 }
 
+#ifdef _WIN32
 #include <tlhelp32.h>
+#endif
 
 // zombies (p1 chunk 25): per render frame GPU / Present timing and resource counts for bo1_frameperf (measurement
 // only; nothing runs unless g_bo1ProfOn). One ring entry per Present (universal/profile.h g_bo1RenderRing); the GPU
@@ -4895,6 +4897,7 @@ void RB_BO1ThreadStart(HANDLE h, char *out, int size)
     }
 }
 
+#ifdef _WIN32
 void RB_BO1ThreadsRefresh()
 {
     HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
@@ -4991,6 +4994,11 @@ void RB_BO1ThreadsAfter(char *out, int size, double cyclesPerMs)
         len += w;
     }
 }
+#else
+void RB_BO1ThreadsRefresh() {}
+void RB_BO1ThreadsBefore(long long now, double toMs) { (void)now; (void)toMs; }
+void RB_BO1ThreadsAfter(char *out, int size, double cyclesPerMs) { (void)cyclesPerMs; if (out && size > 0) out[0] = 0; }
+#endif
 
 long long RB_BO1PresentBegin()
 {

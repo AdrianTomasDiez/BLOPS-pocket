@@ -242,6 +242,17 @@ typedef struct _D3DVIEWPORT9 {
     float       MaxZ;
 } D3DVIEWPORT9;
 
+typedef struct _D3DSURFACE_DESC {
+    D3DFORMAT           Format;
+    DWORD               Type;
+    DWORD               Usage;
+    D3DPOOL             Pool;
+    D3DMULTISAMPLE_TYPE MultiSampleType;
+    DWORD               MultiSampleQuality;
+    UINT                Width;
+    UINT                Height;
+} D3DSURFACE_DESC;
+
 typedef struct _D3DGAMMARAMP {
     WORD                red[256];
     WORD                green[256];
@@ -389,7 +400,11 @@ struct IDirect3DSurface9 : public IDirect3DResource9 {
 struct IDirect3DBaseTexture9 : public IDirect3DResource9 {
     virtual void PreLoad() {}
 };
+typedef struct _D3DSURFACE_DESC _D3DSURFACE_DESC;
+
 struct IDirect3DTexture9 : public IDirect3DBaseTexture9 {
+    virtual DWORD GetLevelCount() { return 1; }
+    virtual HRESULT GetLevelDesc(UINT Level, D3DSURFACE_DESC *pDesc) { return 0; }
     virtual HRESULT GetSurfaceLevel(UINT Level, IDirect3DSurface9 **ppSurfaceLevel) { return 0; }
     virtual HRESULT LockRect(UINT Level, D3DLOCKED_RECT *pLockedRect, const RECT *pRect, DWORD Flags) { return 0; }
     virtual HRESULT UnlockRect(UINT Level) { return 0; }

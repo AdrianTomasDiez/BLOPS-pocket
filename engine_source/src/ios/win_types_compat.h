@@ -197,11 +197,17 @@ typedef uint64_t      UINT64;
 typedef int64_t       INT64;
 typedef uintptr_t     DWORD_PTR;
 typedef uintptr_t     ULONG_PTR;
+typedef uintptr_t     WPARAM;
+typedef intptr_t      LPARAM;
+typedef intptr_t      LRESULT;
 typedef int32_t       HRESULT;
 typedef DWORD*        LPDWORD;
 typedef BOOL*         LPBOOL;
 typedef BYTE*         LPBYTE;
 typedef LONG*         PLONG;
+
+struct NVDX_ObjectHandle__ { int unused; };
+typedef struct NVDX_ObjectHandle__* NVDX_ObjectHandle;
 
 typedef struct _OVERLAPPED {
     uintptr_t Internal;
