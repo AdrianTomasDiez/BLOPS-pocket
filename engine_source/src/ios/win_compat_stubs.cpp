@@ -215,12 +215,12 @@ void __cdecl Sys_DestroySplashWindow() {}
 void __cdecl Sys_HideSplashWindow() {}
 void __cdecl Sys_ShowConsole() {}
 void __cdecl Sys_UpdateHotkeyBlock() {}
-bool __cdecl Sys_DirectoryHasContents(char const *path) { return false; }
+int __cdecl Sys_DirectoryHasContents(const char *path) { return 0; }
 bool __cdecl Sys_HasConfigureChecksumChanged(int sum) { return false; }
-int __cdecl Sys_ListFiles(char *directory, char *extension, char *filter, int *numfiles, int flag)
+HunkUser **__cdecl Sys_ListFiles(char *directory, char *extension, char *filter, int *numfiles, int flag)
 {
     if (numfiles) *numfiles = 0;
-    return 0;
+    return nullptr;
 }
 unsigned int __cdecl Sys_MillisecondsRaw()
 {
