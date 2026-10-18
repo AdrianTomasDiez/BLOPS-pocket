@@ -726,6 +726,10 @@ static inline DWORD GetCurrentProcessId(void) {
     return (DWORD)getpid();
 }
 
+static inline void ExitProcess(UINT uExitCode) {
+    exit((int)uExitCode);
+}
+
 static inline BOOL CloseHandle(HANDLE hObject) {
     return 1;
 }
