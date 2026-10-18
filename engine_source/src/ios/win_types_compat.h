@@ -143,6 +143,31 @@ inline int _snprintf_s(char *buf, size_t size, size_t count, const char *format,
 #define strnicmp strncasecmp
 #endif
 
+#include <sys/stat.h>
+#include <time.h>
+
+#ifndef CreateDirectoryA
+static inline int CreateDirectoryA(const char *path, void *attr) {
+    (void)attr;
+    return mkdir(path, 0755) == 0;
+}
+#endif
+
+#ifndef localtime_s
+static inline int localtime_s(struct tm *result, const time_t *timep) {
+    if (!result || !timep) return -1;
+    return localtime_r(timep, result) != NULL ? 0 : -1;
+}
+#endif
+
+#ifndef fopen_s
+static inline int fopen_s(FILE **pFile, const char *filename, const char *mode) {
+    if (!pFile) return -1;
+    *pFile = fopen(filename, mode);
+    return (*pFile != NULL) ? 0 : -1;
+}
+#endif
+
 static inline char *_itoa(int value, char *buffer, int radix) {
     if (!buffer) return NULL;
     if (radix == 10) {
