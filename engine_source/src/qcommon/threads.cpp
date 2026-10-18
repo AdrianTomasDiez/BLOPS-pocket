@@ -683,6 +683,10 @@ bool __cdecl Sys_IsDatabaseThread()
 
 bool __cdecl Sys_IsMainThread()
 {
+#if defined(__APPLE__)
+    if (threadId[0] == 0 || Sys_GetCurrentThreadId() == threadId[0] || pthread_main_np())
+        return true;
+#endif
     return Sys_GetCurrentThreadId() == threadId[0];
 }
 
@@ -702,6 +706,9 @@ int __cdecl Sys_GetThreadContext()
         if ( threadId[i] == currThread )
             return i;
     }
+#if defined(__APPLE__)
+    return 0;
+#endif
     Com_Printf(1, "Current thread is not in thread table\n");
     if ( !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\qcommon\\threads.cpp", 2277, 0, "%s", "0") )
         __debugbreak();
@@ -710,13 +717,17 @@ int __cdecl Sys_GetThreadContext()
 
 void __cdecl Sys_SetValue(int valueIndex, void *data)
 {
-    //*(unsigned int *)(*(unsigned int *)(*((unsigned int *)NtCurrentTeb()->ThreadLocalStoragePointer + _tls_index) + 20) + 4 * valueIndex) = data;
+    if (!g_dwTlsIndex) {
+        g_dwTlsIndex = g_threadValues[0];
+    }
     g_dwTlsIndex[valueIndex] = data;
 }
 
 void *__cdecl Sys_GetValue(int valueIndex)
 {
-    //return *(void **)(*(unsigned int *)(*((unsigned int *)NtCurrentTeb()->ThreadLocalStoragePointer + _tls_index) + 20) + 4 * valueIndex);
+    if (!g_dwTlsIndex) {
+        g_dwTlsIndex = g_threadValues[0];
+    }
     return g_dwTlsIndex[valueIndex];
 }
 

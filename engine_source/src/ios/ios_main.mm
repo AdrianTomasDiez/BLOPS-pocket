@@ -37,52 +37,67 @@ void bo1_ios_init(const char *gameDirectory)
 
     const char *home = getenv("HOME");
     char logFile[1024];
+    char blopsLogFile[1024];
     if (home) {
+        char blopsDir[1024];
+        snprintf(blopsDir, sizeof(blopsDir), "%s/Documents/BLOPS", home);
+        mkdir(blopsDir, 0755);
         snprintf(logFile, sizeof(logFile), "%s/Documents/bo1_console.log", home);
+        snprintf(blopsLogFile, sizeof(blopsLogFile), "%s/Documents/BLOPS/bo1_console.log", home);
     } else if (gameDirectory) {
         snprintf(logFile, sizeof(logFile), "%s/bo1_console.log", gameDirectory);
+        blopsLogFile[0] = '\0';
     } else {
         logFile[0] = '\0';
+        blopsLogFile[0] = '\0';
     }
 
-    if (logFile[0]) {
-        FILE *f = fopen(logFile, "a");
-        if (f) {
-            fprintf(f, "\n=== [BO1 iOS Engine Init] gameDirectory: %s ===\n", gameDirectory ? gameDirectory : "(null)");
-            fclose(f);
+    auto logMsg = [&](const char *msg) {
+        NSLog(@"[BO1 iOS] %s", msg);
+        if (logFile[0]) {
+            FILE *f = fopen(logFile, "a");
+            if (f) { fprintf(f, "%s\n", msg); fflush(f); fclose(f); }
         }
-    }
+        if (blopsLogFile[0]) {
+            FILE *f2 = fopen(blopsLogFile, "a");
+            if (f2) { fprintf(f2, "%s\n", msg); fflush(f2); fclose(f2); }
+        }
+    };
 
-    NSLog(@"[BO1 iOS] Starting Treyarch BO1 Zombies engine at: %s", gameDirectory);
+    char startMsg[1024];
+    snprintf(startMsg, sizeof(startMsg), "\n=== [BO1 iOS Engine Init] gameDirectory: %s ===", gameDirectory ? gameDirectory : "(null)");
+    logMsg(startMsg);
 
     // Preparar línea de comandos para Treyarch engine
     static char s_cmdline[1024];
     snprintf(s_cmdline, sizeof(s_cmdline),
-             "+set fs_basepath \"%s\" +set fs_homepath \"%s\" +set developer 0 +set bo1_zombies 1 +set sv_cheats 1 +devmap zombie_theater",
+             "+set fs_basepath \"%s\" +set fs_homepath \"%s\" +set developer 0 +set bo1_zombies 1 +set sv_cheats 1 +set sys_smp_allowed 0 +set r_smp 0 +set com_introPlayed 1 +devmap zombie_theater",
              gameDirectory, gameDirectory);
 
-    // Inicializaciones de subsistemas
+    logMsg("[BO1 iOS Step 1/8] Sys_InitializeCriticalSections");
     Sys_InitializeCriticalSections();
+
+    logMsg("[BO1 iOS Step 2/8] Sys_InitMainThread");
     Sys_InitMainThread();
+
+    logMsg("[BO1 iOS Step 3/8] PMem_Init & track_init");
     PMem_Init();
     track_init();
 
+    logMsg("[BO1 iOS Step 4/8] Com_InitParse");
     Com_InitParse();
+
+    logMsg("[BO1 iOS Step 5/8] Dvar_Init");
     Dvar_Init();
+
+    logMsg("[BO1 iOS Step 6/8] InitTiming & Sys_FindInfo");
     InitTiming();
     Sys_FindInfo();
 
-    // Inicializar el ciclo central de Call of Duty
+    logMsg("[BO1 iOS Step 7/8] Com_Init(cmdline)");
     Com_Init(s_cmdline);
 
-    if (logFile[0]) {
-        FILE *f = fopen(logFile, "a");
-        if (f) {
-            fprintf(f, "=== [BO1 iOS Engine] Com_Init finalizado con éxito ===\n");
-            fclose(f);
-        }
-    }
-
+    logMsg("[BO1 iOS Step 8/8] === Com_Init finalizado con éxito ===");
     NSLog(@"[BO1 iOS] Engine initialized successfully for Kino der Toten!");
 }
 
@@ -90,6 +105,10 @@ void bo1_ios_frame(void)
 {
     if (s_engineInitialized)
     {
+        threadId[0] = Sys_GetCurrentThreadId();
+        if (!g_dwTlsIndex) {
+            g_dwTlsIndex = g_threadValues[0];
+        }
         Com_Frame();
     }
 }

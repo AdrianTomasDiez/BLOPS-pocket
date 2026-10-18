@@ -15,8 +15,9 @@
 
 scrEvaluateGlob_t gScrEvaluateGlob[2];
 
+#include <setjmp.h>
 int g_script_error_level[2];
-int g_script_error[2][33][16];
+jmp_buf g_script_error[2][33];
 
 int __cdecl Scr_CompareCanonicalStrings(unsigned int *arg1, unsigned int *arg2)
 {

@@ -2378,8 +2378,12 @@ void Com_InitDvars()
         "mod: hybrid CPUs: 1 = server thread on P-cores + above-normal priority, 2 = also the client threads; no-op on non-hybrid CPUs");
     bo1_mod_priority = _Dvar_RegisterInt("bo1_mod_priority", 0, 0, 2, 0,
         "mod: 1 = process priority class above normal + main thread above normal, 2 = high class; 0 = as started");
+#if defined(__APPLE__)
+    sys_smp_allowed = _Dvar_RegisterBool("sys_smp_allowed", 0, 0x10u, "Allow multi-threading");
+#else
     CpuCount = Sys_GetCpuCount();
     sys_smp_allowed = _Dvar_RegisterBool("sys_smp_allowed", CpuCount > 1, 0x10u, "Allow multi-threading");
+#endif
 #ifdef _DEBUG
     com_developer = _Dvar_RegisterInt("developer", 1, 0, 2, 0, "Enable development options");
 #else 

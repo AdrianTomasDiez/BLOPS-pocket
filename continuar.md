@@ -105,6 +105,10 @@ Adri ha ordenado descartar definitivamente cualquier intento de inventar motores
 - [x] Configurar GitHub Actions para compilar el binario nativo ARM64 en macOS runner (`.github/workflows/ios-ipa.yml`).
 - [x] Empaquetar el ejecutable en la IPA sin firmar y publicar en GitHub Releases (`https://github.com/AdrianTomasDiez/BLOPS-pocket/releases/tag/latest`).
 - [x] Crear script de compilación local en macOS `tools/build_ipa_macos.sh` (100% independiente de los minutos de GitHub Actions).
+- [x] Corrección crítica de `jmp_buf` para ARM64 (`g_com_error` y `g_script_error`) evitando desbordamiento de memoria y cuelgue silencioso en `Com_Init`.
+- [x] Corrección del bucle de espera de registro Direct3D en `R_BeginRegistration` y desactivación de SMP multi-hilo en iOS (`sys_smp_allowed = 0`).
+- [x] Implementación de pantalla de carga temática cinematográfica para Kino der Toten en Swift con telemetría idéntica a IW4-Pocket y arte de fondo del teatro.
+- [x] Redirección y volcado inmediato de trazas a `Documents/bo1_console.log` y `Documents/BLOPS/bo1_console.log`.
 - [ ] Probar la partida en el iPhone instalando vía AltStore, SideStore o TrollStore.
 
 ---
@@ -138,6 +142,6 @@ Cuando la cuota mensual de GitHub Actions se agota (como los 2.000 min mensuales
 - **Rama:** `main`.
 - **Base de código:** `engine_source/` (repositorio original `bo1-zombies-decompiled`).
 - **Pruebas:** `node --test tools/*.test.mjs` → 51/51 pasando. `git diff --check` limpio.
-- **Release:** `BLOPSPocket.ipa` disponible en Releases de GitHub con el motor nativo de Treyarch.
-- **Siguiente paso:** Pruebas de ejecución en dispositivo real y validación de hilos del descompresor de FastFiles.
+- **Release:** `BLOPSPocket.ipa` disponible en Releases de GitHub con el motor nativo de Treyarch y pantalla de carga de Kino der Toten.
+- **Siguiente paso:** Probar en el dispositivo y verificar el avance de fases de carga en los logs.
 

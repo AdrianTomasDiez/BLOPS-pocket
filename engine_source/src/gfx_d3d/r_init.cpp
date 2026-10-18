@@ -2044,6 +2044,21 @@ void __cdecl R_BeginRegistrationInternal()
 
 void __cdecl R_BeginRegistration(vidConfig_t *vidConfigOut)
 {
+#if defined(__APPLE__)
+    if (!rg.registered)
+    {
+        Sys_SetRGRegisteredEvent();
+        R_BeginRegistrationInternal();
+        Sys_SetD3DDeviceStartEvent();
+        Sys_SetD3DDeviceOKEvent();
+        Sys_ClearRGRegisteredEvent();
+    }
+    if (vidConfigOut)
+    {
+        memcpy(vidConfigOut, &vidConfig, sizeof(vidConfig_t));
+    }
+    r_glob.startedRenderThread = 1;
+#else
     Sys_SetRGRegisteredEvent();
     while ( Sys_QueryRGRegisteredEvent() )
         NET_Sleep(0);
@@ -2065,6 +2080,7 @@ void __cdecl R_BeginRegistration(vidConfig_t *vidConfigOut)
     }
     r_glob.startedRenderThread = 1;
     //BLOPS_NULLSUB();
+#endif
 }
 
 void __cdecl R_EndRegistration()
