@@ -9,6 +9,9 @@ func bo1_ios_init(_ gameDirectory: UnsafePointer<CChar>)
 @_silgen_name("bo1_ios_frame")
 func bo1_ios_frame()
 
+@_silgen_name("bo1_ios_execute_command")
+func bo1_ios_execute_command(_ cmd: UnsafePointer<CChar>)
+
 /// Vista que alberga la ejecución del motor nativo C++ de Call of Duty: Black Ops 1 Zombies.
 struct NativeEngineView: View {
     let gameFolder: URL

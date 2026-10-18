@@ -24,3 +24,8 @@ __attribute__((weak, visibility("default")))
 void bo1_ios_send_mouse(int dx, int dy) {
     // Inyección de delta de ratón/mirada hacia Sys_QueEvent
 }
+
+__attribute__((weak, visibility("default")))
+void bo1_ios_execute_command(const char *cmd) {
+    // Inyección de comandos Treyarch
+}

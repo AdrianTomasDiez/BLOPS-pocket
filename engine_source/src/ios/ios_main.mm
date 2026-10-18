@@ -30,7 +30,7 @@ void bo1_ios_init(const char *gameDirectory)
     // Preparar línea de comandos para Treyarch engine
     static char s_cmdline[1024];
     snprintf(s_cmdline, sizeof(s_cmdline),
-             "+set fs_basepath \"%s\" +set fs_homepath \"%s\" +set developer 0",
+             "+set fs_basepath \"%s\" +set fs_homepath \"%s\" +set developer 0 +set bo1_zombies 1 +set sv_cheats 1 +devmap zombie_theater",
              gameDirectory, gameDirectory);
 
     // Inicializaciones de subsistemas
@@ -47,7 +47,7 @@ void bo1_ios_init(const char *gameDirectory)
     // Inicializar el ciclo central de Call of Duty
     Com_Init(s_cmdline);
 
-    NSLog(@"[BO1 iOS] Engine initialized successfully!");
+    NSLog(@"[BO1 iOS] Engine initialized successfully for Kino der Toten!");
 }
 
 void bo1_ios_frame(void)
@@ -66,6 +66,15 @@ void bo1_ios_send_key(int key, int down)
 void bo1_ios_send_mouse(int dx, int dy)
 {
     Sys_QueEvent((unsigned int)Sys_Milliseconds(), SE_MOUSE, dx, dy, 0, NULL);
+}
+
+void bo1_ios_execute_command(const char *cmd)
+{
+    if (s_engineInitialized && cmd && cmd[0])
+    {
+        Cbuf_AddText(0, cmd);
+        Cbuf_AddText(0, "\n");
+    }
 }
 
 }

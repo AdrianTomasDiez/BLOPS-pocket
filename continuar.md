@@ -77,7 +77,7 @@ Adri ha ordenado descartar definitivamente cualquier intento de inventar motores
 - [x] Actualizar `AGENTS.md`, `reglas.md` y `prompts.md` prohibiendo motores ficticios.
 - [x] Identificar módulos clave de Zombies (`bgame`, `cgame`, `game`, `clientscript`, `physics`, `xanim`).
 
-### Fase 7.2: Poda de dependencias Win32 / x86 de PC y Capa iOS (Completada)
+### Fase 7.2: Poda de dependencias Win32 / x86 de PC y Capa iOS (Completada al 100%)
 - [x] Eliminar visores y mocks ficticios en Swift (`KinoGameView.swift`, `XModelMesh.swift`, `XModelMetalView.swift`).
 - [x] Crear vista puente del motor nativo (`NativeEngineView.swift` con `MTKView` y `CADisplayLink`).
 - [x] Desacoplar librerías de 32 bits de PC (`d3d9.lib`, `dsound.lib`, `binkw32.lib`, `steam_api.lib`, `nvapi.lib`) en `cmake_files.cmake`.
@@ -85,13 +85,14 @@ Adri ha ordenado descartar definitivamente cualquier intento de inventar motores
 - [x] Agregar shims de DirectX 9 (`d3d9.h` con tipos de display, caps y vertex elements) y audio (`XAudio2.h`, `XAPOBase.h`).
 - [x] Añadir tipos de 64 bits (`LONG64`, `ULONG64`), `SwitchToThread` y estructuras GDI (`HMONITOR`, `HDC`, `RECT`, `POINT`, `GUID`).
 - [x] Implementar subsistema de plataforma nativa iOS (`src/ios/ios_platform.cpp` y `src/ios/ios_main.mm`).
-- [x] Adaptar `CMakeLists.txt` con bundle iOS y frameworks nativos (Metal, GameController, AudioToolbox).
-- [x] Conectar la compilación de CMake en CI (`.github/workflows/ios-ipa.yml`) para verificar compilación ARM64 en runner macOS.
+- [x] Desacoplar DirectDraw (`ddraw.h`) en `r_texturemem.cpp` y aislar dependencias de profiling Win32 en `rb_backend.cpp`.
+- [x] Compilar el motor C++ completo en CMake (macOS ARM64) y generar la IPA sin firmar en CI de GitHub Actions con Release automática.
 
 ### Fase 7.3: Capa de plataforma iOS (Ventana, Metal y Entrada)
 - [x] Conectar mandos y touch nativos con `GameController` (+forward, +attack, +speed, etc.) en `VirtualGameControls.swift`.
 - [x] Conectar puente de eventos `bo1_ios_send_key` y `bo1_ios_send_mouse` hacia `Sys_QueEvent` en `ios_main.mm`.
 - [x] Conectar sandbox de lectura de archivos a `Documents/Games` en `NativeEngineView.swift` y `ios_platform.cpp`.
+- [x] Inyección de línea de comandos de Treyarch con arranque automático de Kino der Toten (`+devmap zombie_theater`) y puente `bo1_ios_execute_command`.
 - [ ] Integrar capa de ventana iOS con contexto Metal (usando SDL2 o capa puente nativa).
 - [ ] Conectar el subsistema de audio con CoreAudio / OpenAL.
 
@@ -112,4 +113,4 @@ Adri ha ordenado descartar definitivamente cualquier intento de inventar motores
 - **Rama:** `main`.
 - **Base de código:** `engine_source/` (repositorio original `bo1-zombies-decompiled`).
 - **Pruebas:** `node --test tools/*.test.mjs` → 51/51 pasando. `git diff --check` limpio.
-- **Siguiente paso:** Completar la integración del backend Metal (`r_metal.mm`) conectando el viewport del MTKView al ciclo de dibujo.
+- **Siguiente paso:** Completar la conexión del backend de renderizado Metal con el ciclo de dibujo de Treyarch (`R_BeginFrame` / `R_EndFrame`).
