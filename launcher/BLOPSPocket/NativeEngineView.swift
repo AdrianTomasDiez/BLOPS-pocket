@@ -15,6 +15,18 @@ func bo1_ios_execute_command(_ cmd: UnsafePointer<CChar>)
 @_silgen_name("bo1_ios_set_present_callback")
 func bo1_ios_set_present_callback(_ cb: (@convention(c) () -> Void)?)
 
+@_silgen_name("bo1_ios_get_progress_info")
+func bo1_ios_get_progress_info(
+    _ outZone: UnsafeMutablePointer<CChar>?, _ maxZoneLen: Int32,
+    _ outAsset: UnsafeMutablePointer<CChar>?, _ maxAssetLen: Int32,
+    _ outCurrent: UnsafeMutablePointer<Int32>?, _ outTotal: UnsafeMutablePointer<Int32>?,
+    _ outPercent: UnsafeMutablePointer<Int32>?,
+    _ outStage: UnsafeMutablePointer<CChar>?, _ maxStageLen: Int32,
+    _ outError: UnsafeMutablePointer<CChar>?, _ maxErrorLen: Int32,
+    _ outHasError: UnsafeMutablePointer<Int32>?,
+    _ outIsComplete: UnsafeMutablePointer<Int32>?
+)
+
 /// Vista que alberga la ejecución del motor nativo C++ de Call of Duty: Black Ops 1 Zombies.
 struct NativeEngineView: View {
     let gameFolder: URL
@@ -32,11 +44,15 @@ struct NativeEngineView: View {
             })
             .ignoresSafeArea()
 
-            // Pantalla de carga cinematográfica para Kino der Toten (estilo IW4x / Treyarch)
+            // Pantalla de carga cinematográfica para Kino der Toten con telemetría C++ en tiempo real
             if !isEngineReady {
-                KinoLoadingScreenView(gameFolder: gameFolder)
-                    .transition(.opacity)
-                    .zIndex(2)
+                KinoLoadingScreenView(gameFolder: gameFolder, onComplete: {
+                    withAnimation(.easeInOut(duration: 0.7)) {
+                        isEngineReady = true
+                    }
+                })
+                .transition(.opacity)
+                .zIndex(2)
             }
 
             // Controles táctiles virtuales en pantalla (se muestran al terminar la carga)
@@ -67,14 +83,21 @@ struct NativeEngineView: View {
     }
 }
 
-/// Pantalla de carga temática de Kino der Toten idéntica al formato de telemetría de IW4-Pocket
+/// Pantalla de carga temática de Kino der Toten conectada 1:1 a la base de datos C++ de Treyarch
 struct KinoLoadingScreenView: View {
     let gameFolder: URL
+    var onComplete: (() -> Void)? = nil
 
     @State private var elapsedTime: Double = 0.0
-    @State private var progress: Double = 0.05
-    @State private var admissionText: String = "1.2s"
-    @State private var fastfileText: String = "Mounting common_zombie.ff"
+    @State private var zoneName: String = "Iniciando..."
+    @State private var assetName: String = "Arrancando motor Treyarch"
+    @State private var stageText: String = "Iniciando subsistemas"
+    @State private var currentAssetCount: Int = 0
+    @State private var totalAssetCount: Int = 0
+    @State private var progressPercent: Double = 0.02
+    @State private var errorMessage: String = ""
+    @State private var hasError: Bool = false
+    @State private var isComplete: Bool = false
 
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
@@ -106,6 +129,37 @@ struct KinoLoadingScreenView: View {
 
             // Contenido en capas: título del mapa a la izquierda, telemetría a la derecha
             VStack {
+                // Banner de error destacado si el motor detecta un fallo nativo
+                if hasError {
+                    HStack(alignment: .top, spacing: 12) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 26))
+                            .foregroundColor(.red)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("ERROR DEL MOTOR NATIVO (TREYARCH)")
+                                .font(.system(size: 14, weight: .black, design: .monospaced))
+                                .foregroundColor(.red)
+
+                            Text(errorMessage)
+                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                .foregroundColor(.white)
+                                .lineLimit(3)
+                        }
+                        Spacer()
+                    }
+                    .padding(14)
+                    .background(Color.black.opacity(0.88))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.red, lineWidth: 2)
+                    )
+                    .cornerRadius(8)
+                    .padding(.horizontal, 30)
+                    .padding(.top, 16)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
+
                 Spacer()
 
                 HStack(alignment: .bottom, spacing: 20) {
@@ -128,91 +182,131 @@ struct KinoLoadingScreenView: View {
 
                     Spacer()
 
-                    // Panel lateral derecho: métricas de carga en tiempo real (estilo IW4x)
+                    // Panel lateral derecho: métricas de carga REALES leídas de Treyarch FastFiles
                     VStack(alignment: .trailing, spacing: 5) {
                         HStack(spacing: 10) {
-                            Text("Loading")
-                                .foregroundColor(.white)
+                            Text(hasError ? "Detenido por error" : "Cargando")
+                                .foregroundColor(hasError ? .red : .white)
                                 .font(.system(size: 16, weight: .semibold, design: .monospaced))
-                            Text(String(format: "%.1f  s", elapsedTime))
+                            Text(String(format: "%.1f s", elapsedTime))
                                 .foregroundColor(.white)
                                 .font(.system(size: 16, weight: .bold, design: .monospaced))
                         }
                         .padding(.bottom, 4)
 
-                        StatRow(label: "Admission", value: admissionText, color: Color(red: 1.0, green: 0.78, blue: 0.25))
-                        StatRow(label: "GPU textures", value: "2.6k images · Metal", color: Color(red: 0.42, green: 0.92, blue: 0.55))
-                        StatRow(label: "Pipelines", value: "683 pipelines · iOS", color: Color(red: 1.0, green: 0.7, blue: 0.25))
-                        StatRow(label: "Render frames", value: "0 frames · 60 Hz", color: Color(red: 1.0, green: 0.65, blue: 0.2))
-                        StatRow(label: "Fastfiles", value: fastfileText, color: Color(red: 1.0, green: 0.55, blue: 0.15))
-                        StatRow(label: "First person", value: "2.6k models · viewarms", color: Color(red: 0.42, green: 0.92, blue: 0.55))
-                        StatRow(label: "Shaders", value: "3.1k programs · compiled", color: Color(red: 0.42, green: 0.92, blue: 0.55))
+                        StatRow(label: "Estado", value: stageText, color: hasError ? .red : Color(red: 1.0, green: 0.78, blue: 0.25))
+                        StatRow(label: "Zona (FF)", value: zoneName, color: Color(red: 1.0, green: 0.55, blue: 0.15))
+                        StatRow(label: "Asset actual", value: truncateAsset(assetName), color: Color(red: 0.42, green: 0.92, blue: 0.55))
+                        StatRow(label: "Archivos", value: "\(currentAssetCount) / \(totalAssetCount)", color: Color(red: 1.0, green: 0.7, blue: 0.25))
+                        StatRow(label: "Porcentaje", value: "\(Int(progressPercent * 100))%", color: Color(red: 0.42, green: 0.92, blue: 0.55))
                     }
                 }
                 .padding(.horizontal, 40)
-                .padding(.bottom, 20)
+                .padding(.bottom, 12)
 
-                // Barra de progreso inferior brillante
+                // Subtexto con nombre de asset y contador X/Y
+                HStack {
+                    Text(assetName)
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                        .foregroundColor(Color.white.opacity(0.75))
+                        .lineLimit(1)
+
+                    Spacer()
+
+                    Text("\(currentAssetCount) / \(totalAssetCount) assets (\(Int(progressPercent * 100))%)")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundColor(hasError ? .red : Color(red: 1.0, green: 0.72, blue: 0.25))
+                }
+                .padding(.horizontal, 40)
+                .padding(.bottom, 4)
+
+                // Barra de progreso inferior brillante que refleja el conteo real
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: 3)
                             .fill(Color.white.opacity(0.18))
-                            .frame(height: 5)
+                            .frame(height: 6)
 
                         RoundedRectangle(cornerRadius: 3)
                             .fill(
                                 LinearGradient(
-                                    colors: [Color(red: 1.0, green: 0.38, blue: 0.0), Color(red: 1.0, green: 0.72, blue: 0.25)],
+                                    colors: hasError ? [Color.red, Color.orange] : [Color(red: 1.0, green: 0.38, blue: 0.0), Color(red: 1.0, green: 0.72, blue: 0.25)],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
                             )
-                            .frame(width: max(10, geo.size.width * CGFloat(progress)), height: 5)
-                            .shadow(color: Color(red: 1.0, green: 0.45, blue: 0.0).opacity(0.85), radius: 5)
+                            .frame(width: max(10, geo.size.width * CGFloat(progressPercent)), height: 6)
+                            .shadow(color: (hasError ? Color.red : Color(red: 1.0, green: 0.45, blue: 0.0)).opacity(0.85), radius: 5)
                     }
                 }
-                .frame(height: 5)
+                .frame(height: 6)
                 .padding(.horizontal, 40)
                 .padding(.bottom, 18)
             }
         }
         .onReceive(timer) { _ in
             elapsedTime += 0.1
-
-            // Progresión visual de estados durante la inicialización
-            if elapsedTime < 2.0 {
-                progress = min(0.30, progress + 0.02)
-                fastfileStatusUpdate("Mounting common_zombie.ff")
-            } else if elapsedTime < 5.0 {
-                progress = min(0.60, progress + 0.015)
-                fastfileStatusUpdate("Mounting zombie_theater.ff")
-            } else if elapsedTime < 8.0 {
-                progress = min(0.85, progress + 0.01)
-                fastfileStatusUpdate("Allocating hunk & sound assets")
-            } else {
-                progress = min(0.95, progress + 0.005)
-                fastfileStatusUpdate("Spawning zombie_theater BSP")
-            }
-        }
-        .onAppear {
-            checkLocalFastfiles()
+            pollProgress()
         }
     }
 
-    private func fastfileStatusUpdate(_ status: String) {
-        if fastfileText != status {
-            fastfileText = status
+    private func truncateAsset(_ name: String) -> String {
+        if name.count > 28 {
+            return "..." + String(name.suffix(25))
         }
+        return name
     }
 
-    private func checkLocalFastfiles() {
-        let fm = FileManager.default
-        let common = gameFolder.appendingPathComponent("zone/Common/common_zombie.ff")
-        let theater = gameFolder.appendingPathComponent("zone/Common/zombie_theater.ff")
-        if fm.fileExists(atPath: common.path) && fm.fileExists(atPath: theater.path) {
-            admissionText = "verified (fastfiles OK)"
-        } else {
-            admissionText = "reading Documents/Games"
+    private func pollProgress() {
+        var zoneBuf = [CChar](repeating: 0, count: 256)
+        var assetBuf = [CChar](repeating: 0, count: 256)
+        var stageBuf = [CChar](repeating: 0, count: 128)
+        var errBuf = [CChar](repeating: 0, count: 512)
+        var current: Int32 = 0
+        var total: Int32 = 0
+        var pct: Int32 = 0
+        var errFlag: Int32 = 0
+        var compFlag: Int32 = 0
+
+        bo1_ios_get_progress_info(
+            &zoneBuf, 256,
+            &assetBuf, 256,
+            &current, &total,
+            &pct,
+            &stageBuf, 128,
+            &errBuf, 512,
+            &errFlag,
+            &compFlag
+        )
+
+        let zStr = String(cString: zoneBuf).trimmingCharacters(in: .whitespacesAndNewlines)
+        let aStr = String(cString: assetBuf).trimmingCharacters(in: .whitespacesAndNewlines)
+        let sStr = String(cString: stageBuf).trimmingCharacters(in: .whitespacesAndNewlines)
+        let eStr = String(cString: errBuf).trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if !zStr.isEmpty { zoneName = zStr }
+        if !aStr.isEmpty { assetName = aStr }
+        if !sStr.isEmpty { stageText = sStr }
+
+        if errFlag != 0 {
+            hasError = true
+            errorMessage = eStr.isEmpty ? "Error nativo en motor Treyarch" : eStr
+        }
+
+        currentAssetCount = Int(current)
+        totalAssetCount = Int(total)
+
+        if total > 0 {
+            let frac = Double(current) / Double(total)
+            progressPercent = max(0.02, min(1.0, frac))
+        } else if pct > 0 {
+            progressPercent = max(0.02, min(1.0, Double(pct) / 100.0))
+        }
+
+        if compFlag != 0 && !isComplete {
+            isComplete = true
+            progressPercent = 1.0
+            onComplete?()
         }
     }
 }
@@ -356,8 +450,7 @@ class EngineViewController: UIViewController {
 
             DispatchQueue.main.async {
                 self.engineReady = true
-                self.onEngineReady?()
-                print("[Engine] Motor de Treyarch listo. Iniciando rendering de Kino der Toten.")
+                print("[Engine] Motor de Treyarch iniciado. Ejecutando frames de Com_Frame para Kino der Toten.")
             }
         }
     }

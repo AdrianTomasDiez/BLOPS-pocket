@@ -766,6 +766,10 @@ void Com_Error(errorParm_t code, const char *fmt, ...)
         com_errorEntered = 1;
         _vsnprintf(com_errorMessage, 0x1000u, fmt, va);
         com_errorMessage[4095] = 0;
+#if defined(__APPLE__)
+        extern void bo1_ios_set_error(const char *error);
+        bo1_ios_set_error(com_errorMessage);
+#endif
         if ( code != ERR_DISCONNECT && Monkey_IsRunning() )
         {
             Com_Printf(16, com_errorMessage);

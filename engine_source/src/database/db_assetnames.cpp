@@ -437,6 +437,22 @@ const char *__cdecl DB_GetXAssetName(const XAsset *asset)
     return DB_GetXAssetHeaderName(asset->type, &asset->header);
 }
 
+const char *__cdecl DB_GetXAssetNameSafe(const XAsset *asset)
+{
+    if (!asset)
+        return "";
+    if (asset->type < 0 || asset->type >= 43)
+        return "";
+    if (!asset->header.xmodelPieces)
+        return (g_assetNames[asset->type] != NULL) ? g_assetNames[asset->type] : "";
+    if (DB_XAssetGetNameHandler[asset->type] == NULL)
+        return (g_assetNames[asset->type] != NULL) ? g_assetNames[asset->type] : "";
+    const char *name = DB_XAssetGetNameHandler[asset->type](&asset->header);
+    if (!name)
+        return (g_assetNames[asset->type] != NULL) ? g_assetNames[asset->type] : "";
+    return name;
+}
+
 void __cdecl DB_SetXAssetName(XAsset *asset, const char *name)
 {
     if ( !DB_XAssetSetNameHandler[asset->type]

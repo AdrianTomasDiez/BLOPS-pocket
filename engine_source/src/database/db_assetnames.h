@@ -13,6 +13,7 @@ const char *__cdecl DB_DDLGetName(const XAssetHeader *header);
 const char *__cdecl DB_GetEmblemSetName(const XAssetHeader *header);
 const char *__cdecl DB_GetXAssetHeaderName(int type, const XAssetHeader *header);
 const char *__cdecl DB_GetXAssetName(const XAsset *asset);
+const char *__cdecl DB_GetXAssetNameSafe(const XAsset *asset);
 void __cdecl DB_SetXAssetName(XAsset *asset, const char *name);
 int __cdecl DB_GetXAssetTypeSize(int type);
 const char *__cdecl DB_GetXAssetTypeName(unsigned int type);

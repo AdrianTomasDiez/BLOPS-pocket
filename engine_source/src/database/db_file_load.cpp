@@ -11,6 +11,10 @@
 #include "db_stream.h"
 #include "db_stream_load.h"
 #include "db_load.h"
+#include "db_assetnames.h"
+#if defined(__APPLE__)
+#include <ios/ios_engine_bridge.h>
+#endif
 #include <tl/tl_system.h>
 
 volatile int g_totalSize;
@@ -527,6 +531,18 @@ void __cdecl Load_XAssetArrayCustom(int count)
         varXAsset = var;
         g_dbTopAssetType = var->type; // mod (L60): DB_ModPromoteWorldMaterial
         Load_XAsset(0);
+
+#if defined(__APPLE__)
+        const char *assetName = DB_GetXAssetNameSafe(var);
+        bo1_ios_update_progress(
+            g_load.filename ? g_load.filename : "FastFile",
+            (assetName && assetName[0]) ? assetName : "Asset",
+            i + 1,
+            count,
+            "Cargando FastFile"
+        );
+#endif
+
         ++var;
         if ( g_load.abort )
             break;

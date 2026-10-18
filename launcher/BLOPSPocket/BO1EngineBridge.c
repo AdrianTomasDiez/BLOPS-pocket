@@ -47,3 +47,30 @@ void bo1_ios_set_present_callback(BO1_iOS_PresentCallback cb) {
     // Registro de callback de presentación de pantalla
 }
 
+__attribute__((weak, visibility("default")))
+void bo1_ios_update_progress(const char *zone, const char *asset, int current, int total, const char *stage) {
+}
+
+__attribute__((weak, visibility("default")))
+void bo1_ios_set_error(const char *error) {
+}
+
+__attribute__((weak, visibility("default")))
+void bo1_ios_set_game_running(void) {
+}
+
+__attribute__((weak, visibility("default")))
+void bo1_ios_get_progress_info(
+    char *outZone, int maxZoneLen,
+    char *outAsset, int maxAssetLen,
+    int *outCurrent, int *outTotal,
+    int *outPercent,
+    char *outStage, int maxStageLen,
+    char *outError, int maxErrorLen,
+    int *outHasError,
+    int *outIsComplete
+) {
+    if (outPercent) *outPercent = 0;
+    if (outHasError) *outHasError = 0;
+    if (outIsComplete) *outIsComplete = 0;
+}

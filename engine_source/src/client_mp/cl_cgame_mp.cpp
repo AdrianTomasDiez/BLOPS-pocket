@@ -1203,6 +1203,13 @@ void __cdecl CL_SetLocalClientConnectionState(int client, connstate_t state)
     v3 = connectionString_39[state];
     v2 = Sys_Milliseconds();
     Com_DPrintf(14, "[%08d] %d: %s\n", v2, client, v3);
+#if defined(__APPLE__)
+    if (state == CA_ACTIVE)
+    {
+        extern void bo1_ios_set_game_running(void);
+        bo1_ios_set_game_running();
+    }
+#endif
 }
 
 void __cdecl CL_LocalClient_SetCUIFlag(int localClientNum, int flag)

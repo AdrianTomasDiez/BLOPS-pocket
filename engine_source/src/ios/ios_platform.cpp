@@ -6,6 +6,7 @@
 #include <win32/win_main.h>
 #include <qcommon/common.h>
 #include <universal/q_shared.h>
+#include "ios_engine_bridge.h"
 
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -69,6 +70,13 @@ const char *__cdecl Sys_DefaultCDPath()
 
 char *__cdecl Sys_DefaultInstallPath()
 {
+    const char *gdir = bo1_ios_get_gamedir();
+    if (gdir && gdir[0])
+    {
+        strncpy(s_installPath, gdir, sizeof(s_installPath) - 1);
+        s_installPath[sizeof(s_installPath) - 1] = '\0';
+        return s_installPath;
+    }
     if (!s_installPath[0])
     {
         const char *home = getenv("HOME");
@@ -152,6 +160,8 @@ void Sys_Error(char *error, ...)
 
     Sys_Print(errText);
 
+    bo1_ios_set_error(buffer);
+
     const char *home = getenv("HOME");
     if (home) {
         char log1[1024];
@@ -160,6 +170,11 @@ void Sys_Error(char *error, ...)
         snprintf(log2, sizeof(log2), "%s/Documents/BLOPS/bo1_error.log", home);
         write_to_log_file(log1, errText);
         write_to_log_file(log2, errText);
+    }
+
+    // Esperar brevemente para permitir a la UI de SwiftUI mostrar el banner de error
+    for (int i = 0; i < 50; ++i) {
+        usleep(100000);
     }
 
     abort();

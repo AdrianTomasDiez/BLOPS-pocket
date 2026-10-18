@@ -3136,7 +3136,20 @@ void __cdecl DB_BuildOSPath(const char *zoneName, const char *ext, unsigned int 
     if ( DB_IsUsingGermanPaths() )
         languageName = SEH_GetLanguageName(3u);
     v5 = Sys_DefaultInstallPath();
+#if defined(__APPLE__)
+    Com_sprintf(filename, size, "%s/zone/%s/%s%s", v5, languageName, zoneName, ext);
+    if (GetFileAttributesA(filename) == -1) {
+        Com_sprintf(filename, size, "%s/zone/Common/%s%s", v5, zoneName, ext);
+    }
+    if (GetFileAttributesA(filename) == -1) {
+        Com_sprintf(filename, size, "%s/zone/%s%s", v5, zoneName, ext);
+    }
+    if (GetFileAttributesA(filename) == -1) {
+        Com_sprintf(filename, size, "%s/%s%s", v5, zoneName, ext);
+    }
+#else
     Com_sprintf(filename, size, "%s\\zone\\%s\\%s%s", v5, languageName, zoneName, ext);
+#endif
 }
 
 char __cdecl DB_IsUsingGermanPaths()
@@ -3168,7 +3181,17 @@ void __cdecl DB_BuildOSPath_Unlocalized(const char *zoneName, const char *ext, u
     char *v4; // eax
 
     v4 = Sys_DefaultInstallPath();
+#if defined(__APPLE__)
+    Com_sprintf(filename, size, "%s/zone/Common/%s%s", v4, zoneName, ext);
+    if (GetFileAttributesA(filename) == -1) {
+        Com_sprintf(filename, size, "%s/zone/%s%s", v4, zoneName, ext);
+    }
+    if (GetFileAttributesA(filename) == -1) {
+        Com_sprintf(filename, size, "%s/%s%s", v4, zoneName, ext);
+    }
+#else
     Com_sprintf(filename, size, "%s\\zone\\Common\\%s%s", v4, zoneName, ext);
+#endif
 }
 
 void DB_PostLoadXZone()
@@ -4168,6 +4191,10 @@ int __cdecl DB_TryLoadXFileInternal(const char *zoneName, int zoneFlags)
     }
     else
     {
+#if defined(__APPLE__)
+        extern void bo1_ios_update_progress(const char *zone, const char *asset, int current, int total, const char *stage);
+        bo1_ios_update_progress(zoneName, "Montando archivo de zona...", 0, 1, "Abriendo FastFile");
+#endif
         g_zoneIndex = 0;
         for ( i = 1; i < 0x21; ++i )
         {

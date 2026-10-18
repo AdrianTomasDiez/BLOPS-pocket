@@ -15,10 +15,118 @@
 #include <universal/physicalmemory.h>
 #include <universal/timing.h>
 #include <universal/q_parse.h>
+#include "ios_engine_bridge.h"
+#include <pthread.h>
 
 typedef void (*BO1_iOS_PresentCallback)(void);
 
+struct BO1ProgressState {
+    char currentZone[256];
+    char currentAsset[256];
+    int currentCount;
+    int totalCount;
+    int percent;
+    char stage[128];
+    char lastError[512];
+    int hasError;
+    int isComplete;
+};
+
+static pthread_mutex_t s_progressMutex = PTHREAD_MUTEX_INITIALIZER;
+static BO1ProgressState s_progress = {
+    "Iniciando...",
+    "Arrancando motor Treyarch",
+    0,
+    0,
+    0,
+    "Iniciando subsistemas",
+    "",
+    0,
+    0
+};
+
 extern "C" {
+
+void bo1_ios_update_progress(const char *zone, const char *asset, int current, int total, const char *stage)
+{
+    pthread_mutex_lock(&s_progressMutex);
+    if (zone && zone[0]) {
+        const char *slash = strrchr(zone, '/');
+        const char *cleanZone = slash ? (slash + 1) : zone;
+        strncpy(s_progress.currentZone, cleanZone, sizeof(s_progress.currentZone) - 1);
+        s_progress.currentZone[sizeof(s_progress.currentZone) - 1] = '\0';
+    }
+    if (asset && asset[0]) {
+        strncpy(s_progress.currentAsset, asset, sizeof(s_progress.currentAsset) - 1);
+        s_progress.currentAsset[sizeof(s_progress.currentAsset) - 1] = '\0';
+    }
+    s_progress.currentCount = current;
+    s_progress.totalCount = total;
+    if (total > 0) {
+        s_progress.percent = (int)((long long)current * 100 / total);
+    }
+    if (stage && stage[0]) {
+        strncpy(s_progress.stage, stage, sizeof(s_progress.stage) - 1);
+        s_progress.stage[sizeof(s_progress.stage) - 1] = '\0';
+    }
+    pthread_mutex_unlock(&s_progressMutex);
+}
+
+void bo1_ios_set_error(const char *error)
+{
+    pthread_mutex_lock(&s_progressMutex);
+    if (error && error[0]) {
+        strncpy(s_progress.lastError, error, sizeof(s_progress.lastError) - 1);
+        s_progress.lastError[sizeof(s_progress.lastError) - 1] = '\0';
+    }
+    s_progress.hasError = 1;
+    pthread_mutex_unlock(&s_progressMutex);
+}
+
+void bo1_ios_set_game_running(void)
+{
+    pthread_mutex_lock(&s_progressMutex);
+    s_progress.isComplete = 1;
+    s_progress.percent = 100;
+    strncpy(s_progress.stage, "Partida iniciada", sizeof(s_progress.stage) - 1);
+    s_progress.stage[sizeof(s_progress.stage) - 1] = '\0';
+    pthread_mutex_unlock(&s_progressMutex);
+}
+
+void bo1_ios_get_progress_info(
+    char *outZone, int maxZoneLen,
+    char *outAsset, int maxAssetLen,
+    int *outCurrent, int *outTotal,
+    int *outPercent,
+    char *outStage, int maxStageLen,
+    char *outError, int maxErrorLen,
+    int *outHasError,
+    int *outIsComplete
+) {
+    pthread_mutex_lock(&s_progressMutex);
+    if (outZone && maxZoneLen > 0) {
+        strncpy(outZone, s_progress.currentZone, maxZoneLen - 1);
+        outZone[maxZoneLen - 1] = '\0';
+    }
+    if (outAsset && maxAssetLen > 0) {
+        strncpy(outAsset, s_progress.currentAsset, maxAssetLen - 1);
+        outAsset[maxAssetLen - 1] = '\0';
+    }
+    if (outCurrent) *outCurrent = s_progress.currentCount;
+    if (outTotal) *outTotal = s_progress.totalCount;
+    if (outPercent) *outPercent = s_progress.percent;
+    if (outStage && maxStageLen > 0) {
+        strncpy(outStage, s_progress.stage, maxStageLen - 1);
+        outStage[maxStageLen - 1] = '\0';
+    }
+    if (outError && maxErrorLen > 0) {
+        strncpy(outError, s_progress.lastError, maxErrorLen - 1);
+        outError[maxErrorLen - 1] = '\0';
+    }
+    if (outHasError) *outHasError = s_progress.hasError;
+    if (outIsComplete) *outIsComplete = s_progress.isComplete;
+    pthread_mutex_unlock(&s_progressMutex);
+}
 
 static bool s_engineInitialized = false;
 static char s_gameDir[1024] = {0};
@@ -75,29 +183,37 @@ void bo1_ios_init(const char *gameDirectory)
              gameDirectory, gameDirectory);
 
     logMsg("[BO1 iOS Step 1/8] Sys_InitializeCriticalSections");
+    bo1_ios_update_progress("system", "CriticalSections", 1, 8, "Inicializando subsistemas");
     Sys_InitializeCriticalSections();
 
     logMsg("[BO1 iOS Step 2/8] Sys_InitMainThread");
+    bo1_ios_update_progress("system", "MainThread", 2, 8, "Iniciando hilos");
     Sys_InitMainThread();
 
     logMsg("[BO1 iOS Step 3/8] PMem_Init & track_init");
+    bo1_ios_update_progress("memory", "PhysicalMemory", 3, 8, "Asignando memoria física");
     PMem_Init();
     track_init();
 
     logMsg("[BO1 iOS Step 4/8] Com_InitParse");
+    bo1_ios_update_progress("config", "InitParse", 4, 8, "Parseando configuración");
     Com_InitParse();
 
     logMsg("[BO1 iOS Step 5/8] Dvar_Init");
+    bo1_ios_update_progress("dvars", "Dvar_Init", 5, 8, "Configurando variables de motor");
     Dvar_Init();
 
     logMsg("[BO1 iOS Step 6/8] InitTiming & Sys_FindInfo");
+    bo1_ios_update_progress("hardware", "Sys_FindInfo", 6, 8, "Detectando hardware Apple ARM64");
     InitTiming();
     Sys_FindInfo();
 
     logMsg("[BO1 iOS Step 7/8] Com_Init(cmdline)");
+    bo1_ios_update_progress("engine", "Com_Init", 7, 8, "Iniciando motor Treyarch");
     Com_Init(s_cmdline);
 
     logMsg("[BO1 iOS Step 8/8] === Com_Init finalizado con éxito ===");
+    bo1_ios_update_progress("kino", "zombie_theater", 8, 8, "Preparando nivel");
     NSLog(@"[BO1 iOS] Engine initialized successfully for Kino der Toten!");
 }
 

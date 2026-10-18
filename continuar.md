@@ -137,11 +137,12 @@ Cuando la cuota mensual de GitHub Actions se agota (como los 2.000 min mensuales
 
 ---
 
-## 7. Estado del repositorio (2026-10-18)
+## 7. Estado del repositorio (2026-10-19)
 
 - **Rama:** `main`.
 - **Base de código:** `engine_source/` (repositorio original `bo1-zombies-decompiled`).
 - **Pruebas:** `node --test tools/*.test.mjs` → 51/51 pasando. `git diff --check` limpio.
-- **Release:** `BLOPSPocket.ipa` disponible en Releases de GitHub con el motor nativo de Treyarch y pantalla de carga de Kino der Toten.
-- **Siguiente paso:** Probar en el dispositivo y verificar el avance de fases de carga en los logs.
+- **Telemetría de Carga en Tiempo Real:** Conexión C++ ↔ Swift 1:1 mediante `bo1_ios_get_progress_info` en `db_file_load.cpp` (`Load_XAssetArrayCustom`). Muestra nombres reales de FastFiles, nombres reales de assets en carga, contador exacto `X / Y`, porcentaje real de avance y banner destacado de errores nativos en caso de fallo.
+- **Rutas de FastFiles:** Corrección de separadores Windows `\\` a POSIX `/` en `db_registry.cpp` y priorización de la ruta activa del juego en `Sys_DefaultInstallPath()`.
+- **Siguiente paso:** Generar la build de la IPA y verificar en el iPhone la carga visual asset por asset de Kino der Toten.
 
