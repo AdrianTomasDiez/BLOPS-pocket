@@ -408,12 +408,6 @@ typedef struct HCURSOR__* HCURSOR;
 #define IDC_WAIT ((LPCSTR)(intptr_t)32514)
 #endif
 
-typedef struct _SECURITY_ATTRIBUTES {
-    DWORD  nLength;
-    LPVOID lpSecurityDescriptor;
-    BOOL   bInheritHandle;
-} SECURITY_ATTRIBUTES, *PSECURITY_ATTRIBUTES, *LPSECURITY_ATTRIBUTES;
-
 #ifndef _putenv
 #define _putenv putenv
 #endif
@@ -427,6 +421,12 @@ typedef const char*   PCSTR;
 typedef char          CHAR;
 typedef wchar_t       WCHAR;
 typedef wchar_t*      LPWSTR;
+
+typedef struct _SECURITY_ATTRIBUTES {
+    DWORD  nLength;
+    LPVOID lpSecurityDescriptor;
+    BOOL   bInheritHandle;
+} SECURITY_ATTRIBUTES, *PSECURITY_ATTRIBUTES, *LPSECURITY_ATTRIBUTES;
 
 #ifndef LoadLibraryA
 static inline HMODULE LoadLibraryA(const char *lpLibFileName) {
