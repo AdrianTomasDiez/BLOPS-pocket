@@ -818,6 +818,46 @@ static inline BOOL QueryPerformanceFrequency(LARGE_INTEGER *lpFrequency) {
 #define INVALID_HANDLE_VALUE ((HANDLE)(intptr_t)-1)
 #endif
 
+#ifndef INVALID_FILE_ATTRIBUTES
+#define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
+#endif
+#define FILE_ATTRIBUTE_READONLY             0x00000001
+#define FILE_ATTRIBUTE_HIDDEN               0x00000002
+#define FILE_ATTRIBUTE_SYSTEM               0x00000004
+#define FILE_ATTRIBUTE_DIRECTORY            0x00000010
+#define FILE_ATTRIBUTE_ARCHIVE              0x00000020
+#define FILE_ATTRIBUTE_NORMAL               0x00000080
+
+static inline DWORD GetFileAttributesA(const char *lpFileName) {
+    if (!lpFileName || !*lpFileName) return INVALID_FILE_ATTRIBUTES;
+    char path[1024];
+    strncpy(path, lpFileName, sizeof(path) - 1);
+    path[sizeof(path) - 1] = '\0';
+    for (char *p = path; *p; p++) {
+        if (*p == '\\') *p = '/';
+    }
+    struct stat st;
+    if (stat(path, &st) != 0) {
+        const char *slash = strrchr(path, '/');
+        const char *base = slash ? slash + 1 : path;
+        if (strstr(base, ".ff")) {
+            const char *home = getenv("HOME");
+            if (home) {
+                char alt[1024];
+                snprintf(alt, sizeof(alt), "%s/Documents/Games/%s", home, base);
+                if (stat(alt, &st) == 0) return S_ISDIR(st.st_mode) ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
+                snprintf(alt, sizeof(alt), "%s/Documents/Games/zone/%s", home, base);
+                if (stat(alt, &st) == 0) return S_ISDIR(st.st_mode) ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
+                snprintf(alt, sizeof(alt), "%s/Documents/Games/zone/Common/%s", home, base);
+                if (stat(alt, &st) == 0) return S_ISDIR(st.st_mode) ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
+            }
+        }
+        return INVALID_FILE_ATTRIBUTES;
+    }
+    if (S_ISDIR(st.st_mode)) return FILE_ATTRIBUTE_DIRECTORY;
+    return FILE_ATTRIBUTE_NORMAL;
+}
+
 static inline HANDLE CreateFileA(const char *lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, void *lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile) {
     if (!lpFileName) return INVALID_HANDLE_VALUE;
     char path[1024];
@@ -831,6 +871,26 @@ static inline HANDLE CreateFileA(const char *lpFileName, DWORD dwDesiredAccess, 
         flags = O_RDWR | O_CREAT;
     }
     int fd = open(path, flags, 0644);
+    if (fd < 0) {
+        const char *slash = strrchr(path, '/');
+        const char *base = slash ? slash + 1 : path;
+        if (strstr(base, ".ff")) {
+            const char *home = getenv("HOME");
+            if (home) {
+                char alt[1024];
+                snprintf(alt, sizeof(alt), "%s/Documents/Games/%s", home, base);
+                fd = open(alt, flags, 0644);
+                if (fd < 0) {
+                    snprintf(alt, sizeof(alt), "%s/Documents/Games/zone/%s", home, base);
+                    fd = open(alt, flags, 0644);
+                }
+                if (fd < 0) {
+                    snprintf(alt, sizeof(alt), "%s/Documents/Games/zone/Common/%s", home, base);
+                    fd = open(alt, flags, 0644);
+                }
+            }
+        }
+    }
     if (fd < 0) return INVALID_HANDLE_VALUE;
     return (HANDLE)(intptr_t)(fd + 1);
 }
