@@ -58,6 +58,16 @@ void bo1_ios_frame(void)
     }
 }
 
+void bo1_ios_send_key(int key, int down)
+{
+    Sys_QueEvent((unsigned int)Sys_Milliseconds(), SE_KEY, key, down, 0, NULL);
+}
+
+void bo1_ios_send_mouse(int dx, int dy)
+{
+    Sys_QueEvent((unsigned int)Sys_Milliseconds(), SE_MOUSE, dx, dy, 0, NULL);
+}
+
 }
 
 // ----- Controlador de vista y App Delegate para iOS -----

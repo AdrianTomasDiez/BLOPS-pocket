@@ -2,6 +2,13 @@ import SwiftUI
 import UIKit
 import MetalKit
 
+/// Puente C extern para ciclo de vida del motor C++ de Treyarch
+@_silgen_name("bo1_ios_init")
+func bo1_ios_init(_ gameDirectory: UnsafePointer<CChar>)
+
+@_silgen_name("bo1_ios_frame")
+func bo1_ios_frame()
+
 /// Vista que alberga la ejecución del motor nativo C++ de Call of Duty: Black Ops 1 Zombies.
 struct NativeEngineView: View {
     let gameFolder: URL
@@ -12,6 +19,10 @@ struct NativeEngineView: View {
             Color.black.ignoresSafeArea()
 
             EngineViewControllerRepresentable(gameFolder: gameFolder)
+                .ignoresSafeArea()
+
+            // Controles táctiles virtuales en pantalla
+            VirtualGameControls()
                 .ignoresSafeArea()
 
             // Botón sutil de salida / pausa en la esquina superior izquierda
@@ -85,6 +96,10 @@ class EngineViewController: UIViewController {
         guard let folder = gameFolderURL else { return }
         print("[Engine] Inicializando motor nativo BO1 Zombies con carpeta: \(folder.path)")
 
+        folder.path.withCString { cPath in
+            bo1_ios_init(cPath)
+        }
+
         // Configurar CADisplayLink para el refresco por frame a 60/120 Hz
         displayLink = CADisplayLink(target: self, selector: #selector(engineTick))
         displayLink?.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 120, preferred: 60)
@@ -93,6 +108,7 @@ class EngineViewController: UIViewController {
 
     @objc private func engineTick() {
         // En cada tick de refresco de pantalla se llama al Com_Frame() del motor C++
+        bo1_ios_frame()
     }
 
     deinit {
