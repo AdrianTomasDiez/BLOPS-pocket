@@ -247,13 +247,19 @@ void __cdecl Monkey_DisconnectAndExit() {}
 void __cdecl Monkey_ShutdownCommunication() {}
 bool __cdecl Monkey_Recv(char *type, int type_size, char *string, int string_size) { return false; }
 
-// ---------------------------------------------------------
-// 11. Live & Steam
-// ---------------------------------------------------------
 int __cdecl Live_GetClientNumForXuid(SessionData_s const *session, unsigned long long xuid) { return -1; }
 
-bool _g_steamAPIInitialized = false;
-bool _g_steamInitialized = false;
+bool g_steamAPIInitialized = false;
+bool g_steamInitialized = false;
+
+extern SysInfo sys_info;
+void __cdecl Sys_GetInfo(SysInfo *info)
+{
+    if (info)
+    {
+        *info = sys_info;
+    }
+}
 
 void __cdecl Steam_CancelClientTicket() {}
 bool __cdecl Steam_CheckClientTicket(void const *ticket, unsigned int ticketSize, unsigned long long steamID) { return true; }
