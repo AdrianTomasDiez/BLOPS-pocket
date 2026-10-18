@@ -754,4 +754,10 @@ static inline void RaiseException(DWORD dwExceptionCode, DWORD dwExceptionFlags,
 #define LittleFloat(l) (l)
 #endif
 
+#if defined(__arm64__) || defined(__aarch64__)
+#ifndef _mm_prefetch
+#define _mm_prefetch(p, hint) __builtin_prefetch((p))
+#endif
+#endif
+
 #endif // __APPLE__
