@@ -8,6 +8,16 @@
 __attribute__((weak, visibility("default")))
 void bo1_ios_init(const char *gameDirectory) {
     printf("[BLOPS Launcher] Inicializando puente de motor Treyarch en: %s\n", gameDirectory ? gameDirectory : "(null)");
+    const char *home = getenv("HOME");
+    if (home) {
+        char path[1024];
+        snprintf(path, sizeof(path), "%s/Documents/bo1_console.log", home);
+        FILE *f = fopen(path, "a");
+        if (f) {
+            fprintf(f, "[AVISO] bo1_ios_init del launcher stub ejecutado con gameDirectory: %s\n", gameDirectory ? gameDirectory : "(null)");
+            fclose(f);
+        }
+    }
 }
 
 __attribute__((weak, visibility("default")))

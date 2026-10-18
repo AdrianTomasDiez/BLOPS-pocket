@@ -21,6 +21,8 @@ targets:
           - "$(SRCROOT)/../engine_build/Release-iphoneos"
         OTHER_LDFLAGS:
           - "-L$(SRCROOT)/libs"
+          - "-force_load"
+          - "$(SRCROOT)/libs/libBO1Zombies.a"
     info:
       path: BLOPSPocket/Info.plist
       properties:

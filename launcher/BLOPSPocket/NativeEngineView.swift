@@ -127,6 +127,23 @@ class EngineViewController: UIViewController {
         guard let folder = gameFolderURL else { return }
         print("[Engine] Inicializando motor nativo BO1 Zombies con carpeta: \(folder.path)")
 
+        // Escribir traza de inicio desde Swift directamente a Documents/bo1_console.log
+        if let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            let logURL = docs.appendingPathComponent("bo1_console.log")
+            let startupMsg = "\n=== [BLOPS Launcher] Pulsado INICIAR PARTIDA - Carpeta: \(folder.path) ===\n"
+            if let data = startupMsg.data(using: .utf8) {
+                if FileManager.default.fileExists(atPath: logURL.path) {
+                    if let handle = try? FileHandle(forWritingTo: logURL) {
+                        handle.seekToEndOfFile()
+                        handle.write(data)
+                        try? handle.close()
+                    }
+                } else {
+                    try? data.write(to: logURL)
+                }
+            }
+        }
+
         // Configurar CADisplayLink para el refresco por frame a 60/120 Hz
         displayLink = CADisplayLink(target: self, selector: #selector(engineTick))
         displayLink?.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 120, preferred: 60)
