@@ -184,9 +184,7 @@ typedef struct HWND__* HWND;
 
 struct HINSTANCE__ { int unused; };
 typedef struct HINSTANCE__* HINSTANCE;
-
-struct HMODULE__ { int unused; };
-typedef struct HMODULE__* HMODULE;
+typedef HINSTANCE HMODULE;
 
 struct HMENU__ { int unused; };
 typedef struct HMENU__* HMENU;
@@ -398,6 +396,28 @@ static inline LONG SetWindowLongA(HWND hWnd, int nIndex, LONG dwNewLong) {
 #ifndef WS_POPUP
 #define WS_POPUP 0x80000000L
 #endif
+
+#ifndef WS_VISIBLE
+#define WS_VISIBLE 0x10000000L
+#endif
+
+#ifndef HWND_NOTOPMOST
+#define HWND_NOTOPMOST ((HWND)(intptr_t)-2)
+#endif
+#ifndef HWND_TOPMOST
+#define HWND_TOPMOST   ((HWND)(intptr_t)-1)
+#endif
+#ifndef HWND_TOP
+#define HWND_TOP       ((HWND)(intptr_t)0)
+#endif
+#ifndef HWND_BOTTOM
+#define HWND_BOTTOM    ((HWND)(intptr_t)1)
+#endif
+
+static inline HWND SetFocus(HWND hWnd) {
+    (void)hWnd;
+    return hWnd;
+}
 
 #ifndef SWP_NOSIZE
 #define SWP_NOSIZE 0x0001
