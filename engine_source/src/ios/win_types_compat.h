@@ -25,7 +25,13 @@
 #include <strings.h>
 #include <setjmp.h>
 
+#include <errno.h>
+
 typedef FILE _iobuf;
+
+static inline int *_errno(void) {
+    return &errno;
+}
 
 static inline int64_t _time64(int64_t *t) {
     time_t tt = 0;
