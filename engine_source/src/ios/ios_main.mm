@@ -68,6 +68,13 @@ void bo1_ios_send_mouse(int dx, int dy)
     Sys_QueEvent((unsigned int)Sys_Milliseconds(), SE_MOUSE, dx, dy, 0, NULL);
 }
 
+BO1_iOS_PresentCallback g_bo1_ios_present_callback = NULL;
+
+void bo1_ios_set_present_callback(BO1_iOS_PresentCallback cb)
+{
+    g_bo1_ios_present_callback = cb;
+}
+
 void bo1_ios_execute_command(const char *cmd)
 {
     if (s_engineInitialized && cmd && cmd[0])

@@ -94,22 +94,50 @@ Adri ha ordenado descartar definitivamente cualquier intento de inventar motores
 - [x] Inyección de línea de comandos de Treyarch con arranque automático de Kino der Toten (`+set bo1_zombies 1 +set sv_cheats 1 +devmap zombie_theater`) y puente `bo1_ios_execute_command`.
 - [x] Integrar capa de ventana iOS con contexto Metal (`NativeEngineView.swift` vinculado con `CADisplayLink`).
 
-### Fase 7.4: Carga y Ejecución de Kino der Toten
-- [ ] Inicializar subsistema de FastFiles (`DB_Init`, `XAssetList`) sobre `zombie_theater.ff` y `common_zombie.ff`.
-- [ ] Ejecutar la máquina virtual GSC para iniciar la partida en solo en Kino der Toten.
-- [ ] Verificar renderizado nativo con shaders, modelos animados y audio real de Zombies.
+### Fase 7.4: Carga y Ejecución de Kino der Toten (En curso / Avanzada)
+- [x] Implementar resolución tolerante de archivos `*.ff` y shims Win32 de E/S (`CreateFileA`, `ReadFileEx`, `SetFilePointer`, `WriteFile`, `SleepEx`) en `win_types_compat.h`.
+- [x] Conectar la presentación de frames (`swapChain->Present` en `d3d9.h` / `rb_backend.cpp`) hacia el `MTKView` y command buffer de Metal en `NativeEngineView.swift`.
+- [x] Configurar arranque automático de mapa `+set bo1_zombies 1 +set sv_cheats 1 +devmap zombie_theater` en `bo1_ios_init`.
+- [ ] Inicializar y verificar la descompresión secuencial en el hilo de base de datos (`DB_Thread` / `DB_LoadXFileInternal`) sobre `common_zombie.ff` y `zombie_theater.ff`.
+- [ ] Validar la ejecución del script de nivel `maps/_zombiemode::main()` en la VM de GSC.
 
 ### Fase 7.5: Compilación en CI y Release de IPA (Completada al 100%)
 - [x] Configurar GitHub Actions para compilar el binario nativo ARM64 en macOS runner (`.github/workflows/ios-ipa.yml`).
 - [x] Empaquetar el ejecutable en la IPA sin firmar y publicar en GitHub Releases (`https://github.com/AdrianTomasDiez/BLOPS-pocket/releases/tag/latest`).
+- [x] Crear script de compilación local en macOS `tools/build_ipa_macos.sh` (100% independiente de los minutos de GitHub Actions).
 - [ ] Probar la partida en el iPhone instalando vía AltStore, SideStore o TrollStore.
 
 ---
 
-## 6. Estado del repositorio (2026-10-18)
+## 6. Cómo compilar el .ipa sin gastar minutos de GitHub Actions
+
+Cuando la cuota mensual de GitHub Actions se agota (como los 2.000 min mensuales que gastan x10 en macOS), hay dos formas directas y gratuitas de compilar:
+
+### Opción A: Compilación local directa en cualquier Mac
+1. Clonar el repositorio en un Mac (o conectar por SSH / máquina virtual):
+   ```bash
+   git clone https://github.com/AdrianTomasDiez/BLOPS-pocket.git
+   cd BLOPS-pocket
+   ```
+2. Ejecutar el script automatizado:
+   ```bash
+   chmod +x tools/build_ipa_macos.sh
+   ./tools/build_ipa_macos.sh
+   ```
+3. El archivo `BLOPSPocket.ipa` se genera automáticamente en `launcher/build/Build/Products/Release-iphoneos/BLOPSPocket.ipa`.
+
+### Opción B: Self-Hosted Runner en GitHub (minutos ilimitados y gratuitos)
+1. En GitHub ir a `Settings > Actions > Runners > New self-hosted runner`.
+2. Elegir macOS y seguir los 3 comandos de descarga en cualquier Mac.
+3. El workflow `.github/workflows/ios-ipa.yml` se puede cambiar a `runs-on: self-hosted` y compilará automáticamente en cada push con coste 0.
+
+---
+
+## 7. Estado del repositorio (2026-10-18)
 
 - **Rama:** `main`.
 - **Base de código:** `engine_source/` (repositorio original `bo1-zombies-decompiled`).
 - **Pruebas:** `node --test tools/*.test.mjs` → 51/51 pasando. `git diff --check` limpio.
 - **Release:** `BLOPSPocket.ipa` disponible en Releases de GitHub con el motor nativo de Treyarch.
-- **Siguiente paso:** Iniciar la Fase 7.4 (carga de FastFiles y ejecución de GSC para el spawn en Kino der Toten).
+- **Siguiente paso:** Pruebas de ejecución en dispositivo real y validación de hilos del descompresor de FastFiles.
+

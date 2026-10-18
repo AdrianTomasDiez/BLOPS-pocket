@@ -12,6 +12,9 @@ func bo1_ios_frame()
 @_silgen_name("bo1_ios_execute_command")
 func bo1_ios_execute_command(_ cmd: UnsafePointer<CChar>)
 
+@_silgen_name("bo1_ios_set_present_callback")
+func bo1_ios_set_present_callback(_ cb: (@convention(c) () -> Void)?)
+
 /// Vista que alberga la ejecución del motor nativo C++ de Call of Duty: Black Ops 1 Zombies.
 struct NativeEngineView: View {
     let gameFolder: URL
@@ -67,6 +70,10 @@ class EngineViewController: UIViewController {
     private var metalView: MTKView?
     private var displayLink: CADisplayLink?
 
+    private var commandQueue: MTLCommandQueue?
+    private static weak var sharedMetalView: MTKView?
+    private static var sharedCommandQueue: MTLCommandQueue?
+
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .black
@@ -83,6 +90,25 @@ class EngineViewController: UIViewController {
         mtkView.depthStencilPixelFormat = .depth32Float
         view.addSubview(mtkView)
         self.metalView = mtkView
+        self.commandQueue = device.makeCommandQueue()
+        EngineViewController.sharedMetalView = mtkView
+        EngineViewController.sharedCommandQueue = self.commandQueue
+
+        // Configurar callback de presentación de Treyarch -> Metal
+        bo1_ios_set_present_callback {
+            guard let view = EngineViewController.sharedMetalView,
+                  let drawable = view.currentDrawable,
+                  let queue = EngineViewController.sharedCommandQueue,
+                  let commandBuffer = queue.makeCommandBuffer() else {
+                return
+            }
+            if let renderPassDesc = view.currentRenderPassDescriptor,
+               let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDesc) {
+                encoder.endEncoding()
+            }
+            commandBuffer.present(drawable)
+            commandBuffer.commit()
+        }
 
         setupEngine()
     }
@@ -115,6 +141,7 @@ class EngineViewController: UIViewController {
     }
 
     deinit {
+        bo1_ios_set_present_callback(nil)
         displayLink?.invalidate()
     }
 }

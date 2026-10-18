@@ -592,9 +592,21 @@ struct IDirect3DQuery9 : public IUnknown {
     virtual HRESULT Issue(DWORD dwIssueFlags) { return 0; }
     virtual HRESULT GetData(void* pData, DWORD dwSize, DWORD dwGetDataFlags) { return 0; }
 };
+typedef void (*BO1_iOS_PresentCallback)(void);
+#if defined(__APPLE__)
+extern BO1_iOS_PresentCallback g_bo1_ios_present_callback;
+#endif
+
 struct IDirect3DStateBlock9 : public IUnknown {};
 struct IDirect3DSwapChain9 : public IUnknown {
-    virtual HRESULT Present(const RECT *pSourceRect, const RECT *pDestRect, HWND hDestWindowOverride, const void *pDirtyRegion, DWORD dwFlags) { return 0; }
+    virtual HRESULT Present(const RECT *pSourceRect, const RECT *pDestRect, HWND hDestWindowOverride, const void *pDirtyRegion, DWORD dwFlags) {
+#if defined(__APPLE__)
+        if (g_bo1_ios_present_callback) {
+            g_bo1_ios_present_callback();
+        }
+#endif
+        return 0;
+    }
     virtual HRESULT GetFrontBufferData(IDirect3DSurface9 *pDestSurface) { return 0; }
     virtual HRESULT GetBackBuffer(UINT iBackBuffer, D3DBACKBUFFER_TYPE Type, IDirect3DSurface9 **ppBackBuffer) {
         static IDirect3DSurface9 s_backBuffer;

@@ -709,6 +709,18 @@ static inline void Sleep(DWORD dwMilliseconds) {
     usleep(dwMilliseconds * 1000);
 }
 
+static inline DWORD SleepEx(DWORD dwMilliseconds, BOOL bAlertable) {
+    (void)bAlertable;
+    if (dwMilliseconds == 0xFFFFFFFF || dwMilliseconds == (DWORD)-1) {
+        // En Windows, SleepEx(INFINITE, TRUE) espera hasta que se ejecute la rutina de completado APC.
+        // En nuestro shim POSIX, ReadFileEx ejecuta el callback síncronamente al leer,
+        // por lo que no debe bloquearse en un bucle infinito. Retornar WAIT_IO_COMPLETION (0x000000C0L).
+        return 0x000000C0L;
+    }
+    usleep(dwMilliseconds * 1000);
+    return 0;
+}
+
 static inline BOOL SwitchToThread(void) {
     sched_yield();
     return 1;
@@ -929,6 +941,35 @@ static inline BOOL ReadFileEx(HANDLE hFile, void *lpBuffer, DWORD nNumberOfBytes
     if (lpCompletionRoutine) {
         lpCompletionRoutine(0, (DWORD)n, lpOverlapped);
     }
+    return 1;
+}
+
+static inline DWORD SetFilePointer(HANDLE hFile, LONG lDistanceToMove, PLONG lpDistanceToMoveHigh, DWORD dwMoveMethod) {
+    intptr_t val = (intptr_t)hFile;
+    if (val <= 0) return 0xFFFFFFFF;
+    int fd = (int)(val - 1);
+    off_t dist = (off_t)lDistanceToMove;
+    if (lpDistanceToMoveHigh) {
+        dist |= ((off_t)*lpDistanceToMoveHigh << 32);
+    }
+    int whence = SEEK_SET;
+    if (dwMoveMethod == 1) whence = SEEK_CUR;
+    else if (dwMoveMethod == 2) whence = SEEK_END;
+    off_t res = lseek(fd, dist, whence);
+    if (res == (off_t)-1) return 0xFFFFFFFF;
+    if (lpDistanceToMoveHigh) {
+        *lpDistanceToMoveHigh = (LONG)(res >> 32);
+    }
+    return (DWORD)res;
+}
+
+static inline BOOL WriteFile(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, void *lpOverlapped) {
+    intptr_t val = (intptr_t)hFile;
+    if (val <= 0 || !lpBuffer) return 0;
+    int fd = (int)(val - 1);
+    ssize_t n = write(fd, lpBuffer, nNumberOfBytesToWrite);
+    if (n < 0) return 0;
+    if (lpNumberOfBytesWritten) *lpNumberOfBytesWritten = (DWORD)n;
     return 1;
 }
 
