@@ -123,6 +123,14 @@ inline int _snprintf_s(char *buf, size_t size, size_t count, const char *format,
 #define strtok_s(str, delim, context) strtok_r((str), (delim), (context))
 #endif
 
+#ifndef sscanf_s
+#define sscanf_s sscanf
+#endif
+
+#ifndef swscanf_s
+#define swscanf_s swscanf
+#endif
+
 
 #ifndef min
 #define min(a,b) (((a)<(b))?(a):(b))
