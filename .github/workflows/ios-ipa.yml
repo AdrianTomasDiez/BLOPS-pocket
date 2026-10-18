@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: macos-latest
@@ -46,3 +49,13 @@ jobs:
         with:
           name: BLOPSPocket-unsigned
           path: launcher/build/Build/Products/Release-iphoneos/BLOPSPocket.ipa
+
+      - name: Publicar Release con descarga directa del .ipa
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: latest
+          name: "BLOPS Pocket (Última versión)"
+          body: "Descarga directa del archivo .ipa para instalar con AltStore, TrollStore o SideStore sin descomprimir ningún ZIP."
+          files: launcher/build/Build/Products/Release-iphoneos/BLOPSPocket.ipa
+          prerelease: false
