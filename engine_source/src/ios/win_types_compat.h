@@ -718,6 +718,7 @@ static inline void DeleteCriticalSection(CRITICAL_SECTION *cs) {
 #define InterlockedCompareExchangePointer(destination, exchange, comperand) __sync_val_compare_and_swap((destination), (comperand), (exchange))
 #define InterlockedExchangePointer(target, value) __sync_lock_test_and_set((target), (value))
 #define InterlockedExchangeAdd(addend, value) __sync_fetch_and_add((addend), (value))
+#define InterlockedExchange64(target, value) __sync_lock_test_and_set((target), (value))
 
 #define _InterlockedIncrement(x) __sync_add_and_fetch((x), 1)
 #define _InterlockedDecrement(x) __sync_sub_and_fetch((x), 1)
@@ -727,6 +728,7 @@ static inline void DeleteCriticalSection(CRITICAL_SECTION *cs) {
 #define _InterlockedExchangePointer(target, value) __sync_lock_test_and_set((target), (value))
 #define _InterlockedExchangeAdd(addend, value) __sync_fetch_and_add((addend), (value))
 #define _InterlockedCompareExchange64(destination, exchange, comperand) __sync_val_compare_and_swap((destination), (comperand), (exchange))
+#define _InterlockedExchange64(target, value) __sync_lock_test_and_set((target), (value))
 
 #ifndef MemoryBarrier
 #define MemoryBarrier() __sync_synchronize()
