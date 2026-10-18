@@ -1,5 +1,6 @@
 #pragma once
 
+#if defined(_WIN32)
 #include <ddraw.h>
 
 // genius in training
@@ -18,6 +19,7 @@ struct __declspec(align(4)) DDraw // sizeof=0x14
     //~DDraw();
     static DDraw *Instance();
 };
+#endif
 
 unsigned int __cdecl R_AvailableTextureMemory();
 unsigned int __cdecl R_VideoMemory();

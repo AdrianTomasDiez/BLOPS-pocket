@@ -4,6 +4,7 @@
 #include "r_init.h"
 #include <qcommon/common.h>
 
+#if defined(_WIN32)
 DDraw ddraw;
 
 DDraw *DDraw::Instance()
@@ -24,6 +25,7 @@ DDraw::DDraw()
         this->Initialized = 1;
     }
 }
+#endif
 
 unsigned int __cdecl R_AvailableTextureMemory()
 {
@@ -67,6 +69,33 @@ unsigned int __cdecl R_AvailableTextureMemory()
     }
 }
 
+#if !defined(_WIN32)
+unsigned int __cdecl R_VideoMemory()
+{
+    // On iOS / Metal unified memory architecture, report 1024 MB
+    return 1024;
+}
+
+unsigned int __cdecl R_VideoMemoryForDevice(_GUID *lpGUID)
+{
+    return 1024 * 1024 * 1024;
+}
+
+int __stdcall R_DDEnumCallback(_GUID *lpGUID, char *lpDriverDescription, char *lpDriverName, unsigned int *lpContext, HMONITOR__ *hm)
+{
+    return 1;
+}
+
+unsigned int __cdecl R_DrasticVideoMemoryForDevice(_GUID *lpGUID)
+{
+    return 1024 * 1024 * 1024;
+}
+
+int __stdcall R_DDEnumDrasticCallback(_GUID *lpGUID, char *lpDriverDescription, char *lpDriverName, unsigned int *lpContext, HMONITOR__ *hm)
+{
+    return 1;
+}
+#else
 unsigned int __cdecl R_VideoMemory()
 {
     const DDraw *v1; // [esp+8h] [ebp-10h]
@@ -269,4 +298,4 @@ int __stdcall R_DDEnumDrasticCallback(
         *lpContext = total;
     return 1;
 }
-
+#endif
