@@ -127,6 +127,7 @@ typedef uint16_t      WORD;
 typedef uint8_t       BYTE;
 typedef int           BOOL;
 typedef void*         HANDLE;
+typedef HANDLE*        LPHANDLE;
 
 struct HWND__ { int unused; };
 typedef struct HWND__* HWND;
@@ -502,6 +503,203 @@ static inline HANDLE OpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWO
 
 static inline void OutputDebugStringA(const char *lpOutputString) {
     fputs(lpOutputString, stderr);
+}
+
+#ifndef CREATE_SUSPENDED
+#define CREATE_SUSPENDED 0x00000004
+#endif
+
+#ifndef WAIT_OBJECT_0
+#define WAIT_OBJECT_0 0
+#endif
+#ifndef WAIT_TIMEOUT
+#define WAIT_TIMEOUT 258L
+#endif
+#ifndef INFINITE
+#define INFINITE 0xFFFFFFFF
+#endif
+
+struct Win32Event {
+    pthread_mutex_t mutex;
+    pthread_cond_t cond;
+    bool manualReset;
+    bool state;
+};
+
+static inline HANDLE CreateEventA(void *lpEventAttributes, BOOL bManualReset, BOOL bInitialState, const char *lpName) {
+    Win32Event *ev = (Win32Event *)malloc(sizeof(Win32Event));
+    if (!ev) return NULL;
+    pthread_mutex_init(&ev->mutex, NULL);
+    pthread_cond_init(&ev->cond, NULL);
+    ev->manualReset = bManualReset != 0;
+    ev->state = bInitialState != 0;
+    return (HANDLE)ev;
+}
+
+static inline BOOL SetEvent(HANDLE hEvent) {
+    if (!hEvent) return 0;
+    Win32Event *ev = (Win32Event *)hEvent;
+    pthread_mutex_lock(&ev->mutex);
+    ev->state = true;
+    if (ev->manualReset) {
+        pthread_cond_broadcast(&ev->cond);
+    } else {
+        pthread_cond_signal(&ev->cond);
+    }
+    pthread_mutex_unlock(&ev->mutex);
+    return 1;
+}
+
+static inline BOOL ResetEvent(HANDLE hEvent) {
+    if (!hEvent) return 0;
+    Win32Event *ev = (Win32Event *)hEvent;
+    pthread_mutex_lock(&ev->mutex);
+    ev->state = false;
+    pthread_mutex_unlock(&ev->mutex);
+    return 1;
+}
+
+static inline DWORD WaitForSingleObject(HANDLE hHandle, DWORD dwMilliseconds) {
+    if (!hHandle) return WAIT_TIMEOUT;
+    Win32Event *ev = (Win32Event *)hHandle;
+    pthread_mutex_lock(&ev->mutex);
+
+    if (dwMilliseconds == 0) {
+        DWORD res = ev->state ? WAIT_OBJECT_0 : WAIT_TIMEOUT;
+        if (ev->state && !ev->manualReset) {
+            ev->state = false;
+        }
+        pthread_mutex_unlock(&ev->mutex);
+        return res;
+    }
+
+    if (dwMilliseconds == INFINITE) {
+        while (!ev->state) {
+            pthread_cond_wait(&ev->cond, &ev->mutex);
+        }
+        if (!ev->manualReset) {
+            ev->state = false;
+        }
+        pthread_mutex_unlock(&ev->mutex);
+        return WAIT_OBJECT_0;
+    }
+
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    struct timespec ts;
+    uint64_t ns = (uint64_t)now.tv_usec * 1000ULL + (uint64_t)dwMilliseconds * 1000000ULL;
+    ts.tv_sec = now.tv_sec + (time_t)(ns / 1000000000ULL);
+    ts.tv_nsec = (long)(ns % 1000000000ULL);
+
+    while (!ev->state) {
+        int r = pthread_cond_timedwait(&ev->cond, &ev->mutex, &ts);
+        if (r != 0) {
+            pthread_mutex_unlock(&ev->mutex);
+            return WAIT_TIMEOUT;
+        }
+    }
+    if (!ev->manualReset) {
+        ev->state = false;
+    }
+    pthread_mutex_unlock(&ev->mutex);
+    return WAIT_OBJECT_0;
+}
+
+typedef DWORD (WINAPI *LPTHREAD_START_ROUTINE)(LPVOID lpThreadParameter);
+
+struct Win32Thread {
+    pthread_t thread;
+    LPTHREAD_START_ROUTINE startRoutine;
+    LPVOID param;
+    pthread_mutex_t suspendMutex;
+    pthread_cond_t suspendCond;
+    bool suspended;
+};
+
+static inline void *Win32ThreadProc(void *arg) {
+    Win32Thread *th = (Win32Thread *)arg;
+    pthread_mutex_lock(&th->suspendMutex);
+    while (th->suspended) {
+        pthread_cond_wait(&th->suspendCond, &th->suspendMutex);
+    }
+    pthread_mutex_unlock(&th->suspendMutex);
+    th->startRoutine(th->param);
+    return NULL;
+}
+
+static inline HANDLE CreateThread(void *lpThreadAttributes, size_t dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId) {
+    Win32Thread *th = (Win32Thread *)malloc(sizeof(Win32Thread));
+    if (!th) return NULL;
+    th->startRoutine = lpStartAddress;
+    th->param = lpParameter;
+    th->suspended = (dwCreationFlags & CREATE_SUSPENDED) != 0;
+    pthread_mutex_init(&th->suspendMutex, NULL);
+    pthread_cond_init(&th->suspendCond, NULL);
+
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    if (dwStackSize > 0) {
+        pthread_attr_setstacksize(&attr, dwStackSize);
+    }
+
+    int err = pthread_create(&th->thread, &attr, Win32ThreadProc, th);
+    pthread_attr_destroy(&attr);
+    if (err != 0) {
+        free(th);
+        return NULL;
+    }
+    if (lpThreadId) {
+        *lpThreadId = (DWORD)(uintptr_t)th->thread;
+    }
+    return (HANDLE)th;
+}
+
+static inline DWORD ResumeThread(HANDLE hThread) {
+    if (!hThread) return (DWORD)-1;
+    Win32Thread *th = (Win32Thread *)hThread;
+    pthread_mutex_lock(&th->suspendMutex);
+    if (th->suspended) {
+        th->suspended = false;
+        pthread_cond_broadcast(&th->suspendCond);
+    }
+    pthread_mutex_unlock(&th->suspendMutex);
+    return 1;
+}
+
+static inline HANDLE GetCurrentThread(void) {
+    return (HANDLE)(intptr_t)-2;
+}
+
+static inline HANDLE GetCurrentProcess(void) {
+    return (HANDLE)(intptr_t)-1;
+}
+
+static inline BOOL DuplicateHandle(HANDLE hSourceProcessHandle, HANDLE hSourceHandle, HANDLE hTargetProcessHandle, LPHANDLE lpTargetHandle, DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwOptions) {
+    if (lpTargetHandle) *lpTargetHandle = hSourceHandle;
+    return 1;
+}
+
+static inline DWORD SetThreadIdealProcessor(HANDLE hThread, DWORD dwIdealProcessor) {
+    return 0;
+}
+
+static inline BOOL GetProcessAffinityMask(HANDLE hProcess, LPDWORD lpProcessAffinityMask, LPDWORD lpSystemAffinityMask) {
+    if (lpProcessAffinityMask) *lpProcessAffinityMask = 0xFFFFFFFF;
+    if (lpSystemAffinityMask) *lpSystemAffinityMask = 0xFFFFFFFF;
+    return 1;
+}
+
+static inline BOOL SetThreadPriority(HANDLE hThread, int nPriority) {
+    return 1;
+}
+
+static inline DWORD GetLastError(void) {
+    return 0;
+}
+
+static inline void SetLastError(DWORD dwErrCode) {}
+
+static inline void RaiseException(DWORD dwExceptionCode, DWORD dwExceptionFlags, DWORD nNumberOfArguments, const ULONG_PTR *lpArguments) {
 }
 
 #ifndef LittleShort

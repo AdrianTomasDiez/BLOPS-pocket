@@ -318,6 +318,7 @@ set(BGAME_FILES
 )
 
 # ----- src/binklib -----
+if(NOT APPLE)
 set(SRC_BINKLIB
 	"${SRC_DIR}/binklib/bink.h"
 	"${SRC_DIR}/binklib/binktextures.cpp"
@@ -327,6 +328,9 @@ set(SRC_BINKLIB
 	"${SRC_DIR}/binklib/radbase.h"
 )
 source_group("binklib" FILES ${SRC_BINKLIB})
+else()
+set(SRC_BINKLIB "")
+endif()
 
 set(BINKLIB_FILES
 	${SRC_BINKLIB}

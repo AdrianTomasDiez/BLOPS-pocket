@@ -257,6 +257,22 @@ struct IDirect3DDevice9 : public IUnknown {
 };
 struct IDirect3DDevice9Ex : public IDirect3DDevice9 {};
 struct IDirect3D9 : public IUnknown {};
+
+typedef struct IDirect3D9 *LPDIRECT3D9;
+typedef struct IDirect3DDevice9 *LPDIRECT3DDEVICE9;
+typedef struct IDirect3DDevice9Ex *LPDIRECT3DDEVICE9EX;
+typedef struct IDirect3DTexture9 *LPDIRECT3DTEXTURE9;
+typedef struct IDirect3DCubeTexture9 *LPDIRECT3DCUBETEXTURE9;
+typedef struct IDirect3DVolumeTexture9 *LPDIRECT3DVOLUMETEXTURE9;
+typedef struct IDirect3DSurface9 *LPDIRECT3DSURFACE9;
+typedef struct IDirect3DVertexBuffer9 *LPDIRECT3DVERTEXBUFFER9;
+typedef struct IDirect3DIndexBuffer9 *LPDIRECT3DINDEXBUFFER9;
+typedef struct IDirect3DVertexDeclaration9 *LPDIRECT3DVERTEXDECLARATION9;
+typedef struct IDirect3DVertexShader9 *LPDIRECT3DVERTEXSHADER9;
+typedef struct IDirect3DPixelShader9 *LPDIRECT3DPIXELSHADER9;
+typedef struct IDirect3DQuery9 *LPDIRECT3DQUERY9;
+typedef struct IDirect3DStateBlock9 *LPDIRECT3DSTATEBLOCK9;
+typedef struct IDirect3DSwapChain9 *LPDIRECT3DSWAPCHAIN9;
 #endif
 
 #define D3D_OK 0
