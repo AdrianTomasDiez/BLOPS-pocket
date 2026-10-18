@@ -200,11 +200,6 @@ const char *bo1_ios_get_gamedir(void)
 
 @end
 
-int main(int argc, char *argv[])
-{
-    @autoreleasepool {
-        return UIApplicationMain(argc, argv, nil, NSStringFromClass([BO1AppDelegate class]));
-    }
-}
+// Note: The main entry point is driven by SwiftUI launcher (BLOPSPocketApp.swift).
 
 #endif // __APPLE__

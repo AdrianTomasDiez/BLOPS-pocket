@@ -5807,7 +5807,7 @@ void __cdecl RB_UpdateDynamicBuffers(GfxBackEndData *backendData)
     *backendData->dynamicBufferCurrentFrame = 0;
 }
 
-const void *data;
+static const void *data;
 void     RB_RenderThread(unsigned int threadContext)
 {
     void *Value; // eax

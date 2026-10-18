@@ -1,4 +1,5 @@
 #include "r_dpvs_sceneent.h"
+#include "r_dpvs.h"
 #include <universal/com_workercmds.h>
 #include "r_dpvs_entity.h"
 #include "r_scene.h"
@@ -251,21 +252,7 @@ LABEL_56:
 #endif
 
 
-static int __cdecl R_CullSphereDpvs(const float *origin, float radius, const DpvsPlane *planes, int planeCount)
-{
-    int planeIndex; // [esp+8h] [ebp-4h]
 
-    for (planeIndex = 0; planeIndex < planeCount; ++planeIndex)
-    {
-        if ((float)((float)((float)((float)((float)(planes->coeffs[0] * *origin) + (float)(planes->coeffs[1] * origin[1]))
-            + (float)(planes->coeffs[2] * origin[2]))
-            + planes->coeffs[3])
-            + radius) <= 0.0)
-            return 1;
-        ++planes;
-    }
-    return 0;
-}
 
 void R_AddCellSceneEntSurfacesInFrustumCmd(GfxWorldDpvsPlanes *data)
 {
