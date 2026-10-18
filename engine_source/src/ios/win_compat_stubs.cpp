@@ -10,17 +10,21 @@
 #include <qcommon/threads.h>
 #include <tl/jobqueue/jobqueue_all.h>
 #include <universal/com_workercmds.h>
+#include <win32/win_common.h>
 #include <win32/win_workercmds.h>
 #include <win32/win_gamerprofile.h>
 #include <win32/win_gamepad.h>
+#include <win32/win_tasks.h>
 #include <gfx_d3d/r_model_skin.h>
 #include <gfx_d3d/r_buffers.h>
 #include <sound/snd_local.h>
 
+struct SessionData_s;
+
 // ---------------------------------------------------------
 // 1. Endianness
 // ---------------------------------------------------------
-extern "C" __int16 __cdecl BigShort(__int16 l)
+__int16 __cdecl BigShort(__int16 l)
 {
     return (short)ShortSwap(l);
 }
@@ -28,7 +32,7 @@ extern "C" __int16 __cdecl BigShort(__int16 l)
 // ---------------------------------------------------------
 // 2. Localization
 // ---------------------------------------------------------
-extern "C" char *__cdecl Win_GetLanguage()
+char *__cdecl Win_GetLanguage()
 {
     static char s_lang[] = "english";
     return s_lang;
@@ -145,9 +149,9 @@ void __cdecl GamerProfile_SetPlaylistNum(int controllerIndex, int playlistNum) {
 const dvar_t *gpad_enabled = nullptr;
 
 bool __cdecl GPad_IsActive(int controllerIndex) { return false; }
-bool __cdecl GPad_GetButton(int controllerIndex, GamePadButton button) { return false; }
+double __cdecl GPad_GetButton(int controllerIndex, GamePadButton button) { return 0.0; }
 bool __cdecl GPad_IsButtonPressed(int controllerIndex, GamePadButton button) { return false; }
-float __cdecl GPad_GetStick(int controllerIndex, GamePadStick stick) { return 0.0f; }
+double __cdecl GPad_GetStick(int controllerIndex, GamePadStick stick) { return 0.0; }
 
 void __cdecl IN_Frame() {}
 void __cdecl IN_SetCursorPos(unsigned int x, unsigned int y) {}
@@ -204,6 +208,8 @@ void __cdecl Voice_StopClientSamples() {}
 // ---------------------------------------------------------
 // 9. Streaming / Splash / Misc Sys
 // ---------------------------------------------------------
+extern int __cdecl Sys_Milliseconds();
+
 void __cdecl Stream_Init() {}
 void __cdecl Sys_DestroySplashWindow() {}
 void __cdecl Sys_HideSplashWindow() {}
