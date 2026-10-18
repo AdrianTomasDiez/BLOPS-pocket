@@ -9,12 +9,6 @@ targets:
     platform: iOS
     sources:
       - BLOPSPocket
-    dependencies:
-      - framework: Metal.framework
-      - framework: MetalKit.framework
-      - framework: GameController.framework
-      - framework: AudioToolbox.framework
-      - framework: AVFoundation.framework
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.adriantomasdiez.blopspocket
