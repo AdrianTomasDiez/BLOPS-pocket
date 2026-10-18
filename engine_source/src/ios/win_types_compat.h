@@ -24,6 +24,8 @@
 #include <ctype.h>
 #include <strings.h>
 #include <setjmp.h>
+#include <wchar.h>
+#include <wctype.h>
 
 #include <errno.h>
 
@@ -158,6 +160,14 @@ inline int _snprintf_s(char *buf, size_t size, size_t count, const char *format,
 #ifndef swscanf_s
 #define swscanf_s swscanf
 #endif
+
+static inline int _vsnwprintf_s(wchar_t *buf, size_t sizeInWords, size_t count, const wchar_t *format, va_list argptr) {
+    if (!buf || sizeInWords == 0) return -1;
+    size_t maxLen = (count < sizeInWords) ? count : (sizeInWords - 1);
+    int res = vswprintf(buf, maxLen + 1, format, argptr);
+    buf[sizeInWords - 1] = L'\0';
+    return res;
+}
 
 
 #ifndef min
@@ -1848,9 +1858,34 @@ static inline HWND CreateWindowExA(DWORD dwExStyle, const char *lpClassName, con
     return &dummyHwnd;
 }
 
+#ifndef MB_OK
+#define MB_OK 0x00000000L
+#endif
+#ifndef MB_YESNO
+#define MB_YESNO 0x00000004L
+#endif
+#ifndef IDOK
+#define IDOK 1
+#endif
+#ifndef IDYES
+#define IDYES 6
+#endif
+#ifndef IDNO
+#define IDNO 7
+#endif
+
 static inline int MessageBoxA(HWND hWnd, const char *lpText, const char *lpCaption, UINT uType) {
+    (void)hWnd; (void)uType;
     fprintf(stderr, "[BO1 MSG BOX] %s: %s\n", lpCaption ? lpCaption : "Alert", lpText ? lpText : "");
     return 1;
+}
+
+static inline int MessageBoxW(HWND hWnd, const wchar_t *lpText, const wchar_t *lpCaption, UINT uType) {
+    (void)hWnd; (void)uType;
+    if (lpCaption && lpText) {
+        fprintf(stderr, "[BO1 MSG BOX W] %ls: %ls\n", lpCaption, lpText);
+    }
+    return (uType & MB_YESNO) ? IDYES : IDOK;
 }
 
 static inline DWORD GetCurrentDirectoryA(DWORD nBufferLength, char *lpBuffer) {
