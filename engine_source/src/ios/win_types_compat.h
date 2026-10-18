@@ -223,6 +223,9 @@ typedef uint64_t      ULONGLONG;
 typedef uint32_t      UINT;
 typedef int32_t       INT;
 typedef uint32_t      UINT32;
+#ifndef XMD_H
+#define XMD_H
+#endif
 typedef int32_t       INT32;
 typedef uint16_t      UINT16;
 typedef int16_t       INT16;
