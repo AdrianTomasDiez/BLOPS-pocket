@@ -60,47 +60,50 @@ Códigos de salida en todas: **0** correcto, **1** error de formato/lectura o co
 
 **Pruebas:** `node --test tools/*.test.mjs` → **51/51**. Ese mismo comando está en `.github/workflows/ios-ipa.yml`.
 
-## 4. Nuevo rumbo del proyecto (2026-10-18): Port 100% jugable de Kino der Toten
+## 4. Nuevo rumbo del proyecto (2026-10-18): Port nativo del motor real bo1-zombies-decompiled
 
-Adri ha aprobado centrar el 100% del esfuerzo en hacer **jugable por completo el Modo Zombies en Kino der Toten** en el iPhone como el juego original:
-- Eliminada toda la interfaz de depurador, listas técnicas de archivos `.ff` y controles de visor 3D.
-- La aplicación arranca obligatoriamente en **horizontal a pantalla completa (Landscape Fullscreen)**.
-- Se implementa el **Menú Principal de Call of Duty: Black Ops Zombies** (`SOLO · KINO DER TOTEN`).
-- Al pulsar Iniciar, pasa por la pantalla de carga oficial de Kino der Toten y entra directamente a pantalla completa al mapa con el HUD auténtico de Zombies y soporte nativo de mando físico.
-
----
-
-## 5. Checklist de las siguientes fases y prompts
-
-### Fase 6c.4: Suelo, Gravedad y Colisiones en Kino der Toten (Completada)
-- [x] Establecer spawn oficial en el Lobby frente a Quick Revive y escaleras `(0.0, -850.0, floorZ + 60.0)`.
-- [x] Bloquear la cámara FPS al suelo del Lobby a altura de ojos real (~60 unidades = ~1.52m).
-- [x] Aplicar física de gravedad y suelo escalonado (piso bajo Z=0.0, descansillo/balcón Z=140.0).
-- [x] Delimitar físicamente el contorno del Lobby `([-550, 550], [-1480, -90])` para evitar caídas al vacío o atravesar paredes.
-- [x] **Criterio de éxito:** En el iPhone caminas por el Lobby pisando el suelo y sin salirte del mapa ni caer al vacío.
-
-### Fase 6d: Menú Principal Oficial y Partida a Pantalla Completa (Completada)
-- [x] **Eliminación de visor de archivos:** La app ya no muestra exploradores de `.ff` ni botones de diagnóstico.
-- [x] **Orientación Landscape fija:** Configurada en `project.yml` para correr en horizontal panorámico.
-- [x] **Menú Principal Black Ops Zombies:** Pantalla de inicio con estética de Black Ops, botón de "SOLO · KINO DER TOTEN" y cartel del mapa.
-- [x] **Pantalla de Carga Oficial:** Transición limpia hacia Kino der Toten ("Berlín, 1963").
-- [x] **KinoGameView a Pantalla Completa:** Metal renderizando a pantalla completa de borde a borde sin recuadros ni listas.
-- [x] **HUD Auténtico y Limpio:** Puntos amarillos, ronda roja, arma Colt M1911 con contador de balas y controles discretos.
-- [x] **Soporte de Mando Físico:** Detección automática de mandos de PS4/PS5/Xbox/Backbone para jugar de verdad sin tocar la pantalla.
+Adri ha ordenado descartar definitivamente cualquier intento de inventar motores o visores caseros en Swift. El proyecto sigue la misma filosofía de **`IW4-Pocket`**:
+- Se usa el código fuente real de **`bo1-zombies-decompiled`** en C++.
+- Se eliminan las dependencias viejas de PC Win32/x86 (DirectX9, Steamworks, Bink32).
+- Se adapta para compilar en 64 bits ARM64 para iOS con backend Metal/SDL2, CoreAudio y GameController.
+- El motor original de Treyarch se encarga de cargar `zombie_theater.ff`, ejecutar los scripts `.gsc` de Kino der Toten, procesar la física, animaciones esqueléticas de zombis y armas con su gunplay real.
 
 ---
 
-### Fase 6e: Flujo Expandido de Kino der Toten (Puertas, Armas de Pared y Perks)
-- [ ] Compra de puertas del Lobby (puerta superior derecha por 750 pts, puerta inferior izquierda por 750 pts).
-- [ ] Compra de armas de pared (Olympia por 500 pts, M14 por 500 pts).
-- [ ] Caja Misteriosa funcional y máquinas de ventajas (Quick Revive en solo, Titán por 2500 pts para aguantar 5 golpes).
-- [ ] **Criterio de éxito:** Partida completa extendida con puertas y perks en Kino der Toten en el iPhone.
+## 5. Checklist de las siguientes fases (Motor real en iOS)
+
+### Fase 7.1: Importación y arquitectura del motor (Completada)
+- [x] Clonar `bo1-zombies-decompiled` en `engine_source/`.
+- [x] Actualizar `AGENTS.md`, `reglas.md` y `prompts.md` prohibiendo motores ficticios.
+- [x] Identificar módulos clave de Zombies (`bgame`, `cgame`, `game`, `clientscript`, `physics`, `xanim`).
+
+### Fase 7.2: Poda de dependencias Win32 / x86 de PC (SIGUIENTE PASO)
+- [ ] Eliminar módulos no utilizados (campaña, multijugador `client_mp`/`game_mp`/`server_mp`).
+- [ ] Desacoplar librerías de 32 bits de PC (`d3d9.lib`, `dsound.lib`, `binkw32.lib`, `steam_api.lib`, `nvapi.lib`).
+- [ ] Adaptar `CMakeLists.txt` para compilación cruzada con Clang para target `aarch64-apple-ios`.
+- [ ] Resolver compatibilidad de tipos de 64 bits en punteros del motor.
+
+### Fase 7.3: Capa de plataforma iOS (Ventana, Metal y Entrada)
+- [ ] Integrar capa de ventana iOS con contexto Metal (usando SDL2 o capa puente nativa).
+- [ ] Conectar el subsistema de audio con CoreAudio / OpenAL.
+- [ ] Conectar mandos y touch nativos con `GameController` (+forward, +attack, +speed, etc.).
+- [ ] Conectar sandbox de lectura de archivos a `Documents/Games`.
+
+### Fase 7.4: Carga y Ejecución de Kino der Toten
+- [ ] Inicializar subsistema de FastFiles (`DB_Init`, `XAssetList`) sobre `zombie_theater.ff` y `common_zombie.ff`.
+- [ ] Ejecutar la máquina virtual GSC para iniciar la partida en solo en Kino der Toten.
+- [ ] Verificar renderizado nativo con shaders, modelos animados y audio real de Zombies.
+
+### Fase 7.5: Compilación en CI y Release de IPA
+- [ ] Configurar GitHub Actions para compilar el binario nativo ARM64 en macOS runner.
+- [ ] Empaquetar el ejecutable en la IPA sin firmar y publicar en GitHub Releases.
+- [ ] Probar la partida en el iPhone.
 
 ---
 
 ## 6. Estado del repositorio (2026-10-18)
 
 - **Rama:** `main`.
-- **CI en GitHub Actions:** Generación de IPA sin firmar y publicación directa en GitHub Releases.
-- **Suite de pruebas:** `node --test tools/*.test.mjs` → **51/51 tests pasando**. `git diff --check` limpio.
-- **Estado de jugabilidad:** Al abrir la app en el iPhone, aparece el Menú de Black Ops Zombies en horizontal y se entra a jugar a Kino der Toten a pantalla completa con mando o táctil.
+- **Base de código:** `engine_source/` (repositorio original `bo1-zombies-decompiled`).
+- **Pruebas:** `node --test tools/*.test.mjs` → 51/51 pasando. `git diff --check` limpio.
+- **Siguiente paso:** Iniciar **Fase 7.2 (Prompt 7)**: Podar dependencias de Windows x86 de `engine_source/CMakeLists.txt` y preparar el target iOS ARM64.
