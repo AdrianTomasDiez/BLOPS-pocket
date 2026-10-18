@@ -519,4 +519,13 @@ typedef struct IDirect3DSwapChain9 *LPDIRECT3DSWAPCHAIN9;
 #define D3DERR_DEVICELOST 0x88760868
 #define D3DERR_DEVICENOTRESET 0x88760869
 
+#define D3DUSAGE_RENDERTARGET       0x00000001L
+#define D3DUSAGE_DEPTHSTENCIL       0x00000002L
+#define D3DUSAGE_DYNAMIC            0x00000200L
+#define D3DUSAGE_WRITEONLY          0x00000008L
+
+static inline int D3DPERF_BeginEvent(D3DCOLOR col, const wchar_t *wszName) { (void)col; (void)wszName; return 0; }
+static inline int D3DPERF_EndEvent(void) { return 0; }
+static inline void D3DPERF_SetMarker(D3DCOLOR col, const wchar_t *wszName) { (void)col; (void)wszName; }
+
 #endif // __APPLE__
