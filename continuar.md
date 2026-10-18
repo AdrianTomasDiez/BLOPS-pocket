@@ -62,15 +62,11 @@ Códigos de salida en todas: **0** correcto, **1** error de formato/lectura o co
 
 ## 4. Nuevo rumbo del proyecto (2026-10-18): Port 100% jugable de Kino der Toten
 
-Adri ha aprobado centrar el 100% del esfuerzo en hacer **jugable por completo el Modo Zombies en Kino der Toten** en el iPhone, abandonando la ingeniería inversa abstracta o herramientas secundarias.
-
-El enfoque técnico es:
-1. **Motor nativo de 64 bits en Swift + Metal:** Ya compila en CI, empaqueta IPA y corre a 60 FPS sin problemas de punteros ni capas lentas.
-2. **Activos legítimos del usuario:**
-   - Geometría de salas BSP y 3.070 props estáticos ya cargan en memoria (`zombie_theater.ff`).
-   - Texturas completas de paredes, suelos, armas y zombis desde los `.iwd` / `.ff`.
-   - Coordenadas reales de Kino der Toten desde `MapEnts`: spawns de jugador, ventanas/barricadas, puertas comprables (750, 1000, 1250 pts), armas de pared (M14, Olympia, MP40...), Caja Misteriosa y máquinas de perks (Titán, Quick Revive...).
-3. **Mecánicas exactas replicadas al 100%:** Se leen las fórmulas y reglas originales de `bo1-zombies-decompiled` y los scripts `.gsc` oficiales (salud de zombis por ronda, puntos por impacto/muerte, daño, precios y lógica de rondas).
+Adri ha aprobado centrar el 100% del esfuerzo en hacer **jugable por completo el Modo Zombies en Kino der Toten** en el iPhone como el juego original:
+- Eliminada toda la interfaz de depurador, listas técnicas de archivos `.ff` y controles de visor 3D.
+- La aplicación arranca obligatoriamente en **horizontal a pantalla completa (Landscape Fullscreen)**.
+- Se implementa el **Menú Principal de Call of Duty: Black Ops Zombies** (`SOLO · KINO DER TOTEN`).
+- Al pulsar Iniciar, pasa por la pantalla de carga oficial de Kino der Toten y entra directamente a pantalla completa al mapa con el HUD auténtico de Zombies y soporte nativo de mando físico.
 
 ---
 
@@ -81,26 +77,16 @@ El enfoque técnico es:
 - [x] Bloquear la cámara FPS al suelo del Lobby a altura de ojos real (~60 unidades = ~1.52m).
 - [x] Aplicar física de gravedad y suelo escalonado (piso bajo Z=0.0, descansillo/balcón Z=140.0).
 - [x] Delimitar físicamente el contorno del Lobby `([-550, 550], [-1480, -90])` para evitar caídas al vacío o atravesar paredes.
-- [x] Alternador interactivo entre modo "Caminar" (físicas activas) y "Volar" (noclip libre).
-- [x] **Criterio de éxito:** En el iPhone puedes caminar por el Lobby pisando el suelo y sin salirte del mapa ni caer al vacío.
+- [x] **Criterio de éxito:** En el iPhone caminas por el Lobby pisando el suelo y sin salirte del mapa ni caer al vacío.
 
-### Fase 6c.5: Texturas y acabados visuales de Kino der Toten (Completada en 6c.2/6c.3)
-- [x] Extracción y modulación de texturas inline `GfxImageLoadDef` (lightmaps, reflection probes y materiales clasificados semánticamente).
-- [x] Acabado visual con materiales diferenciados y sombras horneadas en Metal.
-
----
-
-### Fase 6d: Gameplay Jugable de Kino der Toten (Arma M1911, Zombis, Daño, Puntos e IA) (Completada)
-- [x] **M1911 Viewmodel interactivo:** HUD táctil con contador de munición auténtico (8 balas en recámara / 32 en reserva).
-- [x] **Controles de combate:** Botones táctiles de DISPARAR, RECARGAR y CUCHILLO a corta distancia.
-- [x] **Efectos de disparo:** Retroceso visual del arma (kick), fogonazo luminoso (muzzle flash) y raycasting balístico desde el centro de la cámara.
-- [x] **Entidad Zombi en Kino der Toten:** Generación de zombis en ventanas del Lobby `(350, -600, 0)`, `(-380, -650, 0)`, `(0, -320, 0)`.
-- [x] **Fórmulas auténticas de daño y salud:** 150 HP en Ronda 1 (20 de daño por bala de M1911, muerte en 8 disparos o 1 cuchillada de 150 daño).
-- [x] **Sistema de puntuación CoD:** +10 pts por bala acertada, +60 pts por muerte al cuerpo con pistola, +130 pts por muerte con cuchillo. Puntuación inicial de 500 pts.
-- [x] **Hitmarker y retroalimentación:** Cruz roja (hitmarker) en el centro de la pantalla al impactar contra el zombi.
-- [x] **IA de persecución y combate:** El zombi camina de forma autónoma hacia el jugador adaptándose a las cotas del suelo del Lobby.
-- [x] **Daño al jugador y muerte:** Al aproximarse a distancia cuerpo a cuerpo (<45 unidades), el zombi ataca al jugador (50 de daño), activando destello rojo periférico y reaparición en caso de caída.
-- [x] **Bucle de rondas:** Al abatir al zombi, reaparece el siguiente zombi con salud escalada (+50 HP por ronda) y se incrementa el contador de rondas.
+### Fase 6d: Menú Principal Oficial y Partida a Pantalla Completa (Completada)
+- [x] **Eliminación de visor de archivos:** La app ya no muestra exploradores de `.ff` ni botones de diagnóstico.
+- [x] **Orientación Landscape fija:** Configurada en `project.yml` para correr en horizontal panorámico.
+- [x] **Menú Principal Black Ops Zombies:** Pantalla de inicio con estética de Black Ops, botón de "SOLO · KINO DER TOTEN" y cartel del mapa.
+- [x] **Pantalla de Carga Oficial:** Transición limpia hacia Kino der Toten ("Berlín, 1963").
+- [x] **KinoGameView a Pantalla Completa:** Metal renderizando a pantalla completa de borde a borde sin recuadros ni listas.
+- [x] **HUD Auténtico y Limpio:** Puntos amarillos, ronda roja, arma Colt M1911 con contador de balas y controles discretos.
+- [x] **Soporte de Mando Físico:** Detección automática de mandos de PS4/PS5/Xbox/Backbone para jugar de verdad sin tocar la pantalla.
 
 ---
 
@@ -114,7 +100,7 @@ El enfoque técnico es:
 
 ## 6. Estado del repositorio (2026-10-18)
 
-- **Rama:** `main` sincronizada con `origin/main` (HEAD `479ff7a`).
-- **CI en GitHub Actions:** Flujo automatizado en macOS arm64 que genera y publica la IPA sin firmar `BLOPSPocket-unsigned` en menos de 50 segundos.
+- **Rama:** `main`.
+- **CI en GitHub Actions:** Generación de IPA sin firmar y publicación directa en GitHub Releases.
 - **Suite de pruebas:** `node --test tools/*.test.mjs` → **51/51 tests pasando**. `git diff --check` limpio.
-- **Estado de jugabilidad:** El juego ya es jugable en primera persona en Kino der Toten con movimiento, físicas de suelo, M1911, disparo, munición, zombis persiguiéndote, daño e incremento de rondas.
+- **Estado de jugabilidad:** Al abrir la app en el iPhone, aparece el Menú de Black Ops Zombies en horizontal y se entra a jugar a Kino der Toten a pantalla completa con mando o táctil.

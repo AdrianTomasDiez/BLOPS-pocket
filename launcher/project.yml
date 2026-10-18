@@ -21,7 +21,8 @@ targets:
         CFBundleDisplayName: BLOPS pocket
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
-          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         # Deja ver la carpeta de la app en Archivos → En mi iPhone → BLOPS pocket,
         # que es la vía recomendada para copiar el juego (reglas.md, sección 10).
         UIFileSharingEnabled: true
