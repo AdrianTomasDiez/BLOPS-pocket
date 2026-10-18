@@ -317,12 +317,25 @@ typedef struct HMENU__* HMENU;
 
 typedef void*         LPVOID;
 typedef void*         PVOID;
-typedef const void*   LPCVOID;
 typedef char*         LPSTR;
 typedef const char*   LPCSTR;
+typedef const char*   PCSTR;
 typedef char          CHAR;
 typedef wchar_t       WCHAR;
 typedef wchar_t*      LPWSTR;
+
+#ifndef LoadLibraryA
+static inline HMODULE LoadLibraryA(const char *lpLibFileName) {
+    (void)lpLibFileName;
+    return NULL;
+}
+#endif
+#ifndef GetProcAddress
+static inline void *GetProcAddress(HMODULE hModule, const char *lpProcName) {
+    (void)hModule; (void)lpProcName;
+    return NULL;
+}
+#endif
 typedef const wchar_t* LPCWSTR;
 typedef uint64_t      DWORD64;
 typedef uint64_t*     PDWORD64;
@@ -942,6 +955,18 @@ typedef struct _MEMORYSTATUS {
     size_t dwAvailVirtual;
 } MEMORYSTATUS, *LPMEMORYSTATUS;
 
+typedef struct _MEMORYSTATUSEX {
+    DWORD     dwLength;
+    DWORD     dwMemoryLoad;
+    DWORDLONG ullTotalPhys;
+    DWORDLONG ullAvailPhys;
+    DWORDLONG ullTotalPageFile;
+    DWORDLONG ullAvailPageFile;
+    DWORDLONG ullTotalVirtual;
+    DWORDLONG ullAvailVirtual;
+    DWORDLONG ullAvailExtendedVirtual;
+} MEMORYSTATUSEX, *LPMEMORYSTATUSEX;
+
 static inline void GlobalMemoryStatus(MEMORYSTATUS *lpBuffer) {
     if (lpBuffer) {
         memset(lpBuffer, 0, sizeof(*lpBuffer));
@@ -949,6 +974,18 @@ static inline void GlobalMemoryStatus(MEMORYSTATUS *lpBuffer) {
         lpBuffer->dwTotalPhys = 1024ULL * 1024ULL * 1024ULL;
         lpBuffer->dwAvailPhys = 512ULL * 1024ULL * 1024ULL;
     }
+}
+
+static inline BOOL GlobalMemoryStatusEx(MEMORYSTATUSEX *lpBuffer) {
+    if (lpBuffer) {
+        memset(lpBuffer, 0, sizeof(*lpBuffer));
+        lpBuffer->dwLength = sizeof(*lpBuffer);
+        lpBuffer->ullTotalPhys = 2048ULL * 1024ULL * 1024ULL;
+        lpBuffer->ullAvailPhys = 1024ULL * 1024ULL * 1024ULL;
+        lpBuffer->ullTotalVirtual = 4096ULL * 1024ULL * 1024ULL;
+        lpBuffer->ullAvailVirtual = 2048ULL * 1024ULL * 1024ULL;
+    }
+    return TRUE;
 }
 
 #define MEM_COMMIT             0x00001000
@@ -1501,8 +1538,32 @@ static inline HANDLE CreateThread(void *lpThreadAttributes, size_t dwStackSize, 
 #define EXCEPTION_EXECUTE_HANDLER 1
 #endif
 
+#ifndef CONTEXT_CONTROL
+#define CONTEXT_CONTROL 0x00010001L
+#endif
+
+typedef struct _CONTEXT {
+    DWORD ContextFlags;
+    DWORD Dr0, Dr1, Dr2, Dr3, Dr6, Dr7;
+    DWORD SegGs, SegFs, SegEs, SegDs;
+    DWORD Edi, Esi, Ebx, Edx, Ecx, Eax;
+    DWORD Ebp;
+    DWORD Eip;
+    DWORD SegCs;
+    DWORD EFlags;
+    DWORD Esp;
+    DWORD SegSs;
+} CONTEXT, _CONTEXT, *PCONTEXT, *LPCONTEXT;
+
+static inline BOOL GetThreadContext(HANDLE hThread, LPCONTEXT lpContext) {
+    (void)hThread;
+    if (lpContext) {
+        memset(lpContext, 0, sizeof(CONTEXT));
+    }
+    return FALSE;
+}
+
 typedef struct _EXCEPTION_RECORD _EXCEPTION_RECORD;
-typedef struct _CONTEXT _CONTEXT;
 typedef struct _EXCEPTION_POINTERS {
     _EXCEPTION_RECORD *ExceptionRecord;
     _CONTEXT *ContextRecord;
