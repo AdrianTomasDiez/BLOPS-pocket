@@ -519,8 +519,66 @@ struct IDirect3DDevice9 : public IUnknown {
     virtual HRESULT Reset(D3DPRESENT_PARAMETERS*) { return 0; }
     virtual void SetGammaRamp(UINT, DWORD, const D3DGAMMARAMP*) {}
 };
+
 struct IDirect3DDevice9Ex : public IDirect3DDevice9 {};
-struct IDirect3D9 : public IUnknown {};
+
+
+struct IDirect3D9 : public IUnknown {
+    virtual HRESULT CheckDeviceMultiSampleType(UINT, D3DDEVTYPE, D3DFORMAT, BOOL, D3DMULTISAMPLE_TYPE, DWORD*) { return 0; }
+    virtual HRESULT CreateDevice(UINT, D3DDEVTYPE, HWND, DWORD, D3DPRESENT_PARAMETERS*, IDirect3DDevice9 **ppDev) {
+        static IDirect3DDevice9 s_dev;
+        if (ppDev) *ppDev = &s_dev;
+        return 0;
+    }
+    virtual HRESULT CreateDeviceEx(UINT, D3DDEVTYPE, HWND, DWORD, D3DPRESENT_PARAMETERS*, void*, IDirect3DDevice9Ex **ppDev) {
+        static IDirect3DDevice9Ex s_devex;
+        if (ppDev) *ppDev = &s_devex;
+        return 0;
+    }
+    virtual HRESULT GetAdapterDisplayMode(UINT, D3DDISPLAYMODE *pMode) {
+        if (pMode) { pMode->Width = 1920; pMode->Height = 1080; pMode->RefreshRate = 60; pMode->Format = D3DFMT_X8R8G8B8; }
+        return 0;
+    }
+    virtual HMONITOR GetAdapterMonitor(UINT) { return (HMONITOR)(intptr_t)1; }
+    virtual UINT GetAdapterCount() { return 1; }
+    virtual HRESULT GetAdapterIdentifier(UINT, DWORD, D3DADAPTER_IDENTIFIER9 *pId) {
+        if (pId) {
+            memset(pId, 0, sizeof(*pId));
+            strncpy(pId->Description, "Apple Metal Renderer", sizeof(pId->Description) - 1);
+            strncpy(pId->Driver, "Metal", sizeof(pId->Driver) - 1);
+            pId->VendorId = 0x106B; // Apple Inc.
+            pId->DeviceId = 0x0001;
+        }
+        return 0;
+    }
+    virtual HRESULT GetDeviceCaps(UINT, D3DDEVTYPE, D3DCAPS9 *pCaps) {
+        if (pCaps) memset(pCaps, 0, sizeof(*pCaps));
+        return 0;
+    }
+    virtual HRESULT CheckDeviceFormat(UINT, D3DDEVTYPE, D3DFORMAT, DWORD, D3DRESOURCETYPE, D3DFORMAT) { return 0; }
+    virtual HRESULT CheckDepthStencilMatch(UINT, D3DDEVTYPE, D3DFORMAT, D3DFORMAT, D3DFORMAT) { return 0; }
+    virtual UINT GetAdapterModeCount(UINT, D3DFORMAT) { return 1; }
+    virtual HRESULT EnumAdapterModes(UINT, D3DFORMAT, UINT, D3DDISPLAYMODE *pMode) {
+        if (pMode) { pMode->Width = 1920; pMode->Height = 1080; pMode->RefreshRate = 60; pMode->Format = D3DFMT_X8R8G8B8; }
+        return 0;
+    }
+};
+
+struct IDirect3D9Ex : public IDirect3D9 {};
+
+static inline IDirect3D9 *Direct3DCreate9(UINT SDKVersion) {
+    (void)SDKVersion;
+    static IDirect3D9 s_d3d9;
+    return &s_d3d9;
+}
+
+static inline HRESULT Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex **ppD3D) {
+    (void)SDKVersion;
+    static IDirect3D9Ex s_d3d9ex;
+    if (ppD3D) *ppD3D = &s_d3d9ex;
+    return 0;
+}
+
 
 typedef struct IDirect3D9 *LPDIRECT3D9;
 typedef struct IDirect3DDevice9 *LPDIRECT3DDEVICE9;

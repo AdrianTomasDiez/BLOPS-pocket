@@ -840,10 +840,18 @@ static inline DWORD GetLastError(void) {
     return 0;
 }
 
-static inline void SetLastError(DWORD dwErrCode) {}
-
 static inline void RaiseException(DWORD dwExceptionCode, DWORD dwExceptionFlags, DWORD nNumberOfArguments, const ULONG_PTR *lpArguments) {
 }
+
+static inline const char *GetCommandLineA(void) {
+    return "+set bo1_zombies 1 +devmap zombie_theater";
+}
+
+static inline HWND CreateWindowExA(DWORD dwExStyle, const char *lpClassName, const char *lpWindowName, DWORD dwStyle, int X, int Y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam) {
+    static struct HWND__ dummyHwnd;
+    return &dummyHwnd;
+}
+
 
 #ifndef LittleShort
 #define LittleShort(l) (l)
