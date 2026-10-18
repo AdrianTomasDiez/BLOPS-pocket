@@ -18,6 +18,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#ifdef __cplusplus
+#include <new>
+#endif
+
 #ifndef _snprintf
 #define _snprintf snprintf
 #endif
