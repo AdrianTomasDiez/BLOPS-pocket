@@ -133,6 +133,12 @@ class EngineViewController: UIViewController {
         displayLink?.add(to: .main, forMode: .common)
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let accessed = folder.startAccessingSecurityScopedResource()
+            defer {
+                if accessed {
+                    folder.stopAccessingSecurityScopedResource()
+                }
+            }
             folder.path.withCString { cPath in
                 bo1_ios_init(cPath)
             }

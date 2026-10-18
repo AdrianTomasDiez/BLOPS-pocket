@@ -16,6 +16,7 @@
 extern "C" {
 
 static bool s_engineInitialized = false;
+static char s_gameDir[1024] = {0};
 
 void bo1_ios_init(const char *gameDirectory)
 {
@@ -24,6 +25,17 @@ void bo1_ios_init(const char *gameDirectory)
         return;
     }
     s_engineInitialized = true;
+
+    if (gameDirectory) {
+        strncpy(s_gameDir, gameDirectory, sizeof(s_gameDir) - 1);
+        char logFile[1024];
+        snprintf(logFile, sizeof(logFile), "%s/bo1_console.log", gameDirectory);
+        FILE *f = fopen(logFile, "a");
+        if (f) {
+            fprintf(f, "\n=== [BO1 iOS Engine Init] gameDirectory: %s ===\n", gameDirectory);
+            fclose(f);
+        }
+    }
 
     NSLog(@"[BO1 iOS] Starting Treyarch BO1 Zombies engine at: %s", gameDirectory);
 
@@ -46,6 +58,16 @@ void bo1_ios_init(const char *gameDirectory)
 
     // Inicializar el ciclo central de Call of Duty
     Com_Init(s_cmdline);
+
+    if (gameDirectory) {
+        char logFile[1024];
+        snprintf(logFile, sizeof(logFile), "%s/bo1_console.log", gameDirectory);
+        FILE *f = fopen(logFile, "a");
+        if (f) {
+            fprintf(f, "=== [BO1 iOS Engine] Com_Init finalizado con éxito ===\n");
+            fclose(f);
+        }
+    }
 
     NSLog(@"[BO1 iOS] Engine initialized successfully for Kino der Toten!");
 }
@@ -82,6 +104,11 @@ void bo1_ios_execute_command(const char *cmd)
         Cbuf_AddText(0, cmd);
         Cbuf_AddText(0, "\n");
     }
+}
+
+const char *bo1_ios_get_gamedir(void)
+{
+    return s_gameDir;
 }
 
 }
