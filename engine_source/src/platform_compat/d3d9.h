@@ -216,6 +216,154 @@ typedef struct _D3DLOCKED_RECT {
     void    *pBits;
 } D3DLOCKED_RECT;
 
+typedef struct _D3DRECT {
+    LONG x1;
+    LONG y1;
+    LONG x2;
+    LONG y2;
+} D3DRECT;
+
+typedef struct _D3DVIEWPORT9 {
+    DWORD       X;
+    DWORD       Y;
+    DWORD       Width;
+    DWORD       Height;
+    float       MinZ;
+    float       MaxZ;
+} D3DVIEWPORT9;
+
+typedef struct _D3DGAMMARAMP {
+    WORD                red[256];
+    WORD                green[256];
+    WORD                blue[256];
+} D3DGAMMARAMP;
+
+typedef enum _D3DBACKBUFFER_TYPE {
+    D3DBACKBUFFER_TYPE_MONO         = 0,
+    D3DBACKBUFFER_TYPE_LEFT         = 1,
+    D3DBACKBUFFER_TYPE_RIGHT        = 2,
+    D3DBACKBUFFER_TYPE_FORCE_DWORD  = 0x7fffffff
+} D3DBACKBUFFER_TYPE;
+
+typedef enum _D3DPRIMITIVETYPE {
+    D3DPT_POINTLIST             = 1,
+    D3DPT_LINELIST              = 2,
+    D3DPT_LINESTRIP             = 3,
+    D3DPT_TRIANGLELIST          = 4,
+    D3DPT_TRIANGLESTRIP         = 5,
+    D3DPT_TRIANGLEFAN           = 6,
+    D3DPT_FORCE_DWORD           = 0x7fffffff
+} D3DPRIMITIVETYPE;
+
+typedef enum _D3DRENDERSTATETYPE {
+    D3DRS_ZENABLE                   = 7,
+    D3DRS_FILLMODE                  = 8,
+    D3DRS_SHADEMODE                 = 9,
+    D3DRS_ZWRITEENABLE              = 14,
+    D3DRS_ALPHATESTENABLE           = 15,
+    D3DRS_LASTPIXEL                 = 16,
+    D3DRS_SRCBLEND                  = 19,
+    D3DRS_DESTBLEND                 = 20,
+    D3DRS_CULLMODE                  = 22,
+    D3DRS_ZFUNC                     = 23,
+    D3DRS_ALPHAREF                  = 24,
+    D3DRS_ALPHAFUNC                 = 25,
+    D3DRS_DITHERENABLE              = 26,
+    D3DRS_ALPHABLENDENABLE          = 27,
+    D3DRS_FOGENABLE                 = 28,
+    D3DRS_SPECULARENABLE            = 29,
+    D3DRS_FOGCOLOR                  = 34,
+    D3DRS_FOGTABLEMODE              = 35,
+    D3DRS_FOGSTART                  = 36,
+    D3DRS_FOGEND                    = 37,
+    D3DRS_FOGDENSITY                = 38,
+    D3DRS_RANGEFOGENABLE            = 48,
+    D3DRS_STENCILENABLE             = 52,
+    D3DRS_STENCILFAIL               = 53,
+    D3DRS_STENCILZFAIL              = 54,
+    D3DRS_STENCILPASS               = 55,
+    D3DRS_STENCILFUNC               = 56,
+    D3DRS_STENCILREF                = 57,
+    D3DRS_STENCILMASK               = 58,
+    D3DRS_STENCILWRITEMASK          = 59,
+    D3DRS_TEXTUREFACTOR             = 60,
+    D3DRS_WRAP0                     = 128,
+    D3DRS_CLIPPING                  = 136,
+    D3DRS_LIGHTING                  = 137,
+    D3DRS_AMBIENT                   = 139,
+    D3DRS_COLORVERTEX               = 141,
+    D3DRS_LOCALVIEWER               = 142,
+    D3DRS_NORMALIZENORMALS          = 143,
+    D3DRS_DIFFUSEMATERIALSOURCE     = 145,
+    D3DRS_SPECULARMATERIALSOURCE    = 146,
+    D3DRS_AMBIENTMATERIALSOURCE     = 147,
+    D3DRS_EMISSIVEMATERIALSOURCE    = 148,
+    D3DRS_VERTEXBLEND               = 151,
+    D3DRS_CLIPPLANEENABLE           = 152,
+    D3DRS_POINTSIZE                 = 154,
+    D3DRS_POINTSIZE_MIN             = 155,
+    D3DRS_POINTSPRITEENABLE         = 156,
+    D3DRS_POINTSCALEENABLE          = 157,
+    D3DRS_POINTSCALE_A              = 158,
+    D3DRS_POINTSCALE_B              = 159,
+    D3DRS_POINTSCALE_C              = 160,
+    D3DRS_MULTISAMPLEANTIALIAS      = 161,
+    D3DRS_MULTISAMPLEMASK           = 162,
+    D3DRS_PATCHEDGESTYLE            = 163,
+    D3DRS_DEBUGMONITORTOKEN         = 165,
+    D3DRS_POINTSIZE_MAX             = 166,
+    D3DRS_INDEXEDVERTEXBLENDENABLE  = 167,
+    D3DRS_COLORWRITEENABLE          = 168,
+    D3DRS_TWEENFACTOR               = 170,
+    D3DRS_BLENDOP                   = 171,
+    D3DRS_POSITIONDEGREE            = 172,
+    D3DRS_NORMALDEGREE              = 173,
+    D3DRS_SCISSORTESTENABLE         = 174,
+    D3DRS_SLOPESCALEDEPTHBIAS       = 175,
+    D3DRS_ANTIALIASEDLINEENABLE     = 176,
+    D3DRS_MINTESSELLATIONLEVEL      = 178,
+    D3DRS_MAXTESSELLATIONLEVEL      = 179,
+    D3DRS_ADAPTIVETESS_X            = 180,
+    D3DRS_ADAPTIVETESS_Y            = 181,
+    D3DRS_ADAPTIVETESS_Z            = 182,
+    D3DRS_ADAPTIVETESS_W            = 183,
+    D3DRS_ENABLEADAPTIVETESSELLATION = 184,
+    D3DRS_TWOSIDEDSTENCILMODE       = 185,
+    D3DRS_CCW_STENCILFAIL           = 186,
+    D3DRS_CCW_STENCILZFAIL          = 187,
+    D3DRS_CCW_STENCILPASS           = 188,
+    D3DRS_CCW_STENCILFUNC           = 189,
+    D3DRS_COLORWRITEENABLE1         = 190,
+    D3DRS_COLORWRITEENABLE2         = 191,
+    D3DRS_COLORWRITEENABLE3         = 192,
+    D3DRS_BLENDFACTOR               = 193,
+    D3DRS_SRGBWRITEENABLE           = 194,
+    D3DRS_DEPTHBIAS                 = 195,
+    D3DRS_WRAP8                     = 198,
+    D3DRS_SEPARATEALPHABLENDENABLE  = 206,
+    D3DRS_SRCBLENDALPHA             = 207,
+    D3DRS_DESTBLENDALPHA            = 208,
+    D3DRS_BLENDOPALPHA              = 209,
+    D3DRS_FORCE_DWORD               = 0x7fffffff
+} D3DRENDERSTATETYPE;
+
+typedef enum _D3DSAMPLERSTATETYPE {
+    D3DSAMP_ADDRESSU       = 1,
+    D3DSAMP_ADDRESSV       = 2,
+    D3DSAMP_ADDRESSW       = 3,
+    D3DSAMP_BORDERCOLOR    = 4,
+    D3DSAMP_MAGFILTER      = 5,
+    D3DSAMP_MINFILTER      = 6,
+    D3DSAMP_MIPFILTER      = 7,
+    D3DSAMP_MIPMAPLODBIAS  = 8,
+    D3DSAMP_MAXMIPLEVEL    = 9,
+    D3DSAMP_MAXANISOTROPY  = 10,
+    D3DSAMP_SRGBTEXTURE    = 11,
+    D3DSAMP_ELEMENTINDEX   = 12,
+    D3DSAMP_DMAPOFFSET     = 13,
+    D3DSAMP_FORCE_DWORD    = 0x7fffffff
+} D3DSAMPLERSTATETYPE;
+
 #ifdef __cplusplus
 struct IUnknown {
     virtual ~IUnknown() {}
@@ -283,13 +431,50 @@ struct IDirect3DStateBlock9 : public IUnknown {};
 struct IDirect3DSwapChain9 : public IUnknown {};
 struct IDirect3DDevice9 : public IUnknown {
     virtual HRESULT CreateTexture(UINT, UINT, UINT, DWORD, D3DFORMAT, D3DPOOL, IDirect3DTexture9**, HANDLE*) { return 0; }
+    virtual HRESULT CreateCubeTexture(UINT, UINT, DWORD, D3DFORMAT, D3DPOOL, IDirect3DCubeTexture9**, HANDLE*) { return 0; }
+    virtual HRESULT CreateVolumeTexture(UINT, UINT, UINT, UINT, DWORD, D3DFORMAT, D3DPOOL, IDirect3DVolumeTexture9**, HANDLE*) { return 0; }
     virtual HRESULT CreateVertexBuffer(UINT, DWORD, DWORD, D3DPOOL, IDirect3DVertexBuffer9**, HANDLE*) { return 0; }
     virtual HRESULT CreateIndexBuffer(UINT, DWORD, D3DFORMAT, D3DPOOL, IDirect3DIndexBuffer9**, HANDLE*) { return 0; }
+    virtual HRESULT CreateRenderTarget(UINT, UINT, D3DFORMAT, D3DMULTISAMPLE_TYPE, DWORD, BOOL, IDirect3DSurface9**, HANDLE*) { return 0; }
+    virtual HRESULT CreateDepthStencilSurface(UINT, UINT, D3DFORMAT, D3DMULTISAMPLE_TYPE, DWORD, BOOL, IDirect3DSurface9**, HANDLE*) { return 0; }
+    virtual HRESULT CreateOffscreenPlainSurface(UINT, UINT, D3DFORMAT, D3DPOOL, IDirect3DSurface9**, HANDLE*) { return 0; }
     virtual HRESULT CreateVertexDeclaration(const D3DVERTEXELEMENT9*, IDirect3DVertexDeclaration9**) { return 0; }
     virtual HRESULT CreateVertexShader(const DWORD*, IDirect3DVertexShader9**) { return 0; }
     virtual HRESULT CreatePixelShader(const DWORD*, IDirect3DPixelShader9**) { return 0; }
     virtual HRESULT CreateQuery(D3DQUERYTYPE, IDirect3DQuery9**) { return 0; }
+
+    virtual HRESULT BeginScene() { return 0; }
+    virtual HRESULT EndScene() { return 0; }
+    virtual HRESULT Clear(DWORD, const D3DRECT*, DWORD, D3DCOLOR, float, DWORD) { return 0; }
+    virtual HRESULT SetRenderState(D3DRENDERSTATETYPE, DWORD) { return 0; }
+    virtual HRESULT SetSamplerState(DWORD, D3DSAMPLERSTATETYPE, DWORD) { return 0; }
+    virtual HRESULT SetTexture(DWORD, IDirect3DBaseTexture9*) { return 0; }
+    virtual HRESULT SetRenderTarget(DWORD, IDirect3DSurface9*) { return 0; }
+    virtual HRESULT SetDepthStencilSurface(IDirect3DSurface9*) { return 0; }
+    virtual HRESULT SetVertexDeclaration(IDirect3DVertexDeclaration9*) { return 0; }
+    virtual HRESULT SetVertexShader(IDirect3DVertexShader9*) { return 0; }
+    virtual HRESULT SetPixelShader(IDirect3DPixelShader9*) { return 0; }
+    virtual HRESULT SetVertexShaderConstantF(UINT, const float*, UINT) { return 0; }
+    virtual HRESULT SetPixelShaderConstantF(UINT, const float*, UINT) { return 0; }
+    virtual HRESULT SetStreamSource(UINT, IDirect3DVertexBuffer9*, UINT, UINT) { return 0; }
+    virtual HRESULT SetIndices(IDirect3DIndexBuffer9*) { return 0; }
+    virtual HRESULT SetViewport(const D3DVIEWPORT9*) { return 0; }
+    virtual HRESULT SetScissorRect(const RECT*) { return 0; }
+
+    virtual HRESULT DrawPrimitive(D3DPRIMITIVETYPE, UINT, UINT) { return 0; }
+    virtual HRESULT DrawIndexedPrimitive(D3DPRIMITIVETYPE, INT, UINT, UINT, UINT, UINT) { return 0; }
+    virtual HRESULT DrawPrimitiveUP(D3DPRIMITIVETYPE, UINT, const void*, UINT) { return 0; }
+
+    virtual HRESULT StretchRect(IDirect3DSurface9*, const RECT*, IDirect3DSurface9*, const RECT*, D3DTEXTUREFILTERTYPE) { return 0; }
+    virtual HRESULT UpdateSurface(IDirect3DSurface9*, const RECT*, IDirect3DSurface9*, const POINT*) { return 0; }
     virtual HRESULT GetRenderTargetData(IDirect3DSurface9*, IDirect3DSurface9*) { return 0; }
+    virtual HRESULT GetBackBuffer(UINT, UINT, D3DBACKBUFFER_TYPE, IDirect3DSurface9**) { return 0; }
+    virtual HRESULT GetSwapChain(UINT, IDirect3DSwapChain9**) { return 0; }
+    virtual HRESULT GetDeviceCaps(D3DCAPS9*) { return 0; }
+    virtual UINT GetAvailableTextureMem() { return 1024 * 1024 * 1024; }
+    virtual HRESULT TestCooperativeLevel() { return 0; }
+    virtual HRESULT Reset(D3DPRESENT_PARAMETERS*) { return 0; }
+    virtual void SetGammaRamp(UINT, DWORD, const D3DGAMMARAMP*) {}
 };
 struct IDirect3DDevice9Ex : public IDirect3DDevice9 {};
 struct IDirect3D9 : public IUnknown {};
