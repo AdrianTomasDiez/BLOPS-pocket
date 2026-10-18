@@ -408,6 +408,12 @@ typedef struct HCURSOR__* HCURSOR;
 #define IDC_WAIT ((LPCSTR)(intptr_t)32514)
 #endif
 
+typedef struct _SECURITY_ATTRIBUTES {
+    DWORD  nLength;
+    LPVOID lpSecurityDescriptor;
+    BOOL   bInheritHandle;
+} SECURITY_ATTRIBUTES, *PSECURITY_ATTRIBUTES, *LPSECURITY_ATTRIBUTES;
+
 #ifndef _putenv
 #define _putenv putenv
 #endif
@@ -1798,6 +1804,17 @@ static inline HANDLE OpenThread(DWORD dwDesiredAccess, BOOL bInheritHandle, DWOR
     return NULL;
 }
 #endif
+
+static inline BOOL TerminateThread(HANDLE hThread, DWORD dwExitCode) {
+    (void)hThread; (void)dwExitCode;
+    return TRUE;
+}
+
+static inline BOOL GetExitCodeThread(HANDLE hThread, LPDWORD lpExitCode) {
+    (void)hThread;
+    if (lpExitCode) *lpExitCode = 0;
+    return TRUE;
+}
 
 #ifndef EXCEPTION_EXECUTE_HANDLER
 #define EXCEPTION_EXECUTE_HANDLER 1
