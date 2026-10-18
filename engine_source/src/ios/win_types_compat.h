@@ -24,21 +24,30 @@
 
 typedef FILE _iobuf;
 
-#ifndef _time64
-#define _time64 time
-#endif
+static inline int64_t _time64(int64_t *t) {
+    time_t tt = 0;
+    time_t res = time(&tt);
+    if (t) *t = (int64_t)tt;
+    return (int64_t)res;
+}
 
-#ifndef _localtime64
-#define _localtime64 localtime
-#endif
+static inline struct tm *_localtime64(const int64_t *t) {
+    if (!t) return NULL;
+    time_t tt = (time_t)*t;
+    return localtime(&tt);
+}
 
-#ifndef _gmtime64
-#define _gmtime64 gmtime
-#endif
+static inline struct tm *_gmtime64(const int64_t *t) {
+    if (!t) return NULL;
+    time_t tt = (time_t)*t;
+    return gmtime(&tt);
+}
 
-#ifndef _ctime64
-#define _ctime64 ctime
-#endif
+static inline char *_ctime64(const int64_t *t) {
+    if (!t) return NULL;
+    time_t tt = (time_t)*t;
+    return ctime(&tt);
+}
 
 #ifdef __cplusplus
 #include <new>
