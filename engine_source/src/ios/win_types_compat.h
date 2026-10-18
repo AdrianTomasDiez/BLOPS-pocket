@@ -1379,6 +1379,25 @@ static inline HWND CreateWindowExA(DWORD dwExStyle, const char *lpClassName, con
     return &dummyHwnd;
 }
 
+static inline int MessageBoxA(HWND hWnd, const char *lpText, const char *lpCaption, UINT uType) {
+    fprintf(stderr, "[BO1 MSG BOX] %s: %s\n", lpCaption ? lpCaption : "Alert", lpText ? lpText : "");
+    return 1;
+}
+
+static inline DWORD GetCurrentDirectoryA(DWORD nBufferLength, char *lpBuffer) {
+    if (lpBuffer && nBufferLength > 0) {
+        if (getcwd(lpBuffer, nBufferLength)) {
+            return (DWORD)strlen(lpBuffer);
+        }
+        lpBuffer[0] = '\0';
+    }
+    return 0;
+}
+
+static inline uintptr_t ShellExecuteA(HWND hwnd, const char *lpOperation, const char *lpFile, const char *lpParameters, const char *lpDirectory, int nShowCmd) {
+    return 42;
+}
+
 
 #ifndef LittleShort
 #define LittleShort(l) (l)
