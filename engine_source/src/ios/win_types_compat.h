@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <sched.h>
 
 // Desactivar static_assert específicos de tamaño de puntero de 32 bits en arquitecturas 64-bit
 #if defined(__LP64__) || defined(_WIN64) || defined(__aarch64__)
@@ -37,12 +38,17 @@ typedef void*         PVOID;
 typedef const void*   LPCVOID;
 typedef char*         LPSTR;
 typedef const char*   LPCSTR;
+typedef wchar_t       WCHAR;
 typedef wchar_t*      LPWSTR;
 typedef const wchar_t* LPCWSTR;
 typedef uint64_t      DWORD64;
 typedef uint64_t*     PDWORD64;
 typedef int32_t       LONG;
+typedef int64_t       LONG64;
 typedef uint32_t      ULONG;
+typedef uint64_t      ULONG64;
+typedef int64_t       LONGLONG;
+typedef uint64_t      ULONGLONG;
 typedef uint32_t      UINT;
 typedef int32_t       INT;
 typedef uintptr_t     DWORD_PTR;
@@ -52,6 +58,37 @@ typedef DWORD*        LPDWORD;
 typedef BOOL*         LPBOOL;
 typedef BYTE*         LPBYTE;
 typedef LONG*         PLONG;
+
+struct HMONITOR__ { int unused; };
+typedef struct HMONITOR__* HMONITOR;
+
+struct HDC__ { int unused; };
+typedef struct HDC__* HDC;
+
+typedef struct tagRECT {
+    LONG left;
+    LONG top;
+    LONG right;
+    LONG bottom;
+} RECT, *PRECT, *LPRECT;
+
+typedef struct tagPOINT {
+    LONG x;
+    LONG y;
+} POINT, *PPOINT, *LPPOINT;
+
+typedef struct _GUID {
+    uint32_t Data1;
+    uint16_t Data2;
+    uint16_t Data3;
+    uint8_t  Data4[8];
+} GUID;
+typedef const GUID *LPCGUID;
+typedef GUID IID;
+#ifdef __cplusplus
+typedef const GUID &REFGUID;
+typedef const IID &REFIID;
+#endif
 
 typedef struct _SYSTEMTIME {
     WORD wYear;
@@ -104,6 +141,22 @@ typedef struct _SYSTEMTIME {
 #define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
 #endif
 
+#ifndef E_POINTER
+#define E_POINTER ((HRESULT)0x80004003L)
+#endif
+
+#ifndef E_FAIL
+#define E_FAIL ((HRESULT)0x80004005L)
+#endif
+
+#ifndef E_INVALIDARG
+#define E_INVALIDARG ((HRESULT)0x80070057L)
+#endif
+
+#ifndef E_NOTIMPL
+#define E_NOTIMPL ((HRESULT)0x80004001L)
+#endif
+
 #ifndef MAX_PATH
 #define MAX_PATH 260
 #endif
@@ -151,6 +204,11 @@ static inline void DeleteCriticalSection(CRITICAL_SECTION *cs) {
 // ----- Hilos y tiempo -----
 static inline void Sleep(DWORD dwMilliseconds) {
     usleep(dwMilliseconds * 1000);
+}
+
+static inline BOOL SwitchToThread(void) {
+    sched_yield();
+    return 1;
 }
 
 static inline DWORD GetCurrentThreadId(void) {
