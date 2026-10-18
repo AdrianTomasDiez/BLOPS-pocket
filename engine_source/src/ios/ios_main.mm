@@ -28,11 +28,22 @@ void bo1_ios_init(const char *gameDirectory)
 
     if (gameDirectory) {
         strncpy(s_gameDir, gameDirectory, sizeof(s_gameDir) - 1);
-        char logFile[1024];
+    }
+
+    const char *home = getenv("HOME");
+    char logFile[1024];
+    if (home) {
+        snprintf(logFile, sizeof(logFile), "%s/Documents/bo1_console.log", home);
+    } else if (gameDirectory) {
         snprintf(logFile, sizeof(logFile), "%s/bo1_console.log", gameDirectory);
+    } else {
+        logFile[0] = '\0';
+    }
+
+    if (logFile[0]) {
         FILE *f = fopen(logFile, "a");
         if (f) {
-            fprintf(f, "\n=== [BO1 iOS Engine Init] gameDirectory: %s ===\n", gameDirectory);
+            fprintf(f, "\n=== [BO1 iOS Engine Init] gameDirectory: %s ===\n", gameDirectory ? gameDirectory : "(null)");
             fclose(f);
         }
     }
@@ -59,9 +70,7 @@ void bo1_ios_init(const char *gameDirectory)
     // Inicializar el ciclo central de Call of Duty
     Com_Init(s_cmdline);
 
-    if (gameDirectory) {
-        char logFile[1024];
-        snprintf(logFile, sizeof(logFile), "%s/bo1_console.log", gameDirectory);
+    if (logFile[0]) {
         FILE *f = fopen(logFile, "a");
         if (f) {
             fprintf(f, "=== [BO1 iOS Engine] Com_Init finalizado con éxito ===\n");

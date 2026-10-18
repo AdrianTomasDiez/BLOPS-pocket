@@ -842,6 +842,8 @@ static inline BOOL QueryPerformanceFrequency(LARGE_INTEGER *lpFrequency) {
 #define FILE_ATTRIBUTE_ARCHIVE              0x00000020
 #define FILE_ATTRIBUTE_NORMAL               0x00000080
 
+extern "C" const char *bo1_ios_get_gamedir(void);
+
 static inline DWORD GetFileAttributesA(const char *lpFileName) {
     if (!lpFileName || !*lpFileName) return INVALID_FILE_ATTRIBUTES;
     char path[1024];
@@ -854,15 +856,35 @@ static inline DWORD GetFileAttributesA(const char *lpFileName) {
     if (stat(path, &st) != 0) {
         const char *slash = strrchr(path, '/');
         const char *base = slash ? slash + 1 : path;
+        const char *gdir = bo1_ios_get_gamedir();
+        if (gdir && gdir[0]) {
+            char alt[1024];
+            snprintf(alt, sizeof(alt), "%s/%s", gdir, base);
+            if (stat(alt, &st) == 0) return S_ISDIR(st.st_mode) ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
+            snprintf(alt, sizeof(alt), "%s/zone/%s", gdir, base);
+            if (stat(alt, &st) == 0) return S_ISDIR(st.st_mode) ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
+            snprintf(alt, sizeof(alt), "%s/zone/Common/%s", gdir, base);
+            if (stat(alt, &st) == 0) return S_ISDIR(st.st_mode) ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
+        }
         if (strstr(base, ".ff")) {
             const char *home = getenv("HOME");
             if (home) {
                 char alt[1024];
+                snprintf(alt, sizeof(alt), "%s/Documents/Games/Call of Duty Black Ops/%s", home, base);
+                if (stat(alt, &st) == 0) return S_ISDIR(st.st_mode) ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
+                snprintf(alt, sizeof(alt), "%s/Documents/Games/Call of Duty Black Ops/zone/%s", home, base);
+                if (stat(alt, &st) == 0) return S_ISDIR(st.st_mode) ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
+                snprintf(alt, sizeof(alt), "%s/Documents/Games/Call of Duty Black Ops/zone/Common/%s", home, base);
+                if (stat(alt, &st) == 0) return S_ISDIR(st.st_mode) ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
+
                 snprintf(alt, sizeof(alt), "%s/Documents/Games/%s", home, base);
                 if (stat(alt, &st) == 0) return S_ISDIR(st.st_mode) ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
                 snprintf(alt, sizeof(alt), "%s/Documents/Games/zone/%s", home, base);
                 if (stat(alt, &st) == 0) return S_ISDIR(st.st_mode) ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
                 snprintf(alt, sizeof(alt), "%s/Documents/Games/zone/Common/%s", home, base);
+                if (stat(alt, &st) == 0) return S_ISDIR(st.st_mode) ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
+
+                snprintf(alt, sizeof(alt), "%s/Documents/%s", home, base);
                 if (stat(alt, &st) == 0) return S_ISDIR(st.st_mode) ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
             }
         }
@@ -899,18 +921,48 @@ static inline HANDLE CreateFileA(const char *lpFileName, DWORD dwDesiredAccess, 
     if (fd < 0) {
         const char *slash = strrchr(path, '/');
         const char *base = slash ? slash + 1 : path;
-        if (strstr(base, ".ff")) {
+        const char *gdir = bo1_ios_get_gamedir();
+        if (gdir && gdir[0]) {
+            char alt[1024];
+            snprintf(alt, sizeof(alt), "%s/%s", gdir, base);
+            fd = open(alt, flags, 0644);
+            if (fd < 0) {
+                snprintf(alt, sizeof(alt), "%s/zone/%s", gdir, base);
+                fd = open(alt, flags, 0644);
+            }
+            if (fd < 0) {
+                snprintf(alt, sizeof(alt), "%s/zone/Common/%s", gdir, base);
+                fd = open(alt, flags, 0644);
+            }
+        }
+        if (fd < 0 && strstr(base, ".ff")) {
             const char *home = getenv("HOME");
             if (home) {
                 char alt[1024];
-                snprintf(alt, sizeof(alt), "%s/Documents/Games/%s", home, base);
+                snprintf(alt, sizeof(alt), "%s/Documents/Games/Call of Duty Black Ops/%s", home, base);
                 fd = open(alt, flags, 0644);
+                if (fd < 0) {
+                    snprintf(alt, sizeof(alt), "%s/Documents/Games/Call of Duty Black Ops/zone/%s", home, base);
+                    fd = open(alt, flags, 0644);
+                }
+                if (fd < 0) {
+                    snprintf(alt, sizeof(alt), "%s/Documents/Games/Call of Duty Black Ops/zone/Common/%s", home, base);
+                    fd = open(alt, flags, 0644);
+                }
+                if (fd < 0) {
+                    snprintf(alt, sizeof(alt), "%s/Documents/Games/%s", home, base);
+                    fd = open(alt, flags, 0644);
+                }
                 if (fd < 0) {
                     snprintf(alt, sizeof(alt), "%s/Documents/Games/zone/%s", home, base);
                     fd = open(alt, flags, 0644);
                 }
                 if (fd < 0) {
                     snprintf(alt, sizeof(alt), "%s/Documents/Games/zone/Common/%s", home, base);
+                    fd = open(alt, flags, 0644);
+                }
+                if (fd < 0) {
+                    snprintf(alt, sizeof(alt), "%s/Documents/%s", home, base);
                     fd = open(alt, flags, 0644);
                 }
             }

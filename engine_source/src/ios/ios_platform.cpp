@@ -105,16 +105,18 @@ void __cdecl Sys_Print(char *msg)
 {
     fputs(msg, stdout);
 
-    const char *gdir = bo1_ios_get_gamedir();
     const char *home = getenv("HOME");
     char logPath[1024];
 
-    if (gdir && gdir[0]) {
-        snprintf(logPath, sizeof(logPath), "%s/bo1_console.log", gdir);
-    } else if (home) {
-        snprintf(logPath, sizeof(logPath), "%s/Documents/Games/bo1_console.log", home);
+    if (home) {
+        snprintf(logPath, sizeof(logPath), "%s/Documents/bo1_console.log", home);
     } else {
-        return;
+        const char *gdir = bo1_ios_get_gamedir();
+        if (gdir && gdir[0]) {
+            snprintf(logPath, sizeof(logPath), "%s/bo1_console.log", gdir);
+        } else {
+            return;
+        }
     }
 
     FILE *f = fopen(logPath, "a");
@@ -134,16 +136,18 @@ void Sys_Error(char *error, ...)
 
     fprintf(stderr, "\n[BO1 NATIVE FATAL ERROR]: %s\n\n", buffer);
 
-    const char *gdir = bo1_ios_get_gamedir();
     const char *home = getenv("HOME");
     char logPath[1024];
 
-    if (gdir && gdir[0]) {
-        snprintf(logPath, sizeof(logPath), "%s/bo1_error.log", gdir);
-    } else if (home) {
-        snprintf(logPath, sizeof(logPath), "%s/Documents/Games/bo1_error.log", home);
+    if (home) {
+        snprintf(logPath, sizeof(logPath), "%s/Documents/bo1_error.log", home);
     } else {
-        abort();
+        const char *gdir = bo1_ios_get_gamedir();
+        if (gdir && gdir[0]) {
+            snprintf(logPath, sizeof(logPath), "%s/bo1_error.log", gdir);
+        } else {
+            abort();
+        }
     }
 
     FILE *f = fopen(logPath, "a");
