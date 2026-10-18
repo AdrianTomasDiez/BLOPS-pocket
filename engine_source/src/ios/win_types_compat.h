@@ -172,45 +172,6 @@ static inline int fopen_s(FILE **pFile, const char *filename, const char *mode) 
 #define _countof(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
-#ifndef GetProcessHandleCount
-static inline BOOL GetProcessHandleCount(HANDLE hProcess, PDWORD pdwHandleCount) {
-    (void)hProcess;
-    if (pdwHandleCount) *pdwHandleCount = 32;
-    return TRUE;
-}
-#endif
-
-#ifndef GetThreadTimes
-static inline BOOL GetThreadTimes(HANDLE hThread, LPFILETIME lpCreationTime, LPFILETIME lpExitTime, LPFILETIME lpKernelTime, LPFILETIME lpUserTime) {
-    (void)hThread;
-    if (lpCreationTime) memset(lpCreationTime, 0, sizeof(FILETIME));
-    if (lpExitTime) memset(lpExitTime, 0, sizeof(FILETIME));
-    if (lpKernelTime) memset(lpKernelTime, 0, sizeof(FILETIME));
-    if (lpUserTime) memset(lpUserTime, 0, sizeof(FILETIME));
-    return TRUE;
-}
-#endif
-
-#ifndef GetSystemTimes
-static inline BOOL GetSystemTimes(LPFILETIME lpIdleTime, LPFILETIME lpKernelTime, LPFILETIME lpUserTime) {
-    if (lpIdleTime) memset(lpIdleTime, 0, sizeof(FILETIME));
-    if (lpKernelTime) memset(lpKernelTime, 0, sizeof(FILETIME));
-    if (lpUserTime) memset(lpUserTime, 0, sizeof(FILETIME));
-    return TRUE;
-}
-#endif
-
-#ifndef GetProcessTimes
-static inline BOOL GetProcessTimes(HANDLE hProcess, LPFILETIME lpCreationTime, LPFILETIME lpExitTime, LPFILETIME lpKernelTime, LPFILETIME lpUserTime) {
-    (void)hProcess;
-    if (lpCreationTime) memset(lpCreationTime, 0, sizeof(FILETIME));
-    if (lpExitTime) memset(lpExitTime, 0, sizeof(FILETIME));
-    if (lpKernelTime) memset(lpKernelTime, 0, sizeof(FILETIME));
-    if (lpUserTime) memset(lpUserTime, 0, sizeof(FILETIME));
-    return TRUE;
-}
-#endif
-
 static inline char *_itoa(int value, char *buffer, int radix) {
     if (!buffer) return NULL;
     if (radix == 10) {
@@ -404,6 +365,45 @@ static inline LONG CompareFileTime(const FILETIME *lpFileTime1, const FILETIME *
     if (t1 > t2) return 1;
     return 0;
 }
+
+#ifndef GetProcessHandleCount
+static inline BOOL GetProcessHandleCount(HANDLE hProcess, PDWORD pdwHandleCount) {
+    (void)hProcess;
+    if (pdwHandleCount) *pdwHandleCount = 32;
+    return TRUE;
+}
+#endif
+
+#ifndef GetThreadTimes
+static inline BOOL GetThreadTimes(HANDLE hThread, LPFILETIME lpCreationTime, LPFILETIME lpExitTime, LPFILETIME lpKernelTime, LPFILETIME lpUserTime) {
+    (void)hThread;
+    if (lpCreationTime) memset(lpCreationTime, 0, sizeof(FILETIME));
+    if (lpExitTime) memset(lpExitTime, 0, sizeof(FILETIME));
+    if (lpKernelTime) memset(lpKernelTime, 0, sizeof(FILETIME));
+    if (lpUserTime) memset(lpUserTime, 0, sizeof(FILETIME));
+    return TRUE;
+}
+#endif
+
+#ifndef GetSystemTimes
+static inline BOOL GetSystemTimes(LPFILETIME lpIdleTime, LPFILETIME lpKernelTime, LPFILETIME lpUserTime) {
+    if (lpIdleTime) memset(lpIdleTime, 0, sizeof(FILETIME));
+    if (lpKernelTime) memset(lpKernelTime, 0, sizeof(FILETIME));
+    if (lpUserTime) memset(lpUserTime, 0, sizeof(FILETIME));
+    return TRUE;
+}
+#endif
+
+#ifndef GetProcessTimes
+static inline BOOL GetProcessTimes(HANDLE hProcess, LPFILETIME lpCreationTime, LPFILETIME lpExitTime, LPFILETIME lpKernelTime, LPFILETIME lpUserTime) {
+    (void)hProcess;
+    if (lpCreationTime) memset(lpCreationTime, 0, sizeof(FILETIME));
+    if (lpExitTime) memset(lpExitTime, 0, sizeof(FILETIME));
+    if (lpKernelTime) memset(lpKernelTime, 0, sizeof(FILETIME));
+    if (lpUserTime) memset(lpUserTime, 0, sizeof(FILETIME));
+    return TRUE;
+}
+#endif
 
 struct HMONITOR__ { int unused; };
 typedef struct HMONITOR__* HMONITOR;
