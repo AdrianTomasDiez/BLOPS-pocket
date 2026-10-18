@@ -100,6 +100,16 @@ typedef enum _D3DTEXTUREFILTERTYPE {
     D3DTEXF_FORCE_DWORD     = 0x7fffffff
 } D3DTEXTUREFILTERTYPE;
 
+typedef enum _D3DCUBEMAP_FACES {
+    D3DCUBEMAP_FACE_POSITIVE_X     = 0,
+    D3DCUBEMAP_FACE_NEGATIVE_X     = 1,
+    D3DCUBEMAP_FACE_POSITIVE_Y     = 2,
+    D3DCUBEMAP_FACE_NEGATIVE_Y     = 3,
+    D3DCUBEMAP_FACE_POSITIVE_Z     = 4,
+    D3DCUBEMAP_FACE_NEGATIVE_Z     = 5,
+    D3DCUBEMAP_FACE_FORCE_DWORD    = 0x7fffffff
+} D3DCUBEMAP_FACES;
+
 typedef enum _D3DSWAPEFFECT {
     D3DSWAPEFFECT_DISCARD       = 1,
     D3DSWAPEFFECT_FLIP          = 2,
@@ -372,14 +382,23 @@ struct IUnknown {
     virtual HRESULT QueryInterface(void*, void**) { return 0; }
 };
 struct IDirect3DResource9 : public IUnknown {};
-struct IDirect3DSurface9 : public IDirect3DResource9 {};
-struct IDirect3DBaseTexture9 : public IDirect3DResource9 {};
+struct IDirect3DSurface9 : public IDirect3DResource9 {
+    virtual HRESULT LockRect(D3DLOCKED_RECT *pLockedRect, const RECT *pRect, DWORD Flags) { return 0; }
+    virtual HRESULT UnlockRect() { return 0; }
+};
+struct IDirect3DBaseTexture9 : public IDirect3DResource9 {
+    virtual void PreLoad() {}
+};
 struct IDirect3DTexture9 : public IDirect3DBaseTexture9 {
     virtual HRESULT GetSurfaceLevel(UINT Level, IDirect3DSurface9 **ppSurfaceLevel) { return 0; }
     virtual HRESULT LockRect(UINT Level, D3DLOCKED_RECT *pLockedRect, const RECT *pRect, DWORD Flags) { return 0; }
     virtual HRESULT UnlockRect(UINT Level) { return 0; }
 };
-struct IDirect3DCubeTexture9 : public IDirect3DBaseTexture9 {};
+struct IDirect3DCubeTexture9 : public IDirect3DBaseTexture9 {
+    virtual HRESULT GetCubeMapSurface(D3DCUBEMAP_FACES FaceType, UINT Level, IDirect3DSurface9 **ppCubeMapSurface) { return 0; }
+    virtual HRESULT LockRect(D3DCUBEMAP_FACES FaceType, UINT Level, D3DLOCKED_RECT *pLockedRect, const RECT *pRect, DWORD Flags) { return 0; }
+    virtual HRESULT UnlockRect(D3DCUBEMAP_FACES FaceType, UINT Level) { return 0; }
+};
 struct IDirect3DVolumeTexture9 : public IDirect3DBaseTexture9 {};
 struct IDirect3DVertexBuffer9 : public IDirect3DResource9 {
     virtual HRESULT Lock(UINT OffsetToLock, UINT SizeToLock, void **ppbData, DWORD Flags) { return 0; }
