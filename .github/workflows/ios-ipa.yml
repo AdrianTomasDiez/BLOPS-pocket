@@ -47,10 +47,10 @@ jobs:
       - name: Compilar sin firma
         working-directory: launcher
         run: |
-          LDFLAGS=""
+          EXTRA_ARGS=()
           if [ -f "libs/libBO1Zombies.a" ]; then
             echo "Enlazando con motor nativo Treyarch: libs/libBO1Zombies.a"
-            LDFLAGS="OTHER_LDFLAGS=-force_load $(pwd)/libs/libBO1Zombies.a"
+            EXTRA_ARGS+=("OTHER_LDFLAGS=-force_load $(pwd)/libs/libBO1Zombies.a")
           fi
           xcodebuild \
             -project BLOPSPocket.xcodeproj \
@@ -61,7 +61,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            ${LDFLAGS} \
+            "${EXTRA_ARGS[@]}" \
             build
 
       - name: Empaquetar IPA
