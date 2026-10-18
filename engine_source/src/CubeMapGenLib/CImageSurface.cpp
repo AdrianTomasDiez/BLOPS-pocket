@@ -270,11 +270,8 @@ void CImageSurface::Init(int32 a_Width, int32 a_Height, int32 a_NumChannels )
    
    SAFE_DELETE_ARRAY(m_ImgData);   //safe delete old image data
 
-   try 
-   {
-      m_ImgData = new CP_ITYPE [ m_Width * m_Height * m_NumChannels];   //assume tight data packing
-   }
-   catch ( ... )
+   m_ImgData = new (std::nothrow) CP_ITYPE [ m_Width * m_Height * m_NumChannels];   //assume tight data packing
+   if (!m_ImgData)
    {
       FatalError((wchar_t*)L"Unable to allocate data for image in CImageSurface::Init.");
       m_ImgData = NULL;
