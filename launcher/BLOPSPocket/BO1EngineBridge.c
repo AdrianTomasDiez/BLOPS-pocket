@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 
 // Puente de símbolos C entre el launcher Swift y el motor nativo de Treyarch C++

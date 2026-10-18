@@ -842,7 +842,13 @@ static inline BOOL QueryPerformanceFrequency(LARGE_INTEGER *lpFrequency) {
 #define FILE_ATTRIBUTE_ARCHIVE              0x00000020
 #define FILE_ATTRIBUTE_NORMAL               0x00000080
 
-extern "C" const char *bo1_ios_get_gamedir(void);
+#ifdef __cplusplus
+extern "C" {
+#endif
+const char *bo1_ios_get_gamedir(void);
+#ifdef __cplusplus
+}
+#endif
 
 static inline DWORD GetFileAttributesA(const char *lpFileName) {
     if (!lpFileName || !*lpFileName) return INVALID_FILE_ATTRIBUTES;
@@ -912,9 +918,7 @@ static inline HANDLE CreateFileA(const char *lpFileName, DWORD dwDesiredAccess, 
         char *lastSlash = strrchr(dir, '/');
         if (lastSlash) {
             *lastSlash = '\0';
-            char tmp[1024];
-            snprintf(tmp, sizeof(tmp), "mkdir -p \"%s\"", dir);
-            system(tmp);
+            mkdir(dir, 0755);
         }
     }
     int fd = open(path, flags, 0644);
