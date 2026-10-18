@@ -6,22 +6,20 @@
 
 ## 1. Objetivo
 
-Port nativo para iPhone (iOS 15+) de **Call of Duty: Black Ops 1 Zombies (Kino der Toten)** 100% jugable, leyendo los archivos del juego que el propio usuario posee en su dispositivo (`zone/` y `main/*.iwd`), sin incluir ningún archivo propietario del juego en el repositorio ni en la IPA.
+Port nativo para iPhone (iOS 15+, 64 bits ARM64) de **Call of Duty: Black Ops 1 Zombies (Kino der Toten)** 100% jugable como en el juego original, basado directamente en el código fuente de **`bo1-zombies-decompiled`**, siguiendo el modelo de arquitectura real probado en **`IW4-Pocket`**.
 
-- **Objetivo exclusivo e inmediato:** Modo Zombies en **Kino der Toten** completo y jugable (jugador, disparo, zombis con IA, rondas, compra de puertas y armas, ventajas/perks). Campaña y multijugador quedan descartados en esta etapa.
-- **Estrategia técnica:** Motor nativo de 64 bits en Swift + Metal (renderizado a 60 FPS sin capas de emulación lentas). Carga de activos reales desde los FastFiles (`.ff`) y archivos de texturas (`.iwd`), extrayendo las entidades originales (`MapEnts`) para respetar las coordenadas exactas de spawns, puertas, armas y cajas. La lógica de juego y fórmulas (salud, daño, puntos, rondas, IA) se extrae fielmente de los scripts `.gsc` y la base descompilada (`bo1-zombies-decompiled`).
-- **Estado:** Fases 0–5 hechas (launcher, acceso persistente, catálogo de zonas). Fases 6c.0–6c.3 implementadas: visor 3D Metal con geometría BSP de Kino der Toten, 3.070 props estáticos (`smodelDrawInsts`), cámara libre FPS interactiva, icono oficial de app y generación automatizada de IPA en CI.
+- **Objetivo exclusivo:** Modo Zombies en **Kino der Toten** completo y jugable (armas completas con animaciones, zombis con IA y animaciones de Treyarch, audio original, colisiones Havok, scripts GSC de rondas, perks y puertas).
+- **Estrategia técnica definitiva:** Descartado cualquier intento de "inventar" o programar motores ficticios en Swift. Se porta y adapta el motor C++ de `bo1-zombies-decompiled` a 64 bits ARM64 para iOS, eliminando el código no utilizado (campaña, multijugador, librerías obsoletas Win32/x86 de PC) y conectando la capa de renderizado a Metal/SDL2, audio a CoreAudio y entrada a GameController.
+- **Activos del juego:** Los activos los provee el usuario desde su copia de Steam de PC en `Documents/Games`.
 
-## 2. Restricciones legales y directrices de código
+## 2. Restricciones y directrices del proyecto
 
 1. **No distribuir recursos del juego:** Ni en git, ni en la IPA, ni en releases. La app extrae y procesa los datos en tiempo de ejecución en la memoria del dispositivo del usuario.
 2. **Propiedad del juego:** El launcher exige una copia legítima de Black Ops 1 PC del usuario en `Documents/Games` o mediante carpeta externa en Archivos.
 3. **Marcas:** Icono propio y nombre provisional independiente (*BLOPS pocket* / *BLOPSP*).
-4. **Código de terceros y base de referencia:**
-   - **bo1-zombies-decompiled**: Se utiliza como referencia técnica y matemática fundamental para replicar con máxima fidelidad las reglas, fórmulas, balance de armas, salud de zombis, y decodificación de estructuras en el motor nativo de 64 bits, evitando intentar compilar directamente el código original x86/Win32/DirectX9 que crashea en iOS de 64 bits.
-   - **KisakBlack** (GPL-3.0): Referencia secundaria de estructuras de red y formatos de red.
-   - **IW4-Pocket** (Apache 2.0): Referencia de arquitectura de launcher y flujo de CI con SideStore.
-5. **Licencia del proyecto:** Apache 2.0 (código propio en Swift y herramientas Node).
+4. **Base de Código Oficial del Motor:**
+   - **bo1-zombies-decompiled**: Código fuente base en C++ del motor de Zombies de Black Ops 1. Se limpia de dependencias Windows x86 y se compila para iOS ARM64.
+   - **IW4-Pocket**: Referencia de arquitectura de runtime iOS, empaquetado IPA y gestión de memoria Jetsam.
 
 ## 3. Hallazgos de la investigación (fase 1)
 
