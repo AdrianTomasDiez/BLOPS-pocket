@@ -238,6 +238,10 @@ static inline int fopen_s(FILE **pFile, const char *filename, const char *mode) 
 #define _countof(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
+#ifndef ARRAYSIZE
+#define ARRAYSIZE(a) (sizeof(a) / sizeof((a)[0]))
+#endif
+
 static inline char *_itoa(int value, char *buffer, int radix) {
     if (!buffer) return NULL;
     if (radix == 10) {
