@@ -1,5 +1,18 @@
 #include "monkey_comm.h"
 
+#if !defined(_WIN32)
+
+bool g_MonkeyConnected = false;
+uintptr_t g_MonkeySock = 0;
+
+char __cdecl Monkey_InitCommunication(const char *server) { return 0; }
+void __cdecl Monkey_CloseCommunication(void) {}
+void __cdecl Monkey_Send(const char *cmd, const char *parms) {}
+int __cdecl Monkey_Recv(char *buf, int len) { return 0; }
+bool __cdecl Monkey_HasInput(void) { return false; }
+
+#else
+
 #include <winsock.h>
 #include <qcommon/common.h>
 #include <universal/assertive.h>
@@ -190,4 +203,6 @@ bool __cdecl Monkey_SocketHasData()
         Monkey_DisconnectAndExit();
     return avail && __WSAFDIsSet(g_MonkeySock, &readfds);
 }
+
+#endif
 
