@@ -117,9 +117,10 @@ inline int _snprintf_s(char *buf, size_t size, size_t count, const char *format,
 #define sprintf_s(buf, size, ...) snprintf((buf), (size), __VA_ARGS__)
 #define _snprintf_s(buf, size, count, ...) snprintf((buf), (size), __VA_ARGS__)
 #define strncpy_s(dst, size, src, count) strncpy((dst), (src), (size))
+#endif
+
 #ifndef strtok_s
 #define strtok_s(str, delim, context) strtok_r((str), (delim), (context))
-#endif
 #endif
 
 
