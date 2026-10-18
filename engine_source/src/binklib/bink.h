@@ -600,7 +600,12 @@ RADEXPFUNC S32  RADEXPLINK BinkSetSoundSystem(BINKSNDSYSOPEN open, UINTa param);
 
 RADEXPFUNC S32 RADEXPLINK BinkControlPlatformFeatures( S32 use, S32 dont_use );
 
-#ifdef __RADWIN__
+#if defined(__APPLE__)
+
+  static inline BINKSNDOPEN BinkOpenDirectSound(UINTa param) { return (BINKSNDOPEN)0; }
+  #define BinkSoundUseDirectSound(lpDS) BinkSetSoundSystem(BinkOpenDirectSound,(UINTa)lpDS)
+
+#elif defined(__RADWIN__)
 
   RADEXPFUNC BINKSNDOPEN RADEXPLINK BinkOpenDirectSound(UINTa param); // don't call directly
   #define BinkSoundUseDirectSound(lpDS) BinkSetSoundSystem(BinkOpenDirectSound,(UINTa)lpDS)
