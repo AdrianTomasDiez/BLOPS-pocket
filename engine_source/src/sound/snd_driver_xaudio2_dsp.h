@@ -7,6 +7,16 @@
 
 #define SDXA2_MAX_FRAME_COUNT 480
 
+#if defined(__APPLE__)
+struct SDXA2Effect {
+    virtual ~SDXA2Effect() {}
+};
+struct SDXA2SourceEffect : public SDXA2Effect {};
+struct SDXA2MasterBusEffect : public SDXA2Effect {};
+struct SDXA2MasterNoVoiceBusEffect : public SDXA2Effect {};
+struct SDXA2RadverbEffect : public SDXA2Effect {};
+#endif
+
 #if !defined(__APPLE__)
 static const GUID HACK_IID_IXAPOParameters = { 0xA90BC001, 0xE897, 0xE897, { 0x55, 0xE4, 0x9E, 0x47, 0x00, 0x00, 0x00, 0x01 } };
 
