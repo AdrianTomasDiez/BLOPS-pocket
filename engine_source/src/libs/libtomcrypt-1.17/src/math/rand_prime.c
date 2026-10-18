@@ -17,6 +17,7 @@
 
 #define USE_BBS 1
 
+#if !defined(LTC_NO_PK) && (defined(LTC_MRSA) || defined(LTC_MDSA))
 int rand_prime(void *N, long len, prng_state *prng, int wprng)
 {
      int                        err, res, type;
@@ -79,6 +80,13 @@ int rand_prime(void *N, long len, prng_state *prng, int wprng)
      XFREE(buf);
      return CRYPT_OK;
 }
+#else
+int rand_prime(void *N, long len, prng_state *prng, int wprng)
+{
+     (void)N; (void)len; (void)prng; (void)wprng;
+     return CRYPT_NOP;
+}
+#endif
             
 
 
