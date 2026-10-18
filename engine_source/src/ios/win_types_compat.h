@@ -153,6 +153,21 @@ typedef BOOL*         LPBOOL;
 typedef BYTE*         LPBYTE;
 typedef LONG*         PLONG;
 
+typedef struct _OVERLAPPED {
+    uintptr_t Internal;
+    uintptr_t InternalHigh;
+    union {
+        struct {
+            DWORD Offset;
+            DWORD OffsetHigh;
+        };
+        PVOID Pointer;
+    };
+    HANDLE hEvent;
+} OVERLAPPED, *LPOVERLAPPED;
+
+typedef void (*LPOVERLAPPED_COMPLETION_ROUTINE)(DWORD dwErrorCode, DWORD dwNumberOfBytesTransfered, LPOVERLAPPED lpOverlapped);
+
 struct HMONITOR__ { int unused; };
 typedef struct HMONITOR__* HMONITOR;
 
@@ -415,6 +430,22 @@ static inline BOOL ReadFile(HANDLE hFile, void *lpBuffer, DWORD nNumberOfBytesTo
     ssize_t n = read(fd, lpBuffer, nNumberOfBytesToRead);
     if (n < 0) return 0;
     if (lpNumberOfBytesRead) *lpNumberOfBytesRead = (DWORD)n;
+    return 1;
+}
+
+static inline BOOL ReadFileEx(HANDLE hFile, void *lpBuffer, DWORD nNumberOfBytesToRead, LPOVERLAPPED lpOverlapped, LPOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine) {
+    intptr_t val = (intptr_t)hFile;
+    if (val <= 0 || !lpBuffer) return 0;
+    int fd = (int)(val - 1);
+    if (lpOverlapped) {
+        off_t offset = ((off_t)lpOverlapped->OffsetHigh << 32) | lpOverlapped->Offset;
+        lseek(fd, offset, SEEK_SET);
+    }
+    ssize_t n = read(fd, lpBuffer, nNumberOfBytesToRead);
+    if (n < 0) return 0;
+    if (lpCompletionRoutine) {
+        lpCompletionRoutine(0, (DWORD)n, lpOverlapped);
+    }
     return 1;
 }
 
