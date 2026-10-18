@@ -462,7 +462,9 @@ struct IDirect3DQuery9 : public IUnknown {
     virtual HRESULT GetData(void* pData, DWORD dwSize, DWORD dwGetDataFlags) { return 0; }
 };
 struct IDirect3DStateBlock9 : public IUnknown {};
-struct IDirect3DSwapChain9 : public IUnknown {};
+struct IDirect3DSwapChain9 : public IUnknown {
+    virtual HRESULT Present(const RECT *pSourceRect, const RECT *pDestRect, HWND hDestWindowOverride, const void *pDirtyRegion, DWORD dwFlags) { return 0; }
+};
 struct IDirect3DDevice9 : public IUnknown {
     virtual HRESULT CreateTexture(UINT, UINT, UINT, DWORD, D3DFORMAT, D3DPOOL, IDirect3DTexture9**, HANDLE*) { return 0; }
     virtual HRESULT CreateCubeTexture(UINT, UINT, DWORD, D3DFORMAT, D3DPOOL, IDirect3DCubeTexture9**, HANDLE*) { return 0; }
@@ -533,6 +535,7 @@ typedef struct IDirect3DSwapChain9 *LPDIRECT3DSWAPCHAIN9;
 #define D3D_OK 0
 #define D3DERR_DEVICELOST 0x88760868
 #define D3DERR_DEVICENOTRESET 0x88760869
+#define S_PRESENT_OCCLUDED 0x0876087B
 
 #define D3DUSAGE_RENDERTARGET       0x00000001L
 #define D3DUSAGE_DEPTHSTENCIL       0x00000002L

@@ -21,6 +21,7 @@
 #include <sys/time.h>
 #include <ctype.h>
 #include <strings.h>
+#include <setjmp.h>
 
 typedef FILE _iobuf;
 
@@ -268,6 +269,15 @@ typedef struct tagPOINT {
     LONG x;
     LONG y;
 } POINT, *PPOINT, *LPPOINT;
+
+typedef struct tagMSG {
+    HWND   hwnd;
+    UINT   message;
+    WPARAM wParam;
+    LPARAM lParam;
+    DWORD  time;
+    POINT  pt;
+} MSG, *PMSG, *LPMSG;
 
 typedef union _LARGE_INTEGER {
     struct {
@@ -777,6 +787,11 @@ static inline DWORD_PTR SetThreadAffinityMask(HANDLE hThread, DWORD_PTR dwThread
 
 static inline BOOL SetThreadPriority(HANDLE hThread, int nPriority) {
     return 1;
+}
+
+static inline int ShowCursor(BOOL bShow) {
+    (void)bShow;
+    return 0;
 }
 
 static inline DWORD GetLastError(void) {
