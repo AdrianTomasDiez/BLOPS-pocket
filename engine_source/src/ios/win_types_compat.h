@@ -230,8 +230,22 @@ typedef BYTE*         LPBYTE;
 typedef LONG*         PLONG;
 typedef ULONG*        PULONG;
 
-struct NVDX_ObjectHandle__ { int unused; };
-typedef struct NVDX_ObjectHandle__* NVDX_ObjectHandle;
+#ifndef CONST
+#define CONST const
+#endif
+
+typedef struct _RGNDATAHEADER {
+    DWORD dwSize;
+    DWORD iType;
+    DWORD nCount;
+    DWORD nRgnSize;
+    RECT  rcBound;
+} RGNDATAHEADER;
+
+typedef struct _RGNDATA {
+    RGNDATAHEADER rdh;
+    char          Buffer[1];
+} RGNDATA, *PRGNDATA, *NPRGNDATA, *LPRGNDATA;
 
 typedef struct _OVERLAPPED {
     uintptr_t Internal;
