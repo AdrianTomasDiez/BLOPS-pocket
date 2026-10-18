@@ -348,8 +348,8 @@ bool __cdecl CL_CDKeyValidate(netadr_t addr)
         return true;
     return Steam_UpdateClientAuthTicket(addr);
 #else
-#error Steam Auth for Arch
-    return false;
+    (void)addr;
+    return true;
 #endif
 }
 
