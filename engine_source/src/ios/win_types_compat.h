@@ -166,6 +166,18 @@ static inline char *_i64toa(int64_t value, char *buffer, int radix) {
     return buffer;
 }
 
+static inline int64_t _atoi64(const char *str) {
+    return str ? (int64_t)strtoll(str, NULL, 10) : 0;
+}
+
+static inline int64_t _strtoi64(const char *str, char **endptr, int base) {
+    return str ? (int64_t)strtoll(str, endptr, base) : 0;
+}
+
+static inline uint64_t _strtoui64(const char *str, char **endptr, int base) {
+    return str ? (uint64_t)strtoull(str, endptr, base) : 0;
+}
+
 // Desactivar static_assert específicos de tamaño de puntero de 32 bits en arquitecturas 64-bit
 #if defined(__LP64__) || defined(_WIN64) || defined(__aarch64__)
 #define static_assert(...)
