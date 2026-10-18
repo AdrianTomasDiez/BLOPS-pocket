@@ -52,11 +52,17 @@ int __cdecl ShortSwap(__int16 l);
 int __cdecl LongSwap(int l);
 
 static ID_INLINE short BigShort(short l) { return (short)ShortSwap(l); }
-#define LittleShort
+#ifndef LittleShort
+#define LittleShort(l) (l)
+#endif
 static ID_INLINE int BigLong(int l) { return LongSwap(l); }
-#define LittleLong
+#ifndef LittleLong
+#define LittleLong(l) (l)
+#endif
 //static ID_INLINE float BigFloat(const float *l) { FloatSwap(l); }
-#define LittleFloat
+#ifndef LittleFloat
+#define LittleFloat(l) (l)
+#endif
 
 #define	PATH_SEP '\\'
 

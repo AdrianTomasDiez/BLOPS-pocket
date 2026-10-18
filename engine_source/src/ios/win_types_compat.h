@@ -354,4 +354,14 @@ static inline void OutputDebugStringA(const char *lpOutputString) {
     fputs(lpOutputString, stderr);
 }
 
+#ifndef LittleShort
+#define LittleShort(l) (l)
+#endif
+#ifndef LittleLong
+#define LittleLong(l) (l)
+#endif
+#ifndef LittleFloat
+#define LittleFloat(l) (l)
+#endif
+
 #endif // __APPLE__
