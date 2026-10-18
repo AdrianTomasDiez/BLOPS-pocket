@@ -34,8 +34,8 @@ if(APPLE)
     )
     target_compile_options(BO1Zombies PUBLIC
         -w
-        -fno-exceptions
-        -fno-rtti
+        $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>
+        $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
     )
 else()
     target_compile_definitions(BO1Zombies PUBLIC

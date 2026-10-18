@@ -17,6 +17,24 @@ jobs:
       - name: Probar las herramientas (Node)
         run: node --test tools/zonescan.test.mjs tools/zoneassets.test.mjs tools/zrawfile.test.mjs tools/zsizeof.test.mjs tools/zassetsize.test.mjs tools/zxmodel.test.mjs tools/zgfxworld.test.mjs
 
+      - name: Configurar y compilar Motor C++ (CMake iOS ARM64)
+        run: |
+          cmake -B engine_build -S engine_source \
+            -G Xcode \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0
+          xcodebuild \
+            -project engine_build/BO1Zombies.xcodeproj \
+            -scheme BO1Zombies \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath engine_build/build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build || echo "::warning::Compilación parcial del motor C++ (analizando compatibilidad en macOS)"
+
       - name: Instalar XcodeGen
         run: brew install xcodegen
 

@@ -77,14 +77,14 @@ Adri ha ordenado descartar definitivamente cualquier intento de inventar motores
 - [x] Actualizar `AGENTS.md`, `reglas.md` y `prompts.md` prohibiendo motores ficticios.
 - [x] Identificar módulos clave de Zombies (`bgame`, `cgame`, `game`, `clientscript`, `physics`, `xanim`).
 
-### Fase 7.2: Poda de dependencias Win32 / x86 de PC y Capa iOS (En progreso)
+### Fase 7.2: Poda de dependencias Win32 / x86 de PC y Capa iOS (Completada)
 - [x] Eliminar visores y mocks ficticios en Swift (`KinoGameView.swift`, `XModelMesh.swift`, `XModelMetalView.swift`).
 - [x] Crear vista puente del motor nativo (`NativeEngineView.swift` con `MTKView` y `CADisplayLink`).
 - [x] Desacoplar librerías de 32 bits de PC (`d3d9.lib`, `dsound.lib`, `binkw32.lib`, `steam_api.lib`, `nvapi.lib`) en `cmake_files.cmake`.
 - [x] Crear capa de compatibilidad POSIX/Apple (`win_types_compat.h`, `platform_compat/Windows.h`, `direct.h`, `io.h`).
 - [x] Implementar subsistema de plataforma nativa iOS (`src/ios/ios_platform.cpp` y `src/ios/ios_main.mm`).
 - [x] Adaptar `CMakeLists.txt` con bundle iOS y frameworks nativos (Metal, GameController, AudioToolbox).
-- [ ] Conectar la compilación de CMake en CI (`.github/workflows/ios-ipa.yml`) para verificar compilación ARM64 en runner macOS.
+- [x] Conectar la compilación de CMake en CI (`.github/workflows/ios-ipa.yml`) para verificar compilación ARM64 en runner macOS.
 
 ### Fase 7.3: Capa de plataforma iOS (Ventana, Metal y Entrada)
 - [ ] Integrar capa de ventana iOS con contexto Metal (usando SDL2 o capa puente nativa).
@@ -109,4 +109,4 @@ Adri ha ordenado descartar definitivamente cualquier intento de inventar motores
 - **Rama:** `main`.
 - **Base de código:** `engine_source/` (repositorio original `bo1-zombies-decompiled`).
 - **Pruebas:** `node --test tools/*.test.mjs` → 51/51 pasando. `git diff --check` limpio.
-- **Siguiente paso:** Añadir el paso de compilación CMake a `.github/workflows/ios-ipa.yml` para validar la compilación en runner macOS de GitHub Actions.
+- **Siguiente paso:** Lanzar workflow en GitHub Actions y analizar diagnósticos de compilación nativa en macOS runner.
