@@ -67,6 +67,14 @@ typedef int (*_CoreCrtNonSecureSearchSortCompareFunction)(const void *, const vo
 #define strcpy_s(dst, size, src) strncpy((dst), (src), (size))
 #define sprintf_s(buf, size, ...) snprintf((buf), (size), __VA_ARGS__)
 
+#ifndef _TRUNCATE
+#define _TRUNCATE ((size_t)-1)
+#endif
+
+#define _snprintf_s(buf, size, count, ...) snprintf((buf), (size), __VA_ARGS__)
+#define strncpy_s(dst, size, src, count) strncpy((dst), (src), (size))
+
+
 #ifndef min
 #define min(a,b) (((a)<(b))?(a):(b))
 #endif
