@@ -638,6 +638,21 @@ static inline HANDLE CreateEventA(void *lpEventAttributes, BOOL bManualReset, BO
     return (HANDLE)ev;
 }
 
+static inline HANDLE CreateMutexA(void *lpMutexAttributes, BOOL bInitialOwner, const char *lpName) {
+    (void)lpMutexAttributes; (void)lpName;
+    return CreateEventA(NULL, FALSE, !bInitialOwner, NULL);
+}
+
+static inline BOOL ReleaseMutex(HANDLE hMutex) {
+    if (!hMutex) return 0;
+    Win32Event *ev = (Win32Event *)hMutex;
+    pthread_mutex_lock(&ev->mutex);
+    ev->state = true;
+    pthread_cond_signal(&ev->cond);
+    pthread_mutex_unlock(&ev->mutex);
+    return 1;
+}
+
 static inline BOOL SetEvent(HANDLE hEvent) {
     if (!hEvent) return 0;
     Win32Event *ev = (Win32Event *)hEvent;
