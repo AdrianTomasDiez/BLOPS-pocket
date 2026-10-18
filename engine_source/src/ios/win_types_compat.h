@@ -282,6 +282,7 @@ static inline uint64_t _strtoui64(const char *str, char **endptr, int base) {
 #endif
 
 // ----- Tipos básicos de Win32 -----
+typedef void          VOID;
 typedef uint32_t      DWORD;
 typedef uint32_t*     PDWORD;
 typedef uint16_t      WORD;
