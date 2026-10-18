@@ -155,6 +155,18 @@ inline int _snprintf_s(char *buf, size_t size, size_t count, const char *format,
 #define strnicmp strncasecmp
 #endif
 
+static inline char *_strlwr(char *str) {
+    if (!str) return NULL;
+    for (char *p = str; *p; ++p) *p = (char)tolower((unsigned char)*p);
+    return str;
+}
+
+static inline char *_strupr(char *str) {
+    if (!str) return NULL;
+    for (char *p = str; *p; ++p) *p = (char)toupper((unsigned char)*p);
+    return str;
+}
+
 #include <sys/stat.h>
 #include <time.h>
 
