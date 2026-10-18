@@ -1530,6 +1530,20 @@ static inline HANDLE CreateThread(void *lpThreadAttributes, size_t dwStackSize, 
     return (HANDLE)th;
 }
 
+#ifndef THREAD_SUSPEND_RESUME
+#define THREAD_SUSPEND_RESUME 0x0002
+#endif
+#ifndef THREAD_GET_CONTEXT
+#define THREAD_GET_CONTEXT    0x0008
+#endif
+
+#ifndef OpenThread
+static inline HANDLE OpenThread(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwThreadId) {
+    (void)dwDesiredAccess; (void)bInheritHandle; (void)dwThreadId;
+    return NULL;
+}
+#endif
+
 #ifndef EXCEPTION_EXECUTE_HANDLER
 #define EXCEPTION_EXECUTE_HANDLER 1
 #endif
