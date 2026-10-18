@@ -259,6 +259,7 @@ static inline uint64_t _strtoui64(const char *str, char **endptr, int base) {
 
 // ----- Tipos básicos de Win32 -----
 typedef uint32_t      DWORD;
+typedef uint32_t*     PDWORD;
 typedef uint16_t      WORD;
 typedef uint8_t       BYTE;
 #if defined(__OBJC__)
@@ -269,6 +270,14 @@ typedef int           BOOL;
 #define OBJC_BOOL_DEFINED
 #endif
 #endif
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+#ifndef FALSE
+#define FALSE 0
+#endif
+
 typedef void*         HANDLE;
 typedef HANDLE*        LPHANDLE;
 
