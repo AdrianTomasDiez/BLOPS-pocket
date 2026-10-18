@@ -34,6 +34,7 @@ if(APPLE)
     )
     target_compile_options(BO1Zombies PUBLIC
         -w
+        -Wno-c++11-narrowing
         -fms-extensions
         -include "${CMAKE_CURRENT_SOURCE_DIR}/src/ios/win_types_compat.h"
         $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>

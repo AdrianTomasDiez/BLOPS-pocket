@@ -11,15 +11,27 @@
 #include <string.h>
 #include <stdio.h>
 
+// Desactivar static_assert específicos de tamaño de puntero de 32 bits en arquitecturas 64-bit
+#if defined(__LP64__) || defined(_WIN64) || defined(__aarch64__)
+#define static_assert(...)
+#endif
+
 // ----- Tipos básicos de Win32 -----
 typedef uint32_t      DWORD;
 typedef uint16_t      WORD;
 typedef uint8_t       BYTE;
 typedef int           BOOL;
 typedef void*         HANDLE;
-typedef void*         HWND;
-typedef void*         HINSTANCE;
-typedef void*         HMODULE;
+
+struct HWND__ { int unused; };
+typedef struct HWND__* HWND;
+
+struct HINSTANCE__ { int unused; };
+typedef struct HINSTANCE__* HINSTANCE;
+
+struct HMODULE__ { int unused; };
+typedef struct HMODULE__* HMODULE;
+
 typedef void*         LPVOID;
 typedef const void*   LPCVOID;
 typedef char*         LPSTR;
@@ -39,6 +51,17 @@ typedef DWORD*        LPDWORD;
 typedef BOOL*         LPBOOL;
 typedef BYTE*         LPBYTE;
 typedef LONG*         PLONG;
+
+typedef struct _SYSTEMTIME {
+    WORD wYear;
+    WORD wMonth;
+    WORD wDayOfWeek;
+    WORD wDay;
+    WORD wHour;
+    WORD wMinute;
+    WORD wSecond;
+    WORD wMilliseconds;
+} SYSTEMTIME, *PSYSTEMTIME, *LPSYSTEMTIME;
 
 #ifndef TRUE
 #define TRUE 1
