@@ -13,6 +13,8 @@
 #include <sched.h>
 #include <stdarg.h>
 #include <fcntl.h>
+#include <float.h>
+#include <math.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
