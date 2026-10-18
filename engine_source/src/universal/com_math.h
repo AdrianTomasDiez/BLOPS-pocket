@@ -94,6 +94,10 @@ struct orientation_t // sizeof=0x30
     float axis[3][3];                                     // XREF: CG_Laser_Add(centity_s *,DObj *,cpose_t *,float const * const,LaserOwnerEnum)+50/o
 };
 
+#if defined(__APPLE__) || defined(__linux__) || defined(__posix__)
+#define random bo1_random
+#endif
+
 double __cdecl random();
 double __cdecl crandom();
 void __cdecl GaussianRandom(float *f0, float *f1);
