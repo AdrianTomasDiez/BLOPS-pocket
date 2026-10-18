@@ -138,14 +138,12 @@ unsigned int __cdecl G_NewString(const char *string)
     return SL_GetString(str, 0, SCRIPTINSTANCE_SERVER);
 }
 
-char str[8][32];
-int index;
+static char s_vtosStr[8][32];
+static int s_vtosIndex;
 char *__cdecl vtos(const float *v)
 {
-    char *s; // [esp+0h] [ebp-4h]
-
-    s = str[index];
-    index = ((_BYTE)index + 1) & 7;
+    char *s = s_vtosStr[s_vtosIndex];
+    s_vtosIndex = (s_vtosIndex + 1) & 7;
     Com_sprintf(s, 0x20u, "(%i %i %i)", (int)*v, (int)v[1], (int)v[2]);
     return s;
 }
