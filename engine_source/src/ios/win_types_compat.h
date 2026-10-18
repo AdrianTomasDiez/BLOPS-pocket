@@ -215,6 +215,38 @@ static inline DWORD GetCurrentThreadId(void) {
     return (DWORD)(uintptr_t)pthread_self();
 }
 
+static inline HANDLE GetCurrentProcess(void) {
+    return (HANDLE)(intptr_t)-1;
+}
+
+static inline DWORD GetCurrentProcessId(void) {
+    return (DWORD)getpid();
+}
+
+static inline BOOL CloseHandle(HANDLE hObject) {
+    return 1;
+}
+
+typedef struct _MEMORYSTATUS {
+    DWORD dwLength;
+    DWORD dwMemoryLoad;
+    size_t dwTotalPhys;
+    size_t dwAvailPhys;
+    size_t dwTotalPageFile;
+    size_t dwAvailPageFile;
+    size_t dwTotalVirtual;
+    size_t dwAvailVirtual;
+} MEMORYSTATUS, *LPMEMORYSTATUS;
+
+static inline void GlobalMemoryStatus(MEMORYSTATUS *lpBuffer) {
+    if (lpBuffer) {
+        memset(lpBuffer, 0, sizeof(*lpBuffer));
+        lpBuffer->dwLength = sizeof(*lpBuffer);
+        lpBuffer->dwTotalPhys = 1024ULL * 1024ULL * 1024ULL;
+        lpBuffer->dwAvailPhys = 512ULL * 1024ULL * 1024ULL;
+    }
+}
+
 static inline void OutputDebugStringA(const char *lpOutputString) {
     fputs(lpOutputString, stderr);
 }
