@@ -55,9 +55,16 @@ typedef enum _D3DFORMAT {
     D3DFMT_DXT3                 = 0x33545844,
     D3DFMT_DXT4                 = 0x34545844,
     D3DFMT_DXT5                 = 0x35545844,
+    D3DFMT_L8                   = 50,
+    D3DFMT_A8L8                 = 51,
+    D3DFMT_D16_LOCKABLE         = 70,
+    D3DFMT_D32                  = 71,
+    D3DFMT_D15S1                = 73,
     D3DFMT_D24S8                = 75,
     D3DFMT_D24X8                = 77,
     D3DFMT_D16                  = 80,
+    D3DFMT_R32F                 = 114,
+    D3DFMT_A16B16G16R16F        = 113,
     D3DFMT_FORCE_DWORD          = 0x7fffffff
 } D3DFORMAT;
 
