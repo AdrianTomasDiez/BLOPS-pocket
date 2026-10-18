@@ -279,6 +279,26 @@ typedef struct tagMSG {
     POINT  pt;
 } MSG, *PMSG, *LPMSG;
 
+static inline BOOL PeekMessageA(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg) {
+    (void)lpMsg; (void)hWnd; (void)wMsgFilterMin; (void)wMsgFilterMax; (void)wRemoveMsg;
+    return 0;
+}
+
+static inline BOOL GetMessageA(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax) {
+    (void)lpMsg; (void)hWnd; (void)wMsgFilterMin; (void)wMsgFilterMax;
+    return 0;
+}
+
+static inline BOOL TranslateMessage(const MSG *lpMsg) {
+    (void)lpMsg;
+    return 0;
+}
+
+static inline LRESULT DispatchMessageA(const MSG *lpMsg) {
+    (void)lpMsg;
+    return 0;
+}
+
 typedef union _LARGE_INTEGER {
     struct {
         DWORD LowPart;
