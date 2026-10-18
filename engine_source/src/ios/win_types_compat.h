@@ -120,6 +120,7 @@ inline int _snprintf_s(char *buf, size_t size, size_t count, const char *format,
 #ifndef strtok_s
 #define strtok_s(str, delim, context) strtok_r((str), (delim), (context))
 #endif
+#endif
 
 
 #ifndef min
