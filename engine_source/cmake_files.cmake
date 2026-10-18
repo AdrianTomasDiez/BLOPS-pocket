@@ -2868,6 +2868,7 @@ set(WIN32_FILES
 set(SRC_IOS
 	"${SRC_DIR}/ios/ios_main.mm"
 	"${SRC_DIR}/ios/ios_platform.cpp"
+	"${SRC_DIR}/ios/win_compat_stubs.cpp"
 	"${SRC_DIR}/ios/win_types_compat.h"
 )
 source_group("ios" FILES ${SRC_IOS})
