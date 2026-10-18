@@ -3007,11 +3007,7 @@ else()
 	)
 endif()
 
-if(APPLE)
-	add_library(${BIN_NAME} STATIC
-else()
-	add_executable(${BIN_NAME}
-endif()
+set(ALL_ENGINE_SRCS
 	${DW_DEMONWAREROOT_FILES}
 	${DW_BDCORE_FILES}
 	${DW_BDPLATFORM_FILES}
@@ -3067,3 +3063,9 @@ endif()
 	${TL_JOBQUEUE_FILES}
 	${TL_PHYSICS_FILES}
 )
+
+if(APPLE)
+	add_library(${BIN_NAME} STATIC ${ALL_ENGINE_SRCS})
+else()
+	add_executable(${BIN_NAME} ${ALL_ENGINE_SRCS})
+endif()
