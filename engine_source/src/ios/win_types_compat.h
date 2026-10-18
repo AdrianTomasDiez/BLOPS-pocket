@@ -66,15 +66,58 @@ typedef int (*_CoreCrtNonSecureSearchSortCompareFunction)(const void *, const vo
 #define _vsnprintf vsnprintf
 #endif
 
-#define strcpy_s(dst, size, src) strncpy((dst), (src), (size))
-#define sprintf_s(buf, size, ...) snprintf((buf), (size), __VA_ARGS__)
-
 #ifndef _TRUNCATE
 #define _TRUNCATE ((size_t)-1)
 #endif
 
+#ifdef __cplusplus
+#include <cstdio>
+#include <cstring>
+#include <cstdarg>
+
+template <size_t N, typename... Args>
+inline int sprintf_s(char (&buf)[N], const char *format, Args... args) {
+    return snprintf(buf, N, format, args...);
+}
+
+template <typename... Args>
+inline int sprintf_s(char *buf, size_t size, const char *format, Args... args) {
+    return snprintf(buf, size, format, args...);
+}
+
+template <size_t N>
+inline char *strcpy_s(char (&dst)[N], const char *src) {
+    return strncpy(dst, src, N);
+}
+
+inline char *strcpy_s(char *dst, size_t size, const char *src) {
+    return strncpy(dst, src, size);
+}
+
+template <size_t N>
+inline char *strncpy_s(char (&dst)[N], const char *src, size_t count) {
+    return strncpy(dst, src, (count < N) ? count : N);
+}
+
+inline char *strncpy_s(char *dst, size_t size, const char *src, size_t count) {
+    return strncpy(dst, src, (count < size) ? count : size);
+}
+
+template <size_t N, typename... Args>
+inline int _snprintf_s(char (&buf)[N], size_t count, const char *format, Args... args) {
+    return snprintf(buf, (count < N) ? count : N, format, args...);
+}
+
+template <typename... Args>
+inline int _snprintf_s(char *buf, size_t size, size_t count, const char *format, Args... args) {
+    return snprintf(buf, (count < size) ? count : size, format, args...);
+}
+#else
+#define strcpy_s(dst, size, src) strncpy((dst), (src), (size))
+#define sprintf_s(buf, size, ...) snprintf((buf), (size), __VA_ARGS__)
 #define _snprintf_s(buf, size, count, ...) snprintf((buf), (size), __VA_ARGS__)
 #define strncpy_s(dst, size, src, count) strncpy((dst), (src), (size))
+#endif
 
 
 #ifndef min
