@@ -89,10 +89,11 @@ Adri ha ordenado descartar definitivamente cualquier intento de inventar motores
 - [x] Conectar la compilación de CMake en CI (`.github/workflows/ios-ipa.yml`) para verificar compilación ARM64 en runner macOS.
 
 ### Fase 7.3: Capa de plataforma iOS (Ventana, Metal y Entrada)
+- [x] Conectar mandos y touch nativos con `GameController` (+forward, +attack, +speed, etc.) en `VirtualGameControls.swift`.
+- [x] Conectar puente de eventos `bo1_ios_send_key` y `bo1_ios_send_mouse` hacia `Sys_QueEvent` en `ios_main.mm`.
+- [x] Conectar sandbox de lectura de archivos a `Documents/Games` en `NativeEngineView.swift` y `ios_platform.cpp`.
 - [ ] Integrar capa de ventana iOS con contexto Metal (usando SDL2 o capa puente nativa).
 - [ ] Conectar el subsistema de audio con CoreAudio / OpenAL.
-- [ ] Conectar mandos y touch nativos con `GameController` (+forward, +attack, +speed, etc.).
-- [ ] Conectar sandbox de lectura de archivos a `Documents/Games`.
 
 ### Fase 7.4: Carga y Ejecución de Kino der Toten
 - [ ] Inicializar subsistema de FastFiles (`DB_Init`, `XAssetList`) sobre `zombie_theater.ff` y `common_zombie.ff`.
@@ -111,4 +112,4 @@ Adri ha ordenado descartar definitivamente cualquier intento de inventar motores
 - **Rama:** `main`.
 - **Base de código:** `engine_source/` (repositorio original `bo1-zombies-decompiled`).
 - **Pruebas:** `node --test tools/*.test.mjs` → 51/51 pasando. `git diff --check` limpio.
-- **Siguiente paso:** Completar la integración del backend Metal (`r_metal.mm`) y mapear controles táctiles a `Sys_QueEvent`.
+- **Siguiente paso:** Completar la integración del backend Metal (`r_metal.mm`) conectando el viewport del MTKView al ciclo de dibujo.
