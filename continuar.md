@@ -81,7 +81,9 @@ Adri ha ordenado descartar definitivamente cualquier intento de inventar motores
 - [x] Eliminar visores y mocks ficticios en Swift (`KinoGameView.swift`, `XModelMesh.swift`, `XModelMetalView.swift`).
 - [x] Crear vista puente del motor nativo (`NativeEngineView.swift` con `MTKView` y `CADisplayLink`).
 - [x] Desacoplar librerías de 32 bits de PC (`d3d9.lib`, `dsound.lib`, `binkw32.lib`, `steam_api.lib`, `nvapi.lib`) en `cmake_files.cmake`.
-- [x] Crear capa de compatibilidad POSIX/Apple (`win_types_compat.h`, `platform_compat/Windows.h`, `direct.h`, `io.h`).
+- [x] Crear capa de compatibilidad POSIX/Apple (`win_types_compat.h`, `platform_compat/Windows.h`, `direct.h`, `io.h`, `xmmintrin.h`, `mmintrin.h`).
+- [x] Agregar shims de DirectX 9 (`d3d9.h` con tipos de display, caps y vertex elements) y audio (`XAudio2.h`, `XAPOBase.h`).
+- [x] Añadir tipos de 64 bits (`LONG64`, `ULONG64`), `SwitchToThread` y estructuras GDI (`HMONITOR`, `HDC`, `RECT`, `POINT`, `GUID`).
 - [x] Implementar subsistema de plataforma nativa iOS (`src/ios/ios_platform.cpp` y `src/ios/ios_main.mm`).
 - [x] Adaptar `CMakeLists.txt` con bundle iOS y frameworks nativos (Metal, GameController, AudioToolbox).
 - [x] Conectar la compilación de CMake en CI (`.github/workflows/ios-ipa.yml`) para verificar compilación ARM64 en runner macOS.
@@ -98,8 +100,8 @@ Adri ha ordenado descartar definitivamente cualquier intento de inventar motores
 - [ ] Verificar renderizado nativo con shaders, modelos animados y audio real de Zombies.
 
 ### Fase 7.5: Compilación en CI y Release de IPA
-- [ ] Configurar GitHub Actions para compilar el binario nativo ARM64 en macOS runner.
-- [ ] Empaquetar el ejecutable en la IPA sin firmar y publicar en GitHub Releases.
+- [x] Configurar GitHub Actions para compilar el binario nativo ARM64 en macOS runner.
+- [x] Empaquetar el ejecutable en la IPA sin firmar y publicar en GitHub Releases.
 - [ ] Probar la partida en el iPhone.
 
 ---
@@ -109,4 +111,4 @@ Adri ha ordenado descartar definitivamente cualquier intento de inventar motores
 - **Rama:** `main`.
 - **Base de código:** `engine_source/` (repositorio original `bo1-zombies-decompiled`).
 - **Pruebas:** `node --test tools/*.test.mjs` → 51/51 pasando. `git diff --check` limpio.
-- **Siguiente paso:** Lanzar workflow en GitHub Actions y analizar diagnósticos de compilación nativa en macOS runner.
+- **Siguiente paso:** Completar la integración del backend Metal (`r_metal.mm`) y mapear controles táctiles a `Sys_QueEvent`.
