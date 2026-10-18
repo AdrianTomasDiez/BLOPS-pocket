@@ -687,6 +687,10 @@ static inline BOOL GetProcessAffinityMask(HANDLE hProcess, LPDWORD lpProcessAffi
     return 1;
 }
 
+static inline DWORD_PTR SetThreadAffinityMask(HANDLE hThread, DWORD_PTR dwThreadAffinityMask) {
+    return 1;
+}
+
 static inline BOOL SetThreadPriority(HANDLE hThread, int nPriority) {
     return 1;
 }

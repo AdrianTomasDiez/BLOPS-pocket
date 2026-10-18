@@ -1084,6 +1084,21 @@ void __cdecl Win_UnlockThreadAffinity()
 }
 
 
+#if defined(__APPLE__)
+int __cdecl Sys_ModOnPCore()
+{
+    return -1;
+}
+
+void __cdecl Sys_ModApplyPCore(int mode)
+{
+}
+
+void __cdecl Sys_ModApplyPriority(int mode)
+{
+}
+#else
+
 // mod (L64): bo1_mod_pcore. The engine sets no affinity/priority for the listen-server thread (Sys_SpawnServerThread), and
 // Windows 10 (no hybrid-aware scheduling) often runs it on an E-core of a hybrid CPU (e.g. 8 P + 16 E cores).
 // 1 = the server thread gets the P-cores' CPU sets (highest EfficiencyClass) and THREAD_PRIORITY_ABOVE_NORMAL;
@@ -1217,3 +1232,4 @@ void __cdecl Sys_ModApplyPriority(int mode)
     Com_Printf(16, "bo1_mod_priority %d: process class 0x%x (started 0x%x), main thread %s\n", mode,
         GetPriorityClass(GetCurrentProcess()), s_startClass, mode ? "above normal" : "normal");
 }
+#endif
