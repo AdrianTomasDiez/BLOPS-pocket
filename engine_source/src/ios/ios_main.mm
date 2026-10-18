@@ -6,12 +6,17 @@
 #include "win_types_compat.h"
 #include <win32/win_local.h>
 #include <win32/win_common.h>
+#include <win32/win_shared.h>
 #include <win32/win_main.h>
 #include <qcommon/common.h>
+#include <qcommon/cmd.h>
 #include <qcommon/threads.h>
 #include <qcommon/mem_track.h>
 #include <universal/physicalmemory.h>
 #include <universal/timing.h>
+#include <universal/q_parse.h>
+
+typedef void (*BO1_iOS_PresentCallback)(void);
 
 extern "C" {
 
@@ -96,7 +101,8 @@ void bo1_ios_send_key(int key, int down)
 
 void bo1_ios_send_mouse(int dx, int dy)
 {
-    Sys_QueEvent((unsigned int)Sys_Milliseconds(), SE_MOUSE, dx, dy, 0, NULL);
+    // Ratón / mirada en Treyarch engine
+    (void)dx; (void)dy;
 }
 
 BO1_iOS_PresentCallback g_bo1_ios_present_callback = NULL;
