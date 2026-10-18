@@ -1,4 +1,6 @@
 import SwiftUI
+import simd
+import GameController
 
 /// Pantalla completa auténtica de Call of Duty: Black Ops Zombies en Kino der Toten.
 /// Sin listas de archivos, sin botones de depurador, a pantalla completa horizontal.
@@ -402,9 +404,7 @@ struct KinoGameView: View {
                 // Cargar todas las salas del mapa (Lobby, Foyer, Auditorio...)
                 let sectors = XModelReader.scanWorldSectors(in: stream)
                 let indices = sectors.map { $0.chunkIndex }
-                guard let mesh = try XModelReader.extractWorldSectors(from: stream, sectorIndices: indices.isEmpty ? [0] : indices) else {
-                    return .failure(NSError(domain: "BLOPS", code: 3, userInfo: [NSLocalizedDescriptionKey: "No se pudo extraer la geometría de Kino"]))
-                }
+                let mesh = try XModelReader.extractWorldSectors(from: stream, sectorIndices: indices.isEmpty ? [0] : indices)
                 return .success(mesh)
             } catch {
                 return .failure(error)
