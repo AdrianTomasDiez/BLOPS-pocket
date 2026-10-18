@@ -672,10 +672,6 @@ static inline HANDLE GetCurrentThread(void) {
     return (HANDLE)(intptr_t)-2;
 }
 
-static inline HANDLE GetCurrentProcess(void) {
-    return (HANDLE)(intptr_t)-1;
-}
-
 static inline BOOL DuplicateHandle(HANDLE hSourceProcessHandle, HANDLE hSourceHandle, HANDLE hTargetProcessHandle, LPHANDLE lpTargetHandle, DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwOptions) {
     if (lpTargetHandle) *lpTargetHandle = hSourceHandle;
     return 1;
