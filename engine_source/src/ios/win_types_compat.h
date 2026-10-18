@@ -656,6 +656,10 @@ static inline HANDLE CreateThread(void *lpThreadAttributes, size_t dwStackSize, 
     return (HANDLE)th;
 }
 
+#ifndef EXCEPTION_EXECUTE_HANDLER
+#define EXCEPTION_EXECUTE_HANDLER 1
+#endif
+
 static inline DWORD ResumeThread(HANDLE hThread) {
     if (!hThread) return (DWORD)-1;
     Win32Thread *th = (Win32Thread *)hThread;
@@ -664,6 +668,15 @@ static inline DWORD ResumeThread(HANDLE hThread) {
         th->suspended = false;
         pthread_cond_broadcast(&th->suspendCond);
     }
+    pthread_mutex_unlock(&th->suspendMutex);
+    return 1;
+}
+
+static inline DWORD SuspendThread(HANDLE hThread) {
+    if (!hThread) return (DWORD)-1;
+    Win32Thread *th = (Win32Thread *)hThread;
+    pthread_mutex_lock(&th->suspendMutex);
+    th->suspended = true;
     pthread_mutex_unlock(&th->suspendMutex);
     return 1;
 }
