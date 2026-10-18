@@ -244,7 +244,41 @@ struct IDirect3DIndexBuffer9 : public IDirect3DResource9 {
 struct IDirect3DVertexDeclaration9 : public IUnknown {};
 struct IDirect3DVertexShader9 : public IUnknown {};
 struct IDirect3DPixelShader9 : public IUnknown {};
-struct IDirect3DQuery9 : public IUnknown {};
+typedef enum _D3DQUERYTYPE {
+    D3DQUERYTYPE_VCACHE                 = 4,
+    D3DQUERYTYPE_RESOURCEMANAGER        = 5,
+    D3DQUERYTYPE_VERTEXSTATS            = 6,
+    D3DQUERYTYPE_EVENT                  = 8,
+    D3DQUERYTYPE_OCCLUSION              = 9,
+    D3DQUERYTYPE_TIMESTAMP              = 10,
+    D3DQUERYTYPE_TIMESTAMPDISJOINT      = 11,
+    D3DQUERYTYPE_TIMESTAMPFREQ          = 12,
+    D3DQUERYTYPE_PIPELINETIMINGS        = 13,
+    D3DQUERYTYPE_INTERFACETIMINGS       = 14,
+    D3DQUERYTYPE_VERTEXTIMINGS          = 15,
+    D3DQUERYTYPE_PIXELTIMINGS           = 16,
+    D3DQUERYTYPE_BANDWIDTHTIMINGS       = 17,
+    D3DQUERYTYPE_CACHEUTILIZATION       = 18
+} D3DQUERYTYPE;
+
+#ifndef D3DISSUE_BEGIN
+#define D3DISSUE_BEGIN (1 << 1)
+#endif
+#ifndef D3DISSUE_END
+#define D3DISSUE_END   (1 << 0)
+#endif
+#ifndef D3DGETDATA_FLUSH
+#define D3DGETDATA_FLUSH (1 << 0)
+#endif
+
+struct IDirect3DDevice9;
+struct IDirect3DQuery9 : public IUnknown {
+    virtual HRESULT GetDevice(IDirect3DDevice9** ppDevice) { return 0; }
+    virtual D3DQUERYTYPE GetType() { return (D3DQUERYTYPE)0; }
+    virtual DWORD GetDataSize() { return 0; }
+    virtual HRESULT Issue(DWORD dwIssueFlags) { return 0; }
+    virtual HRESULT GetData(void* pData, DWORD dwSize, DWORD dwGetDataFlags) { return 0; }
+};
 struct IDirect3DStateBlock9 : public IUnknown {};
 struct IDirect3DSwapChain9 : public IUnknown {};
 struct IDirect3DDevice9 : public IUnknown {
@@ -254,6 +288,8 @@ struct IDirect3DDevice9 : public IUnknown {
     virtual HRESULT CreateVertexDeclaration(const D3DVERTEXELEMENT9*, IDirect3DVertexDeclaration9**) { return 0; }
     virtual HRESULT CreateVertexShader(const DWORD*, IDirect3DVertexShader9**) { return 0; }
     virtual HRESULT CreatePixelShader(const DWORD*, IDirect3DPixelShader9**) { return 0; }
+    virtual HRESULT CreateQuery(D3DQUERYTYPE, IDirect3DQuery9**) { return 0; }
+    virtual HRESULT GetRenderTargetData(IDirect3DSurface9*, IDirect3DSurface9*) { return 0; }
 };
 struct IDirect3DDevice9Ex : public IDirect3DDevice9 {};
 struct IDirect3D9 : public IUnknown {};
