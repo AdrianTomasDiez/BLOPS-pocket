@@ -715,9 +715,72 @@ static inline HMODULE GetModuleHandleA(LPCSTR lpModuleName) {
     return (HMODULE)(intptr_t)1;
 }
 
+static inline DWORD GetModuleFileNameA(HMODULE hModule, LPSTR lpFilename, DWORD nSize) {
+    (void)hModule;
+    if (lpFilename && nSize > 0) {
+        strncpy(lpFilename, "BLOPSPocket", nSize - 1);
+        lpFilename[nSize - 1] = '\0';
+        return (DWORD)strlen(lpFilename);
+    }
+    return 0;
+}
+
 static inline void *GetProcAddress(HMODULE hModule, LPCSTR lpProcName) {
     (void)hModule; (void)lpProcName;
     return NULL;
+}
+
+typedef void *HGLOBAL;
+
+static inline HGLOBAL GlobalAlloc(UINT uFlags, size_t dwBytes) {
+    (void)uFlags;
+    return (HGLOBAL)malloc(dwBytes);
+}
+
+static inline HGLOBAL GlobalFree(HGLOBAL hMem) {
+    if (hMem) free(hMem);
+    return NULL;
+}
+
+static inline LPVOID GlobalLock(HGLOBAL hMem) {
+    return (LPVOID)hMem;
+}
+
+static inline BOOL GlobalUnlock(HGLOBAL hMem) {
+    (void)hMem;
+    return TRUE;
+}
+
+static inline HWND GetActiveWindow(void) {
+    static struct HWND__ dummy;
+    return &dummy;
+}
+
+static inline HWND GetDesktopWindow(void) {
+    static struct HWND__ dummy;
+    return &dummy;
+}
+
+static inline BOOL OpenClipboard(HWND hWndNewOwner) {
+    (void)hWndNewOwner;
+    return TRUE;
+}
+
+static inline BOOL CloseClipboard(void) {
+    return TRUE;
+}
+
+static inline BOOL EmptyClipboard(void) {
+    return TRUE;
+}
+
+static inline HANDLE SetClipboardData(UINT uFormat, HANDLE hMem) {
+    (void)uFormat;
+    return hMem;
+}
+
+static inline BOOL IsDebuggerPresent(void) {
+    return FALSE;
 }
 
 typedef struct tagMSG {
