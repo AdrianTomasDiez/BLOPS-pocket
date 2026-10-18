@@ -348,6 +348,13 @@ typedef HINSTANCE HMODULE;
 struct HMENU__ { int unused; };
 typedef struct HMENU__* HMENU;
 
+struct HFONT__ { int unused; };
+typedef struct HFONT__* HFONT;
+
+#ifndef _putenv
+#define _putenv putenv
+#endif
+
 typedef void*         LPVOID;
 typedef void*         PVOID;
 typedef const void*   LPCVOID;
