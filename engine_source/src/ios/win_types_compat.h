@@ -234,19 +234,6 @@ typedef ULONG*        PULONG;
 #define CONST const
 #endif
 
-typedef struct _RGNDATAHEADER {
-    DWORD dwSize;
-    DWORD iType;
-    DWORD nCount;
-    DWORD nRgnSize;
-    RECT  rcBound;
-} RGNDATAHEADER;
-
-typedef struct _RGNDATA {
-    RGNDATAHEADER rdh;
-    char          Buffer[1];
-} RGNDATA, *PRGNDATA, *NPRGNDATA, *LPRGNDATA;
-
 typedef struct _OVERLAPPED {
     uintptr_t Internal;
     uintptr_t InternalHigh;
@@ -297,6 +284,19 @@ typedef struct tagRECT {
     LONG right;
     LONG bottom;
 } RECT, *PRECT, *LPRECT;
+
+typedef struct _RGNDATAHEADER {
+    DWORD dwSize;
+    DWORD iType;
+    DWORD nCount;
+    DWORD nRgnSize;
+    RECT  rcBound;
+} RGNDATAHEADER;
+
+typedef struct _RGNDATA {
+    RGNDATAHEADER rdh;
+    char          Buffer[1];
+} RGNDATA, *PRGNDATA, *NPRGNDATA, *LPRGNDATA;
 
 typedef struct tagPALETTEENTRY {
     BYTE peRed;
