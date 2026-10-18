@@ -75,6 +75,39 @@ typedef struct _D3DDISPLAYMODE {
     D3DFORMAT       Format;
 } D3DDISPLAYMODE;
 
+typedef enum _D3DDEVTYPE {
+    D3DDEVTYPE_HAL         = 1,
+    D3DDEVTYPE_NULLREF     = 2,
+    D3DDEVTYPE_REF         = 3,
+    D3DDEVTYPE_SW          = 4,
+    D3DDEVTYPE_FORCE_DWORD = 0x7fffffff
+} D3DDEVTYPE;
+
+typedef enum _D3DRESOURCETYPE {
+    D3DRTYPE_SURFACE                = 1,
+    D3DRTYPE_VOLUME                 = 2,
+    D3DRTYPE_TEXTURE                = 3,
+    D3DRTYPE_VOLUMETEXTURE          = 4,
+    D3DRTYPE_CUBETEXTURE            = 5,
+    D3DRTYPE_VERTEXBUFFER           = 6,
+    D3DRTYPE_INDEXBUFFER            = 7,
+    D3DRTYPE_FORCE_DWORD            = 0x7fffffff
+} D3DRESOURCETYPE;
+
+typedef struct _D3DADAPTER_IDENTIFIER9 {
+    char            Driver[512];
+    char            Description[512];
+    char            DeviceName[32];
+    LARGE_INTEGER   DriverVersion;
+    DWORD           VendorId;
+    DWORD           DeviceId;
+    DWORD           SubSysId;
+    DWORD           Revision;
+    GUID            DeviceIdentifier;
+    DWORD           WHQLLevel;
+} D3DADAPTER_IDENTIFIER9;
+
+
 typedef enum _D3DMULTISAMPLE_TYPE {
     D3DMULTISAMPLE_NONE            =  0,
     D3DMULTISAMPLE_NONMASKABLE     =  1,
