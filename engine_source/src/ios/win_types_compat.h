@@ -283,10 +283,97 @@ typedef struct tagRECT {
     LONG bottom;
 } RECT, *PRECT, *LPRECT;
 
+typedef struct tagPALETTEENTRY {
+    BYTE peRed;
+    BYTE peGreen;
+    BYTE peBlue;
+    BYTE peFlags;
+} PALETTEENTRY, *PPALETTEENTRY, *LPPALETTEENTRY;
+
+typedef struct tagMONITORINFO {
+    DWORD cbSize;
+    RECT  rcMonitor;
+    RECT  rcWork;
+    DWORD dwFlags;
+} MONITORINFO, *LPMONITORINFO;
+
 typedef struct tagPOINT {
     LONG x;
     LONG y;
 } POINT, *PPOINT, *LPPOINT;
+
+#ifndef MONITOR_DEFAULTTONULL
+#define MONITOR_DEFAULTTONULL    0x00000000
+#endif
+#ifndef MONITOR_DEFAULTTOPRIMARY
+#define MONITOR_DEFAULTTOPRIMARY 0x00000001
+#endif
+#ifndef MONITOR_DEFAULTTONEAREST
+#define MONITOR_DEFAULTTONEAREST 0x00000002
+#endif
+
+static inline HMONITOR MonitorFromWindow(HWND hwnd, DWORD dwFlags) {
+    (void)hwnd; (void)dwFlags;
+    return (HMONITOR)(intptr_t)1;
+}
+
+static inline HMONITOR MonitorFromPoint(POINT pt, DWORD dwFlags) {
+    (void)pt; (void)dwFlags;
+    return (HMONITOR)(intptr_t)1;
+}
+
+static inline BOOL GetMonitorInfoA(HMONITOR hMonitor, LPMONITORINFO lpmi) {
+    (void)hMonitor;
+    if (!lpmi) return 0;
+    lpmi->rcMonitor.left = 0;
+    lpmi->rcMonitor.top = 0;
+    lpmi->rcMonitor.right = 1920;
+    lpmi->rcMonitor.bottom = 1080;
+    lpmi->rcWork = lpmi->rcMonitor;
+    lpmi->dwFlags = 1;
+    return 1;
+}
+
+static inline BOOL ClientToScreen(HWND hWnd, LPPOINT lpPoint) {
+    (void)hWnd; (void)lpPoint;
+    return 1;
+}
+
+static inline BOOL GetClientRect(HWND hWnd, LPRECT lpRect) {
+    (void)hWnd;
+    if (lpRect) {
+        lpRect->left = 0;
+        lpRect->top = 0;
+        lpRect->right = 1920;
+        lpRect->bottom = 1080;
+    }
+    return 1;
+}
+
+#ifndef SM_CXSCREEN
+#define SM_CXSCREEN 0
+#endif
+#ifndef SM_CYSCREEN
+#define SM_CYSCREEN 1
+#endif
+
+static inline int GetSystemMetrics(int nIndex) {
+    if (nIndex == SM_CXSCREEN) return 1920;
+    if (nIndex == SM_CYSCREEN) return 1080;
+    return 0;
+}
+
+#ifndef GWL_STYLE
+#define GWL_STYLE (-16)
+#endif
+#ifndef GWL_EXSTYLE
+#define GWL_EXSTYLE (-20)
+#endif
+
+static inline LONG GetWindowLongA(HWND hWnd, int nIndex) {
+    (void)hWnd; (void)nIndex;
+    return 0;
+}
 
 typedef struct tagMSG {
     HWND   hwnd;

@@ -434,6 +434,15 @@ struct IUnknown {
 };
 struct IDirect3DResource9 : public IUnknown {};
 struct IDirect3DSurface9 : public IDirect3DResource9 {
+    virtual HRESULT GetDesc(D3DSURFACE_DESC *pDesc) {
+        if (pDesc) {
+            memset(pDesc, 0, sizeof(*pDesc));
+            pDesc->Width = 1920;
+            pDesc->Height = 1080;
+            pDesc->Format = D3DFMT_A8R8G8B8;
+        }
+        return 0;
+    }
     virtual HRESULT LockRect(D3DLOCKED_RECT *pLockedRect, const RECT *pRect, DWORD Flags) { return 0; }
     virtual HRESULT UnlockRect() { return 0; }
 };
@@ -504,6 +513,12 @@ struct IDirect3DQuery9 : public IUnknown {
 struct IDirect3DStateBlock9 : public IUnknown {};
 struct IDirect3DSwapChain9 : public IUnknown {
     virtual HRESULT Present(const RECT *pSourceRect, const RECT *pDestRect, HWND hDestWindowOverride, const void *pDirtyRegion, DWORD dwFlags) { return 0; }
+    virtual HRESULT GetFrontBufferData(IDirect3DSurface9 *pDestSurface) { return 0; }
+    virtual HRESULT GetBackBuffer(UINT iBackBuffer, D3DBACKBUFFER_TYPE Type, IDirect3DSurface9 **ppBackBuffer) {
+        static IDirect3DSurface9 s_backBuffer;
+        if (ppBackBuffer) *ppBackBuffer = &s_backBuffer;
+        return 0;
+    }
 };
 struct IDirect3DDevice9 : public IUnknown {
     virtual HRESULT CreateTexture(UINT, UINT, UINT, DWORD, D3DFORMAT, D3DPOOL, IDirect3DTexture9**, HANDLE*) { return 0; }
