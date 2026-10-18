@@ -169,6 +169,29 @@ static inline int _vsnwprintf_s(wchar_t *buf, size_t sizeInWords, size_t count, 
     return res;
 }
 
+#ifdef __cplusplus
+template <size_t N, typename... Args>
+inline int _snwprintf_s(wchar_t (&buf)[N], size_t count, const wchar_t *format, Args... args) {
+    size_t maxLen = (count < N) ? count : (N - 1);
+    int res = swprintf(buf, maxLen + 1, format, args...);
+    buf[N - 1] = L'\0';
+    return res;
+}
+
+template <typename... Args>
+inline int _snwprintf_s(wchar_t *buf, size_t sizeInWords, size_t count, const wchar_t *format, Args... args) {
+    if (!buf || sizeInWords == 0) return -1;
+    size_t maxLen = (count < sizeInWords) ? count : (sizeInWords - 1);
+    int res = swprintf(buf, maxLen + 1, format, args...);
+    buf[sizeInWords - 1] = L'\0';
+    return res;
+}
+#endif
+
+#ifndef STILL_ACTIVE
+#define STILL_ACTIVE 259
+#endif
+
 
 #ifndef min
 #define min(a,b) (((a)<(b))?(a):(b))
@@ -374,6 +397,16 @@ typedef struct HMENU__* HMENU;
 
 struct HFONT__ { int unused; };
 typedef struct HFONT__* HFONT;
+
+struct HCURSOR__ { int unused; };
+typedef struct HCURSOR__* HCURSOR;
+
+#ifndef IDC_ARROW
+#define IDC_ARROW ((LPCSTR)(intptr_t)32512)
+#endif
+#ifndef IDC_WAIT
+#define IDC_WAIT ((LPCSTR)(intptr_t)32514)
+#endif
 
 #ifndef _putenv
 #define _putenv putenv
@@ -610,6 +643,18 @@ static inline BOOL GetClientRect(HWND hWnd, LPRECT lpRect) {
 #ifndef SM_CYSCREEN
 #define SM_CYSCREEN 1
 #endif
+
+static inline HCURSOR LoadCursorA(HINSTANCE hInstance, LPCSTR lpCursorName) {
+    (void)hInstance; (void)lpCursorName;
+    static struct HCURSOR__ dummy;
+    return &dummy;
+}
+
+#define LoadCursor LoadCursorA
+
+static inline HCURSOR SetCursor(HCURSOR hCursor) {
+    return hCursor;
+}
 
 static inline int GetSystemMetrics(int nIndex) {
     if (nIndex == SM_CXSCREEN) return 1920;
