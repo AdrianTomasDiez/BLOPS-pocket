@@ -199,6 +199,16 @@ static inline char *_strupr(char *str) {
     return str;
 }
 
+#ifndef PITCH
+#define PITCH 0
+#endif
+#ifndef YAW
+#define YAW 1
+#endif
+#ifndef ROLL
+#define ROLL 2
+#endif
+
 #include <sys/stat.h>
 #include <time.h>
 
