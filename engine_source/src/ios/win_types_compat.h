@@ -1031,6 +1031,35 @@ static inline BOOL VirtualProtect(void *lpAddress, size_t dwSize, DWORD flNewPro
     return 1;
 }
 
+#ifndef MEM_PRIVATE
+#define MEM_PRIVATE 0x20000
+#endif
+
+typedef struct _MEMORY_BASIC_INFORMATION {
+    PVOID  BaseAddress;
+    PVOID  AllocationBase;
+    DWORD  AllocationProtect;
+    WORD   PartitionId;
+    size_t RegionSize;
+    DWORD  State;
+    DWORD  Protect;
+    DWORD  Type;
+} MEMORY_BASIC_INFORMATION, _MEMORY_BASIC_INFORMATION, *PMEMORY_BASIC_INFORMATION;
+
+static inline size_t VirtualQuery(LPCVOID lpAddress, _MEMORY_BASIC_INFORMATION *lpBuffer, size_t dwLength) {
+    if (lpBuffer) {
+        memset(lpBuffer, 0, dwLength);
+        lpBuffer->BaseAddress = (PVOID)lpAddress;
+        lpBuffer->AllocationBase = (PVOID)lpAddress;
+        lpBuffer->AllocationProtect = PAGE_READWRITE;
+        lpBuffer->RegionSize = 4096;
+        lpBuffer->State = MEM_COMMIT;
+        lpBuffer->Protect = PAGE_READWRITE;
+        lpBuffer->Type = MEM_PRIVATE;
+    }
+    return sizeof(_MEMORY_BASIC_INFORMATION);
+}
+
 static inline BOOL QueryPerformanceCounter(LARGE_INTEGER *lpPerformanceCount) {
     if (lpPerformanceCount) {
         struct timespec ts;
