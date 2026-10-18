@@ -317,6 +317,7 @@ typedef struct HMENU__* HMENU;
 
 typedef void*         LPVOID;
 typedef void*         PVOID;
+typedef const void*   LPCVOID;
 typedef char*         LPSTR;
 typedef const char*   LPCSTR;
 typedef const char*   PCSTR;
@@ -330,15 +331,10 @@ static inline HMODULE LoadLibraryA(const char *lpLibFileName) {
     return NULL;
 }
 #endif
-#ifndef GetProcAddress
-static inline void *GetProcAddress(HMODULE hModule, const char *lpProcName) {
-    (void)hModule; (void)lpProcName;
-    return NULL;
-}
-#endif
 typedef const wchar_t* LPCWSTR;
 typedef uint64_t      DWORD64;
 typedef uint64_t*     PDWORD64;
+typedef uint64_t      DWORDLONG;
 typedef int32_t       LONG;
 typedef int64_t       LONG64;
 typedef uint32_t      ULONG;
