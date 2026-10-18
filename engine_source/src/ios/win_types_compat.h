@@ -539,6 +539,29 @@ static inline void OutputDebugStringA(const char *lpOutputString) {
 #define INFINITE 0xFFFFFFFF
 #endif
 
+typedef pthread_mutex_t SRWLOCK, *PSRWLOCK;
+#define SRWLOCK_INIT PTHREAD_MUTEX_INITIALIZER
+
+static inline void InitializeSRWLock(PSRWLOCK SRWLock) {
+    if (SRWLock) pthread_mutex_init(SRWLock, NULL);
+}
+
+static inline void AcquireSRWLockExclusive(PSRWLOCK SRWLock) {
+    if (SRWLock) pthread_mutex_lock(SRWLock);
+}
+
+static inline void ReleaseSRWLockExclusive(PSRWLOCK SRWLock) {
+    if (SRWLock) pthread_mutex_unlock(SRWLock);
+}
+
+static inline void AcquireSRWLockShared(PSRWLOCK SRWLock) {
+    if (SRWLock) pthread_mutex_lock(SRWLock);
+}
+
+static inline void ReleaseSRWLockShared(PSRWLOCK SRWLock) {
+    if (SRWLock) pthread_mutex_unlock(SRWLock);
+}
+
 typedef struct Win32Event Win32Event;
 struct Win32Event {
     pthread_mutex_t mutex;
