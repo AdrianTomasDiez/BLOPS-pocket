@@ -34,6 +34,8 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             build || echo "::warning::Compilación parcial del motor C++ (analizando compatibilidad en macOS)"
+          mkdir -p launcher/libs
+          find engine_build -name "libBO1Zombies.a" -exec cp {} launcher/libs/ \; || true
 
       - name: Instalar XcodeGen
         run: brew install xcodegen
@@ -45,6 +47,11 @@ jobs:
       - name: Compilar sin firma
         working-directory: launcher
         run: |
+          LDFLAGS=""
+          if [ -f "libs/libBO1Zombies.a" ]; then
+            echo "Enlazando con motor nativo Treyarch: libs/libBO1Zombies.a"
+            LDFLAGS="OTHER_LDFLAGS=-force_load $(pwd)/libs/libBO1Zombies.a"
+          fi
           xcodebuild \
             -project BLOPSPocket.xcodeproj \
             -scheme BLOPSPocket \
@@ -54,6 +61,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
+            ${LDFLAGS} \
             build
 
       - name: Empaquetar IPA
