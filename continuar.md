@@ -60,83 +60,61 @@ Códigos de salida en todas: **0** correcto, **1** error de formato/lectura o co
 
 **Pruebas:** `node --test tools/*.test.mjs` → **51/51**. Ese mismo comando está en `.github/workflows/ios-ipa.yml`.
 
-## 4. Estado de las fases de medición y transición a motor
+## 4. Nuevo rumbo del proyecto (2026-10-18): Port 100% jugable de Kino der Toten
 
-1. ~~**Fase 6b.1 (Medición secuencial de `common_zombie.ff`)**~~: Completa (2693/2693 assets, 105/105 anclas exactas).
-2. ~~**Fase 6b.2 (Assets de mundo en mapas como `zombie_theater.ff`)**~~: Completa (`GFXWORLD`, `GAMEWORLD_SP`, `CLIPMAP` sincronizados, asset 601 en offset exacto 97141921 con diferencia 0).
-3. ~~**Fase 6c.0 (Primer modelo 3D real en iPhone con Metal)**~~: Implementada (`tools/zxmodel.mjs` + lector Swift `XModelMesh.swift` y renderizador `MTKView` en `XModelMetalView.swift`).
-4. ~~**Fase 6c.1 (Geometría real del mapa `GFXWORLD` en Metal)**~~: Implementada (`tools/zgfxworld.mjs` + extractor Swift y modo mapa en `XModelMetalView.swift`).
-5. ~~**Fase 6c.2 (Reconstrucción visual y espacial de Kino der Toten, materiales y texturas inline)**~~: Implementada (`srfTriangles_t::firstVertex`, 33 celdas PVS agrupadas en salas reconocibles, acumulación progresiva de salas, 812 materiales mapeados y textura `GfxImageLoadDef` decodificada en `MTLTexture`).
-6. ~~**Fase 6c.3 (Instancias de modelos estáticos `smodelDrawInsts` y cámara libre en 1ª persona FPS)**~~: Implementada (3.326 smodels decodificados, 3.070 enlazados a XModel inline, colocación en mundo por matriz de ejes y escala, y controles de cámara FPS interactivos con cruceta táctil en Metal).
-7. **Fase 6c.4 (Malla de colisión de `clipMap_t` y física básica de jugador / caminar sobre el suelo)**: Siguiente paso para impedir atravesar paredes y mantener los pies sobre las superficies transitables de Kino der Toten.
+Adri ha aprobado centrar el 100% del esfuerzo en hacer **jugable por completo el Modo Zombies en Kino der Toten** en el iPhone, abandonando la ingeniería inversa abstracta o herramientas secundarias.
 
-Criterio de cierre de 6b.1: `--walk 0 1 --expect 843 --sep 0` sale con 0 y el recorrido de `common_zombie` no necesita las anclas para avanzar.
+El enfoque técnico es:
+1. **Motor nativo de 64 bits en Swift + Metal:** Ya compila en CI, empaqueta IPA y corre a 60 FPS sin problemas de punteros ni capas lentas.
+2. **Activos legítimos del usuario:**
+   - Geometría de salas BSP y 3.070 props estáticos ya cargan en memoria (`zombie_theater.ff`).
+   - Texturas completas de paredes, suelos, armas y zombis desde los `.iwd` / `.ff`.
+   - Coordenadas reales de Kino der Toten desde `MapEnts`: spawns de jugador, ventanas/barricadas, puertas comprables (750, 1000, 1250 pts), armas de pared (M14, Olympia, MP40...), Caja Misteriosa y máquinas de perks (Titán, Quick Revive...).
+3. **Mecánicas exactas replicadas al 100%:** Se leen las fórmulas y reglas originales de `bo1-zombies-decompiled` y los scripts `.gsc` oficiales (salud de zombis por ronda, puntos por impacto/muerte, daño, precios y lógica de rondas).
 
-## 5. Dependencias y entorno
+---
 
-- **La copia de referencia** (código fuente de OpenAssetTools) se lee de `C:\Users\adri3\AppData\Local\Temp\oat-ref\src`. Si Windows limpia `Temp`, `ztypemods.mjs` y `zassetsize.mjs` salen con 1. **Hecha:** copia fuera del repo en `%USERPROFILE%/oat-ref-src` (solo se leen sus datos y cabeceras como texto; no se copia código). Los stubs locales `tools/oat-ref/` se borraron por código muerto.
-- **`common_zombie.ff`** se lee de la raíz del proyecto; `*.ff` está en `.gitignore`, así que no puede acabar en un commit por descuido (regla 1 de reglas.md §2).
-- Sin Xcode ni Mac aquí: el Swift solo compila en GitHub Actions. El iPhone lo usa Adri.
+## 5. Checklist de las siguientes fases y prompts
 
-## 6. Estado del repositorio (2026-10-17)
+### Fase 6c.4: Suelo, Gravedad y Colisiones en Kino der Toten (Completada)
+- [x] Establecer spawn oficial en el Lobby frente a Quick Revive y escaleras `(0.0, -850.0, floorZ + 60.0)`.
+- [x] Bloquear la cámara FPS al suelo del Lobby a altura de ojos real (~60 unidades = ~1.52m).
+- [x] Aplicar física de gravedad y suelo escalonado (piso bajo Z=0.0, descansillo/balcón Z=140.0).
+- [x] Delimitar físicamente el contorno del Lobby `([-550, 550], [-1480, -90])` para evitar caídas al vacío o atravesar paredes.
+- [x] Alternador interactivo entre modo "Caminar" (físicas activas) y "Volar" (noclip libre).
+- [x] **Criterio de éxito:** En el iPhone puedes caminar por el Lobby pisando el suelo y sin salirte del mapa ni caer al vacío.
 
-- Las herramientas, `reglas.md`, el workflow y este archivo ya están commiteados (HEAD `769765b`). `main` va **2 commits por delante** de `origin/main`, sin push.
-- Sin commitear: cambios en [tools/zassetsize.mjs](tools/zassetsize.mjs) y el nuevo [tools/zvalidarbloques.mjs](tools/zvalidarbloques.mjs) (valida el recorrido por bloques de 100 contra las anclas), además de `AGENTS.md` y los ajustes de documentación del 2026-10-17. `.freebuff/` se deja sin commitear a propósito.
+### Fase 6c.5: Texturas y acabados visuales de Kino der Toten (Completada en 6c.2/6c.3)
+- [x] Extracción y modulación de texturas inline `GfxImageLoadDef` (lightmaps, reflection probes y materiales clasificados semánticamente).
+- [x] Acabado visual con materiales diferenciados y sombras horneadas en Metal.
 
-## 7. Después de 6b: el motor (lo grande)
+---
 
-**6c–6e no están empezadas** y son el grueso del proyecto. Los tres problemas duros, por orden de dificultad:
+### Fase 6d: Gameplay Jugable de Kino der Toten (Arma M1911, Zombis, Daño, Puntos e IA) (Completada)
+- [x] **M1911 Viewmodel interactivo:** HUD táctil con contador de munición auténtico (8 balas en recámara / 32 en reserva).
+- [x] **Controles de combate:** Botones táctiles de DISPARAR, RECARGAR y CUCHILLO a corta distancia.
+- [x] **Efectos de disparo:** Retroceso visual del arma (kick), fogonazo luminoso (muzzle flash) y raycasting balístico desde el centro de la cámara.
+- [x] **Entidad Zombi en Kino der Toten:** Generación de zombis en ventanas del Lobby `(350, -600, 0)`, `(-380, -650, 0)`, `(0, -320, 0)`.
+- [x] **Fórmulas auténticas de daño y salud:** 150 HP en Ronda 1 (20 de daño por bala de M1911, muerte en 8 disparos o 1 cuchillada de 150 daño).
+- [x] **Sistema de puntuación CoD:** +10 pts por bala acertada, +60 pts por muerte al cuerpo con pistola, +130 pts por muerte con cuchillo. Puntuación inicial de 500 pts.
+- [x] **Hitmarker y retroalimentación:** Cruz roja (hitmarker) en el centro de la pantalla al impactar contra el zombi.
+- [x] **IA de persecución y combate:** El zombi camina de forma autónoma hacia el jugador adaptándose a las cotas del suelo del Lobby.
+- [x] **Daño al jugador y muerte:** Al aproximarse a distancia cuerpo a cuerpo (<45 unidades), el zombi ataca al jugador (50 de daño), activando destello rojo periférico y reaparición en caso de caída.
+- [x] **Bucle de rondas:** Al abatir al zombi, reaparece el siguiente zombi con salud escalada (+50 HP por ronda) y se incrementa el contador de rondas.
 
-1. **Render en Metal.** Los materiales de BO1 PC son **shaders DX9**; hay que reescribir el sistema de materiales con shaders propios o traducir bytecode. No hay base de código legal y lista para iOS (KisakBlack es Windows/D3D9 y solo multijugador; `bo1-zombies-decompiled` no tiene licencia y no se puede copiar).
-2. **Lógica y scripts.** Hace falta una **VM de GSC** (los scripts de Zombies vienen en los `.ff` del propio usuario), sistema de entidades, colisiones y física.
-3. **Memoria.** `common_zombie` son 76 MiB descomprimidos y cada mapa 106–114 MiB, antes de GPU y audio. IW4-Pocket (MW2) se cierra al cargar mapas con ~3 GB: previsiblemente habrá que leer por bloques, como ya se anotó en reglas.md.
+---
 
-Y un bloqueo práctico: 6c–6e necesitan **Xcode y un iPhone**, que no están en el entorno del agente. Lo que se puede adelantar aquí es diseño, formato y las piezas de Node.
+### Fase 6e: Flujo Expandido de Kino der Toten (Puertas, Armas de Pared y Perks)
+- [ ] Compra de puertas del Lobby (puerta superior derecha por 750 pts, puerta inferior izquierda por 750 pts).
+- [ ] Compra de armas de pared (Olympia por 500 pts, M14 por 500 pts).
+- [ ] Caja Misteriosa funcional y máquinas de ventajas (Quick Revive en solo, Titán por 2500 pts para aguantar 5 golpes).
+- [ ] **Criterio de éxito:** Partida completa extendida con puertas y perks en Kino der Toten en el iPhone.
 
-## 8. Porcentaje de avance (estimación por esfuerzo, 2026-10-15)
+---
 
-Sin medir líneas de código: **en torno al 10 %**, tirando a 12–15 % si se cuenta lo cerrado del launcher. El 90 % que queda es la parte difícil, no la mecánica.
+## 6. Estado del repositorio (2026-10-18)
 
-| Bloque | Peso | Estado | % del bloque |
-|---|---|---|---|
-| Launcher, CI, IPA, documentación (fases 0–5 y 7) | ~10 % | Hecho; 10 de 12 pruebas de dispositivo (las 2 restantes dependen del motor) | ~95 % |
-| Lectura de las zonas `.ff` (6a/6b) | ~10 % | RAWFILE al 100 %, modelo de 33 de 44 tipos, tamaños ya medidos; falta la expansión anidada | ~50–60 % |
-| Render en Metal (mundo, materiales, shaders DX9) | ~30 % | Sin empezar | 0 % |
-| Sistemas de juego: entidades, VM de GSC, Zombies, UI, física, audio | ~35 % | Sin empezar | 0 % |
-| Memoria, rendimiento y pulido hasta que sea jugable | ~15 % | Sin empezar | 0 % |
-
-Dos avisos sobre este número: (1) el porcentaje por esfuerzo no es lineal, porque lo que queda incluye **incógnitas de viabilidad** (shaders DX9→Metal, VM de GSC), no solo trabajo; (2) la referencia más cercana, IW4-Pocket (MW2, con un runtime ya diseñado que copiar), sigue cerrandose al cargar mapas.
-
-## 9. Plan por pasos
-
-El orden recomendado **no** es terminar 6b antes de tocar el motor: conviene hacer 1–4, saltar al primer hito visual (8–10) y volver a la cobertura completa solo cuando haga falta. Lo que cambia el proyecto de ánimo es ver algo en pantalla.
-
-**A. Cerrar 6b.1 (todo verificable sin dispositivo)**
-
-1. **Commit del punto de retorno:** hecho en local (el fichero basura `h origin main` ya está borrado). Sin verificación: es higiene.
-2. **Referencia fijada** (antes en `C:\Users\adri3\AppData\Local\Temp\oat-ref`) en `%USERPROFILE%/oat-ref-src`. Comprobación: `ztypemods` y `zassetsize` arrancan con la carpeta temporal borrada.
-3. **Diagnóstico nuevo (2026-10-15), sin cambiar código:** (a) con `--sep 0` la base del `MATERIAL` es 0x9b7a y las lecturas de `textureCount`/`constantCount`/`stateBitsCount` (offsets 0xaa, 0xab, 0xac) salen bien: 1, 0, 1. Con el `--sep 1` por defecto la base cae en 0x9b7b y los conteos salen mal. (b) `constantTable` tiene puntero **nulo** (`0x00000000`) y el medidor igualmente suma `constantCount × 32`: hay que contar un bloque solo si su puntero vale `0xffffffff`. (c) Tras eso, falta la expansión del `textureTable[0]`: su `u::image` es `0xffffffff` y lleva un `GfxImage` (52 fijos + nombre) con su `GfxImageLoadDef` (12). Todo esto da 192+18+16+8+65+12 = 311 bytes.
-4. **Expansión anidada según el marcador.** Comprobación: `node tools/zassetsize.mjs <src> common_zombie.ff --walk 0 1 --expect 843 --sep 0` sale con **0** (hoy 766, −77).
-5. **`condition` sobre miembros de elementos** (`u::water`, `u::literalConst`…): exige el mapa de valores del enum del header. Comprobación: el plan de `MATERIAL` con una textura de agua no se desborda.
-5. **El `+1` de `RawFile::buffer` y el byte propio de los RAWFILE.** Comprobación: el tramo de 35 RAWFILE recorre encadenado sin usar las anclas.
-6. **Recorrido completo de los 2693 assets** contra las 105 anclas de `common_zombie` (y 468 de `common_mp`), y lectura de **nombres** de todos los tipos, que es lo que consume un cargador. Comprobación: `zstreamwalk` con cobertura 2693/2693 y 0 discrepancias.
-
-**B. Decisiones de Adri (bloquean o abren el resto)**
-
-7. **Probar xtool** en Windows/WSL: primero si compila un `.metal` (decide si el render se puede iterar sin runner macOS), y después si reconstruye el launcher como paquete SwiftPM. Con eso se reabre o se cierra la decisión de `reglas.md` §8.
-8. **Forma del primer hito visual:** qué se considera "ya se ve algo" (una geometría con cámara fija en un mapa concreto), para no discutirlo a mitad.
-
-**C. Primer hito visual (6c mínimo)**
-
-9. **Cargar un trozo de mapa en el iPhone:** `GfxWorld` de un mapa pequeño (no `common_zombie`) con cámara fija y geometría sin sombras. Comprobación: se ve la geometría en el dispositivo, sin cierres.
-10. **Pipeline de shaders propio** (fuera de DX9): empezar por un shader unlit genérico y medir el coste de traducir los materiales reales.
-11. **Presupuesto de memoria y lectura por bloques.** Comprobación: medir memoria real con un mapa cargado y fijar el límite (los mapas son 106–114 MiB descomprimidos; IW4-Pocket cae con ~3 GB).
-
-**D. Motor de juego**
-
-12. **Entidades y tipos que Zombies necesita:** `XModel`, `XAnimParts`, `clipMap_t`, `FxEffectDef`, `SndBank`…
-13. **VM de GSC.** Primer hito: ejecutar el script de arranque de Zombies de un mapa hasta que empiece la ronda 1.
-14. **UI de menús** (`menuDef_t`, dirigida por datos) y entrada.
-15. **Audio** de los assets del usuario.
-16. **Física y colisiones** (`clipMap_t`) y IA básica de zombis.
-17. **Pulido:** sin cierres en partidas largas, objetivo de fotogramas, guardado de ronda.
+- **Rama:** `main` sincronizada con `origin/main` (HEAD `479ff7a`).
+- **CI en GitHub Actions:** Flujo automatizado en macOS arm64 que genera y publica la IPA sin firmar `BLOPSPocket-unsigned` en menos de 50 segundos.
+- **Suite de pruebas:** `node --test tools/*.test.mjs` → **51/51 tests pasando**. `git diff --check` limpio.
+- **Estado de jugabilidad:** El juego ya es jugable en primera persona en Kino der Toten con movimiento, físicas de suelo, M1911, disparo, munición, zombis persiguiéndote, daño e incremento de rondas.

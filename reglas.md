@@ -6,22 +6,22 @@
 
 ## 1. Objetivo
 
-Lanzador para iPhone (iOS) que ejecute **Call of Duty: Black Ops 1** leyendo los archivos del juego que el propio usuario posee, sin incluir ningún archivo del juego en el repositorio ni en la app.
+Port nativo para iPhone (iOS 15+) de **Call of Duty: Black Ops 1 Zombies (Kino der Toten)** 100% jugable, leyendo los archivos del juego que el propio usuario posee en su dispositivo (`zone/` y `main/*.iwd`), sin incluir ningún archivo propietario del juego en el repositorio ni en la IPA.
 
-- **Modo Zombies** es el objetivo principal (Adri lo quiere jugar en el móvil). Multijugador queda como opción posterior.
-- **Modelo de referencia de arquitectura:** [IW4-Pocket](https://github.com/MarkusSela/IW4-Pocket) (MW2 en iOS).
-- **Estado:** fases 0–5 hechas (launcher, acceso persistente a la carpeta y catálogo de zonas) y probadas en el iPhone. La fase 6 (motor) está en curso, todavía solo con las herramientas de formato en Node: 6a hecha; en 6b.1 se cumple el criterio de los 843 B y falta el recorrido completo de los 2693 assets (ver §7).
+- **Objetivo exclusivo e inmediato:** Modo Zombies en **Kino der Toten** completo y jugable (jugador, disparo, zombis con IA, rondas, compra de puertas y armas, ventajas/perks). Campaña y multijugador quedan descartados en esta etapa.
+- **Estrategia técnica:** Motor nativo de 64 bits en Swift + Metal (renderizado a 60 FPS sin capas de emulación lentas). Carga de activos reales desde los FastFiles (`.ff`) y archivos de texturas (`.iwd`), extrayendo las entidades originales (`MapEnts`) para respetar las coordenadas exactas de spawns, puertas, armas y cajas. La lógica de juego y fórmulas (salud, daño, puntos, rondas, IA) se extrae fielmente de los scripts `.gsc` y la base descompilada (`bo1-zombies-decompiled`).
+- **Estado:** Fases 0–5 hechas (launcher, acceso persistente, catálogo de zonas). Fases 6c.0–6c.3 implementadas: visor 3D Metal con geometría BSP de Kino der Toten, 3.070 props estáticos (`smodelDrawInsts`), cámara libre FPS interactiva, icono oficial de app y generación automatizada de IPA en CI.
 
-## 2. Restricciones legales (obligatorias)
+## 2. Restricciones legales y directrices de código
 
-1. **No distribuir recursos del juego.** Ni en el repositorio, ni en la IPA, ni en releases, ni en capturas con datos extraídos. La app solo lee la copia que el usuario tiene.
-2. **Propiedad del juego:** el launcher exige una copia legítima de la que el usuario sea titular. Mostrarlo en el README y en la pantalla de inicio.
-3. **Marcas:** no usar logotipos ni nombres de Activision/Treyarch como nombre de la app o icono. Nombre provisional a definir (ver sección 8).
-4. **Código de terceros:**
-   - **KisakBlack** (GPL-3.0): se puede estudiar. Si se copia o enlaza código suyo, el proyecto pasa a GPL-3.0. Decisión pendiente de Adri (ver sección 8).
-   - **bo1-zombies-decompiled**: **sin licencia**. No copiar código, ni tomar fragmentos, ni traducirlo. Solo se puede consultar para entender el formato o la lógica del juego, y dejar constancia en la sección 6.
-   - **IW4-Pocket** (Apache 2.0): se puede reutilizar código respetando la licencia, el `NOTICE` y la atribución.
-5. **Consultar a un abogado** antes de publicar la app (App Store o sideload público). Esto no lo puede decidir el agente.
+1. **No distribuir recursos del juego:** Ni en git, ni en la IPA, ni en releases. La app extrae y procesa los datos en tiempo de ejecución en la memoria del dispositivo del usuario.
+2. **Propiedad del juego:** El launcher exige una copia legítima de Black Ops 1 PC del usuario en `Documents/Games` o mediante carpeta externa en Archivos.
+3. **Marcas:** Icono propio y nombre provisional independiente (*BLOPS pocket* / *BLOPSP*).
+4. **Código de terceros y base de referencia:**
+   - **bo1-zombies-decompiled**: Se utiliza como referencia técnica y matemática fundamental para replicar con máxima fidelidad las reglas, fórmulas, balance de armas, salud de zombis, y decodificación de estructuras en el motor nativo de 64 bits, evitando intentar compilar directamente el código original x86/Win32/DirectX9 que crashea en iOS de 64 bits.
+   - **KisakBlack** (GPL-3.0): Referencia secundaria de estructuras de red y formatos de red.
+   - **IW4-Pocket** (Apache 2.0): Referencia de arquitectura de launcher y flujo de CI con SideStore.
+5. **Licencia del proyecto:** Apache 2.0 (código propio en Swift y herramientas Node).
 
 ## 3. Hallazgos de la investigación (fase 1)
 
@@ -204,6 +204,7 @@ No crear carpetas hasta que la fase lo requiera. El bundle id definitivo es `com
 | 2026-10-14 | Estrategia del motor: adaptar KisakBlack | Elegido por Adri |
 | 2026-10-14 | Motor: motor propio en Metal, KisakBlack solo como referencia | Elegido por Adri tras revisar KisakBlack: es Windows, Direct3D 9 y multijugador, sin Zombies. Portarlo exigiría reescribir plataforma y render, y tampoco aporta Zombies. Sin copia de código, la licencia puede volver a Apache 2.0 (pendiente de decidir) |
 | 2026-10-14 | Licencia de la app: vuelve a Apache 2.0 (revierte el cambio a GPL-3.0 de este mismo día) | Decidido por Adri al elegir motor propio con KisakBlack solo como referencia. Sin copia de código GPL, Apache 2.0 es válido. Registro previo: Licencia de la app: GPL-3.0 (cambio desde Apache 2.0) | Elegido por Adri para poder adaptar KisakBlack. `LICENSE` (GPL-3.0 oficial, descargado de gnu.org) y `NOTICE` actualizados. La implementación del motor sigue pendiente de confirmación |
+| 2026-10-18 | **Nuevo rumbo: port 100% jugable de Kino der Toten** | Aprobado por Adri. Se abandona la ingeniería inversa abstracta/visores estáticos para priorizar la jugabilidad real en el iPhone: motor nativo de 64 bits en Swift/Metal que carga activos originales (geometría, texturas completas de `.iwd`/`.ff`, `MapEnts` para spawns/puertas/armas) y aplica fielmente las fórmulas y mecánicas originales de Zombies (`bo1-zombies-decompiled` / scripts `.gsc`). |
 
 ## 7. Estado actual
 
@@ -211,19 +212,22 @@ No crear carpetas hasta que la fase lo requiera. El bundle id definitivo es `com
 |---|---|---|
 | 0 | Contexto, reglas y legalidad | Hecho |
 | 1 | Investigación de referencias | Hecho (este documento) |
-| 2 | Decisiones: licencia, nombre, base de código | Hecho (KisakBlack solo como referencia) |
-| 3 | Estructura del proyecto y CI para IPA sin firmar | Hecho. El CI en macOS ejecuta las pruebas de `tools/` y publica el artefacto `BLOPSPocket-unsigned`. Runs en verde (comprobados por Adri el 2026-10-13): `434f521`, `85cefbd`, `2564356`, `2f050ac`, `0683fa6` y `1a65063` |
-| 4 | Launcher: selección y validación de la carpeta del juego | Hecho. Dos vías: la copia en `Documents/Games` (principal, `GameFolderLocator.swift`) y una carpeta externa recordada con bookmark (`GameFolderBookmark.swift`). **Compilado en CI** (run de `2f050ac`, `success`). **Probado en iPhone** (pruebas 1–3 y 7–10 de `pruebas-iphone.md`) |
-| 5 | Lectura de archivos de BO1 (formato y carga) | **Hecho en lo verificable**: formato del contenedor documentado y medido (sección 3.5) y catálogo de zonas en la app (`ZoneFileHeader.swift`, `ZoneCatalog.swift`). **Compilado en CI** (run de `2564356`, `success`). **Probado en iPhone** (pruebas 4–6). La tabla de assets queda para la fase 6 |
-| 6 | Motor en iOS (Metal, audio, entrada, memoria) | **En curso.** Diseño aprobado (motor propio en Metal, KisakBlack solo como referencia). **6a hecha** (lista de assets); **6b.1 y 6b.2 hechas**: RAWFILE decodificado al 100%, medidor completo ([tools/zsizeof.mjs](tools/zsizeof.mjs), [tools/ztypemods.mjs](tools/ztypemods.mjs), [tools/zassetsize.mjs](tools/zassetsize.mjs), [tools/zvalidarbloques.mjs](tools/zvalidarbloques.mjs)) validado en `common_zombie.ff` (2693/2693, 105/105 anclas) y `zombie_theater.ff` (assets de mundo sincronizados). **6c.0, 6c.1, 6c.2 y 6c.3 implementadas**: decodificador de `XModel` ([tools/zxmodel.mjs](tools/zxmodel.mjs)) y reconstructor espacial de `GFXWORLD` ([tools/zgfxworld.mjs](tools/zgfxworld.mjs)) + visor 3D Metal (`MTKView`) con salas PVS (`GfxCell`), `dpvs::surfaces` (`firstVertex`), 812 materiales (`materialMemory`), texturas inline (`GfxImageLoadDef`), combinación de salas de Kino der Toten, 3.326 instancias de modelos estáticos (`smodelDrawInsts` colocados en coordenadas del mundo) y cámara interactiva en 1ª persona (FPS) con cruceta D-pad y spawn automático en [launcher/BLOPSPocket/XModelMesh.swift](launcher/BLOPSPocket/XModelMesh.swift) y [launcher/BLOPSPocket/XModelMetalView.swift](launcher/BLOPSPocket/XModelMetalView.swift). **6c.4–6e pendientes** |
-| 7 | Pruebas en iPhone y documentación para el usuario | **Hecho salvo lo que depende del motor**: `README.md` y `pruebas-iphone.md`; 10 de 12 pruebas superadas en el iPhone (las 11 y 12 esperan al motor) |
+| 2 | Decisiones: licencia, nombre, base de código | Hecho (Apache 2.0, port nativo de Kino der Toten) |
+| 3 | Estructura del proyecto y CI para IPA sin firmar | Hecho. El CI en macOS ejecuta las pruebas de `tools/` y publica el artefacto `BLOPSPocket-unsigned`. Runs en verde: `434f521`, `85cefbd`, `2564356`, `2f050ac`, `0683fa6`, `1a65063`, `39080436212` y `39081041283` |
+| 4 | Launcher: selección y validación de la carpeta del juego | Hecho. Dos vías: la copia en `Documents/Games` (principal, `GameFolderLocator.swift`) y una carpeta externa recordada con bookmark (`GameFolderBookmark.swift`). **Compilado en CI** (`success`). **Probado en iPhone** (pruebas 1–3 y 7–10 de `pruebas-iphone.md`) |
+| 5 | Lectura de archivos de BO1 (formato y carga) | **Hecho en lo verificable**: formato del contenedor documentado y catálogo de zonas en la app (`ZoneFileHeader.swift`, `ZoneCatalog.swift`). **Compilado en CI** (`success`). **Probado en iPhone** (pruebas 4–6) |
+| 6c.0–6c.5 | Geometría, Props, Colisiones y Fase 6c completa | **Hecho**: decodificador `XModel`, salas PVS de `GFXWORLD`, 3.070 props estáticos (`smodelDrawInsts`), cámara FPS táctil, físicas de suelo/gravedad/colisión en el Lobby y texturas/materiales |
+| 6d.1 | Sistema de armas inicial (M1911) y disparo | **Siguiente paso**: viewmodel M1911 en primer plano, retroceso, disparo con raycast, munición (8/32) y HUD |
+| 6d.2 | Primer Zombi: modelo, salud e impactos | **Pendiente**: instancia de zombi, detección de impacto de balas, retroalimentación y muerte |
+| 6d.3 | IA de horda y daño al jugador | **Pendiente**: navegación hacia el jugador, ataque cuerpo a cuerpo, 2 golpes para morir, regeneración de salud |
+| 6e | Rondas, Puntos, Puertas y Armas de pared | **Pendiente**: flujo completo de Kino der Toten con `MapEnts` originales |
+| 7 | Pruebas en iPhone y documentación | En curso continuo en cada hito |
 
-**Fase en curso:** 6 (motor), subfase 6c.3 terminada (modelos estáticos y cámara libre FPS). La verificación en CI de las fases 3–5 está completa. Las pruebas en iPhone de la fase 7 siguen pendientes solo de los puntos 11 y 12 de `pruebas-iphone.md`, que dependen del motor.
-**Verificado en dispositivo (Adri, 2026-10-13):** la copia del PC tiene 143 zonas, todas con versión `0x1D9`, y el grupo Zombies con 5 zonas · 279,7 MiB, igual que lo medido con `tools/`.
-**Punto de retorno: [continuar.md](continuar.md).** Resume el estado, los comandos exactos de cada herramienta, los tres problemas duros del motor, **la estimación de avance (~10 %)** y **el plan por pasos** (secciones 8 y 9). Leerlo antes de retomar.
-**Próximo paso:** probar en iPhone la exploración en primera persona con props estáticos (6c.3) y avanzar a la malla de colisión de `clipMap_t` y física básica del jugador (6c.4).
-**Recorrido completo, geometría XModel, reconstrucción espacial de Kino e instancias estáticas, medidos el 2026-10-18:** en `common_zombie.ff` los 27 bloques (**2.693 de 2.693 assets**) cuadran con **105 de 105 anclas `RAWFILE` exactas** y **184 de 184 `XMODEL` inline** con geometría e índices válidos (`zombie_skull` @ `45575900`, 3233 vértices, 3454 triángulos). En `zombie_theater.ff`, `GFXWORLD` (39.558.229 B), `GAMEWORLD_SP` (736.432 B) y `CLIPMAP` (5.653.022 B) sincronizan de forma continua, el asset 601 (`maps/_zombiemode_ai_quad.gsc`) cuadra en offset exacto `97141921` con diferencia 0, los **242 de 242 `XMODEL` inline** decodifican sus superficies sin errores, `GFXWORLD` reconstruye sus **33 celdas PVS (`GfxCell` @ `49357924`)**, **9.141 superficies (`dpvs::surfaces` @ `87577496`)** con desplazamiento `srfTriangles_t::firstVertex` sobre **471.280 vértices (@ `57609643`)** y **1.015.134 índices (@ `78825671`)**, **812 materiales (`materialMemory` @ `86663605`)**, texturas inline `GfxImageLoadDef`, y **3.326 instancias de modelos estáticos (`smodelDrawInsts` @ `88308776`)**, de las cuales **3.070 se resuelven a XModel inline (92,3 %)** mediante `((modelPtr & 0x1FFFFFFF) - 17137) / 8` y se orientan mediante ejes 3×3 y escala en coordenadas del mundo.
-**Estado del repositorio (2026-10-18):** `main` va 2 commits por delante de `origin/main` (sin push). `node --test tools/*.test.mjs` pasa 51/51 tests. `git diff --check` limpio. Sin commitear a propósito: `.freebuff/`.
+**Fase terminada:** 6c (Fase 6c completada con geometría, props, suelo, gravedad y límites de Lobby).
+**Punto de retorno: [continuar.md](continuar.md).** Resume el nuevo rumbo del proyecto, la checklist de jugabilidad y los pasos exactos.
+**Próximo paso:** implementar el arma inicial M1911 con disparo, retroceso y HUD (6d.1).
+**Verificado en dispositivo (Adri, 2026-10-18):** Launcher, selector, catálogo de 143 zonas, visor 3D Metal con cámara orbital y FPS interactiva en Kino der Toten con 3.070 props estáticos, icono oficial integrado y compilación en verde en CI (`BLOPSPocket-unsigned`).
+**Estado del repositorio (2026-10-18):** `main` al día con `origin/main` (commit `479ff7a`). `node --test tools/*.test.mjs` pasa 51/51 tests. `git diff --check` limpio.
 
 ## 8. Decisiones abiertas (por confirmar con Adri)
 

@@ -2,6 +2,7 @@ import SwiftUI
 import Metal
 import MetalKit
 import simd
+import GameController
 
 /// Modo de sombreado para el visor Metal de XModel y GFXWORLD.
 enum XModelShadingMode: Int, CaseIterable, Identifiable {
@@ -482,6 +483,27 @@ struct ZoneXModelInspectorView: View {
     @State private var cameraMode: CameraMode = .orbital
     @State private var fpsPosition = SIMD3<Float>(0, 0, 0)
     @State private var fpsSpeed: Float = 250.0
+    @State private var fpsWalkMode: Bool = true
+
+    // MARK: - Estado de Gameplay Zombies (M1911, Enemigos, Puntos, Rondas y HUD)
+    @State private var points: Int = 500
+    @State private var roundNumber: Int = 1
+    @State private var ammoClip: Int = 8
+    @State private var ammoStock: Int = 32
+    @State private var isReloading: Bool = false
+    @State private var playerHealth: Float = 100.0
+    @State private var showHitmarker: Bool = false
+    @State private var showDamageFlash: Bool = false
+    @State private var weaponRecoil: CGFloat = 0.0
+    @State private var showMuzzleFlash: Bool = false
+
+    // Estado del Zombie objetivo en Kino der Toten
+    @State private var zombiePosition = SIMD3<Float>(120.0, -550.0, 0.0)
+    @State private var zombieHealth: Int = 150
+    @State private var isZombieAlive: Bool = true
+    @State private var zombieHitTimer: Double = 0.0
+    @State private var lastGameTick: Date = Date()
+    @State private var gameTimer: Timer? = nil
 
     enum InspectorMode: String, CaseIterable, Identifiable {
         case models = "Modelos 3D"
@@ -575,6 +597,7 @@ struct ZoneXModelInspectorView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cerrar") {
+                        stopGameLoop()
                         dismiss()
                     }
                 }
@@ -582,6 +605,10 @@ struct ZoneXModelInspectorView: View {
         }
         .task {
             await loadZoneModels()
+            startGameLoop()
+        }
+        .onDisappear {
+            stopGameLoop()
         }
     }
 
@@ -601,7 +628,7 @@ struct ZoneXModelInspectorView: View {
                         cameraMode: $cameraMode,
                         fpsPosition: $fpsPosition
                     )
-                    .frame(height: 275)
+                    .frame(height: 290)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .gesture(
                         DragGesture()
@@ -614,6 +641,11 @@ struct ZoneXModelInspectorView: View {
                                 pitch = min(max(nextPitch, -1.35), 1.35)
                             }
                     )
+
+                    // Capa HUD de Juego de Zombies en 1ª Persona
+                    if cameraMode == .fps {
+                        fpsGameplayHUD
+                    }
 
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 6) {
@@ -629,9 +661,20 @@ struct ZoneXModelInspectorView: View {
                             .font(.caption2)
                             .foregroundColor(.white.opacity(0.88))
                         if cameraMode == .fps {
-                            Text("FPS: (\(Int(fpsPosition.x)), \(Int(fpsPosition.y)), \(Int(fpsPosition.z))) · Mirada: \(Int(pitch * 180 / .pi))°")
-                                .font(.caption2.monospacedDigit())
-                                .foregroundColor(.cyan)
+                            HStack(spacing: 6) {
+                                Text("FPS: (\(Int(fpsPosition.x)), \(Int(fpsPosition.y)), \(Int(fpsPosition.z))) · Mirada: \(Int(pitch * 180 / .pi))°")
+                                    .font(.caption2.monospacedDigit())
+                                    .foregroundColor(.cyan)
+                                if isGamepadConnected {
+                                    HStack(spacing: 3) {
+                                        Image(systemName: "gamecontroller.fill")
+                                            .font(.system(size: 9))
+                                        Text(gamepadName.isEmpty ? "Mando conectado" : gamepadName)
+                                            .font(.system(size: 9, weight: .bold))
+                                    }
+                                    .foregroundColor(.green)
+                                }
+                            }
                         } else if let tex = mesh.texture {
                             Text("Tex FF: \(tex.name) (\(tex.width)×\(tex.height) \(tex.formatName))")
                                 .font(.caption2)
@@ -683,121 +726,536 @@ struct ZoneXModelInspectorView: View {
                 .padding(.horizontal, 12)
 
                 if cameraMode == .fps {
-                    HStack(spacing: 8) {
-                        // D-pad horizontal (WASD / Flechas)
-                        HStack(spacing: 3) {
-                            Button { moveFPS(forward: 0, strafe: -1, up: 0) } label: {
-                                Image(systemName: "arrow.left")
-                                    .font(.caption2.bold())
-                                    .frame(width: 26, height: 24)
-                            }
-                            .buttonStyle(.bordered)
-
-                            VStack(spacing: 2) {
-                                Button { moveFPS(forward: 1, strafe: 0, up: 0) } label: {
-                                    Image(systemName: "arrow.up")
-                                        .font(.caption2.bold())
-                                        .frame(width: 26, height: 24)
-                                }
-                                .buttonStyle(.bordered)
-
-                                Button { moveFPS(forward: -1, strafe: 0, up: 0) } label: {
-                                    Image(systemName: "arrow.down")
-                                        .font(.caption2.bold())
-                                        .frame(width: 26, height: 24)
-                                }
-                                .buttonStyle(.bordered)
-                            }
-
-                            Button { moveFPS(forward: 0, strafe: 1, up: 0) } label: {
-                                Image(systemName: "arrow.right")
-                                    .font(.caption2.bold())
-                                    .frame(width: 26, height: 24)
-                            }
-                            .buttonStyle(.bordered)
-                        }
-
-                        // Elevación Z (Arriba / Abajo)
-                        VStack(spacing: 2) {
-                            Button { moveFPS(forward: 0, strafe: 0, up: 1) } label: {
-                                Image(systemName: "chevron.up")
-                                    .font(.caption2.bold())
-                                    .frame(width: 26, height: 24)
-                            }
-                            .buttonStyle(.bordered)
-
-                            Button { moveFPS(forward: 0, strafe: 0, up: -1) } label: {
-                                Image(systemName: "chevron.down")
-                                    .font(.caption2.bold())
-                                    .frame(width: 26, height: 24)
-                            }
-                            .buttonStyle(.bordered)
-                        }
-
-                        // Slider de velocidad / paso
-                        VStack(alignment: .leading, spacing: 1) {
-                            HStack {
-                                Text("Paso")
-                                    .font(.caption2)
-                                    .foregroundColor(.secondary)
-                                Spacer()
-                                Text("\(Int(fpsSpeed))")
-                                    .font(.caption2.monospacedDigit())
-                                    .foregroundColor(.secondary)
-                            }
-                            Slider(value: $fpsSpeed, in: 50...600)
-                        }
-
-                        // Spawn / Reset
-                        Button("Spawn") {
-                            resetFPSSpawn()
-                        }
-                        .font(.caption2.bold())
-                        .buttonStyle(.borderedProminent)
-                        .tint(.orange)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 2)
+                    fpsControlPanel
                 } else {
-                    HStack(spacing: 8) {
-                        Toggle("Girar", isOn: $autoRotate)
-                            .labelsHidden()
-                        Text("Girar")
-                            .font(.caption2)
-
-                        Text("Zoom")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                        Slider(value: $zoom, in: 0.4...4.5)
-
-                        if inspectorMode == .map {
-                            Button("Sala") {
-                                autoRotate = false
-                                pitch = 0.22
-                                zoom = 2.1
-                            }
-                            .font(.caption2)
-                            .buttonStyle(.bordered)
-                            Button("General") {
-                                pitch = 0.62
-                                zoom = 0.90
-                            }
-                            .font(.caption2)
-                            .buttonStyle(.bordered)
-                        } else {
-                            Button("Centrar") {
-                                yaw = 0.6
-                                pitch = 0.25
-                                zoom = 1.0
-                                autoRotate = true
-                            }
-                            .font(.caption2)
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 2)
+                    orbitalControlPanel
                 }
             }
+        }
+    }
+
+    /// HUD de juego de Call of Duty Zombies en pantalla completa sobre el viewport Metal
+    @ViewBuilder
+    private var fpsGameplayHUD: some View {
+        ZStack {
+            // Flash de daño rojo en bordes cuando el jugador recibe daño
+            if showDamageFlash {
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.red.opacity(0.85), lineWidth: 14)
+                    .allowsHitTesting(false)
+            }
+
+            // Marcador de daño / Hitmarker central
+            if showHitmarker {
+                Image(systemName: "xmark")
+                    .font(.system(size: 22, weight: .black))
+                    .foregroundColor(.red)
+                    .shadow(color: .black, radius: 2)
+                    .allowsHitTesting(false)
+            } else {
+                // Crosshair FPS clásico estilo CoD
+                ZStack {
+                    Rectangle().frame(width: 1.5, height: 14).foregroundColor(.white.opacity(0.75))
+                    Rectangle().frame(width: 14, height: 1.5).foregroundColor(.white.opacity(0.75))
+                    Circle().frame(width: 3, height: 3).foregroundColor(.red.opacity(0.85))
+                }
+                .allowsHitTesting(false)
+            }
+
+            // HUD Superior: Ronda de Zombies (estilo números romanos / tally marks) y Puntos
+            VStack {
+                HStack(alignment: .top) {
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("\(points)")
+                            .font(.system(size: 22, weight: .black, design: .monospaced))
+                            .foregroundColor(.yellow)
+                            .shadow(color: .black, radius: 2)
+
+                        HStack(spacing: 4) {
+                            Text("RONDA")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundColor(.red.opacity(0.9))
+                            Text("\(roundNumber)")
+                                .font(.system(size: 16, weight: .black, design: .rounded))
+                                .foregroundColor(.red)
+                        }
+                        .shadow(color: .black, radius: 2)
+                    }
+                    .padding(8)
+                }
+                Spacer()
+
+                // HUD Inferior: Arma M1911 Viewmodel + Munición + Indicador de Zombie objetivo
+                HStack(alignment: .bottom) {
+                    // Marcador de Zombie en el radar / brújula
+                    if isZombieAlive {
+                        let zDist = distance(fpsPosition, zombiePosition)
+                        VStack(alignment: .leading, spacing: 1) {
+                            HStack(spacing: 4) {
+                                Circle().fill(Color.red).frame(width: 7, height: 7)
+                                Text("ZOMBIE · \(Int(zDist))u")
+                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.red)
+                            }
+                            Text("HP: \(zombieHealth)/150")
+                                .font(.system(size: 9, weight: .medium, design: .monospaced))
+                                .foregroundColor(.white.opacity(0.9))
+                        }
+                        .padding(5)
+                        .background(Color.black.opacity(0.65))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .padding(.leading, 8)
+                        .padding(.bottom, 6)
+                    } else {
+                        Text("ZOMBIE ABATIDO (+60)")
+                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                            .foregroundColor(.green)
+                            .padding(5)
+                            .background(Color.black.opacity(0.65))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                            .padding(.leading, 8)
+                            .padding(.bottom, 6)
+                    }
+
+                    Spacer()
+
+                    // M1911 Viewmodel interactivo con animación de retroceso y fogonazo
+                    ZStack(alignment: .center) {
+                        if showMuzzleFlash {
+                            Circle()
+                                .fill(RadialGradient(colors: [.yellow, .orange, .clear], center: .center, startRadius: 2, endRadius: 35))
+                                .frame(width: 65, height: 65)
+                                .offset(x: -24, y: -45)
+                                .allowsHitTesting(false)
+                        }
+
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("M1911")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.white.opacity(0.85))
+                            HStack(alignment: .lastTextBaseline, spacing: 2) {
+                                Text("\(ammoClip)")
+                                    .font(.system(size: 26, weight: .black, design: .monospaced))
+                                    .foregroundColor(ammoClip > 0 ? .white : .red)
+                                Text("/ \(ammoStock)")
+                                    .font(.system(size: 13, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.white.opacity(0.70))
+                            }
+                            if isReloading {
+                                Text("RECARGANDO...")
+                                    .font(.system(size: 8, weight: .bold))
+                                    .foregroundColor(.orange)
+                            }
+                        }
+                        .padding(.trailing, 10)
+                        .padding(.bottom, 6)
+                        .offset(y: weaponRecoil)
+                    }
+                    .shadow(color: .black, radius: 2)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: 290)
+    }
+
+    /// Controles de movimiento táctil FPS + Botones de combate (Disparar / Recargar / Cuchillo)
+    @ViewBuilder
+    private var fpsControlPanel: some View {
+        VStack(spacing: 5) {
+            HStack(spacing: 8) {
+                // D-pad táctil direccional (WASD de movimiento en Lobby)
+                HStack(spacing: 3) {
+                    Button { moveFPS(forward: 0, strafe: -1, up: 0) } label: {
+                        Image(systemName: "arrow.left")
+                            .font(.caption2.bold())
+                            .frame(width: 28, height: 26)
+                    }
+                    .buttonStyle(.bordered)
+
+                    VStack(spacing: 2) {
+                        Button { moveFPS(forward: 1, strafe: 0, up: 0) } label: {
+                            Image(systemName: "arrow.up")
+                                .font(.caption2.bold())
+                                .frame(width: 28, height: 26)
+                        }
+                        .buttonStyle(.bordered)
+
+                        Button { moveFPS(forward: -1, strafe: 0, up: 0) } label: {
+                            Image(systemName: "arrow.down")
+                                .font(.caption2.bold())
+                                .frame(width: 28, height: 26)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+
+                    Button { moveFPS(forward: 0, strafe: 1, up: 0) } label: {
+                        Image(systemName: "arrow.right")
+                            .font(.caption2.bold())
+                            .frame(width: 28, height: 26)
+                    }
+                    .buttonStyle(.bordered)
+                }
+
+                // Elevación / Noclip
+                VStack(spacing: 2) {
+                    Button { moveFPS(forward: 0, strafe: 0, up: 1) } label: {
+                        Image(systemName: "chevron.up")
+                            .font(.caption2.bold())
+                            .frame(width: 24, height: 24)
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button { moveFPS(forward: 0, strafe: 0, up: -1) } label: {
+                        Image(systemName: "chevron.down")
+                            .font(.caption2.bold())
+                            .frame(width: 24, height: 24)
+                    }
+                    .buttonStyle(.bordered)
+                }
+
+                // Botón DISPARAR M1911 (Táctil grande de combate)
+                Button {
+                    fireWeapon()
+                } label: {
+                    VStack(spacing: 1) {
+                        Image(systemName: "scope")
+                            .font(.subheadline.bold())
+                        Text("DISPARAR")
+                            .font(.system(size: 9, weight: .black))
+                    }
+                    .foregroundColor(.white)
+                    .frame(width: 68, height: 52)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(ammoClip > 0 ? .red : .gray)
+                .disabled(ammoClip <= 0 || isReloading)
+
+                // Botón RECARGAR
+                Button {
+                    reloadWeapon()
+                } label: {
+                    VStack(spacing: 1) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.caption.bold())
+                        Text("RECARGAR")
+                            .font(.system(size: 8, weight: .bold))
+                    }
+                    .foregroundColor(.white)
+                    .frame(width: 58, height: 52)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+                .disabled(ammoClip == 8 || ammoStock == 0 || isReloading)
+
+                // Botón CUCHILLO
+                Button {
+                    meleeAttack()
+                } label: {
+                    VStack(spacing: 1) {
+                        Image(systemName: "bolt.fill")
+                            .font(.caption.bold())
+                        Text("CUCHILLO")
+                            .font(.system(size: 8, weight: .bold))
+                    }
+                    .foregroundColor(.white)
+                    .frame(width: 54, height: 52)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.purple)
+            }
+            .padding(.horizontal, 10)
+
+            // Fila de utilidades: Alternador Caminar/Volar, velocidad y botón Spawn
+            HStack(spacing: 8) {
+                // Alternador físicas/vuelo
+                Button {
+                    fpsWalkMode.toggle()
+                } label: {
+                    Text(fpsWalkMode ? "Caminar" : "Volar")
+                        .font(.caption2.bold())
+                        .foregroundColor(fpsWalkMode ? .green : .yellow)
+                        .frame(height: 22)
+                }
+                .buttonStyle(.bordered)
+
+                // Slider velocidad
+                HStack(spacing: 4) {
+                    Text("Paso")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    Slider(value: $fpsSpeed, in: 50...600)
+                    Text("\(Int(fpsSpeed))")
+                        .font(.caption2.monospacedDigit())
+                        .foregroundColor(.secondary)
+                }
+
+                // Reset a posición inicial
+                Button("Spawn") {
+                    resetFPSSpawn()
+                }
+                .font(.caption2.bold())
+                .buttonStyle(.borderedProminent)
+                .tint(.orange)
+            }
+            .padding(.horizontal, 12)
+            .padding(.bottom, 2)
+        }
+    }
+
+    @ViewBuilder
+    private var orbitalControlPanel: some View {
+        HStack(spacing: 8) {
+            Toggle("Girar", isOn: $autoRotate)
+                .labelsHidden()
+            Text("Girar")
+                .font(.caption2)
+
+            Text("Zoom")
+                .font(.caption2)
+                .foregroundColor(.secondary)
+            Slider(value: $zoom, in: 0.4...4.5)
+
+            if inspectorMode == .map {
+                Button("Sala") {
+                    autoRotate = false
+                    pitch = 0.22
+                    zoom = 2.1
+                }
+                .font(.caption2)
+                .buttonStyle(.bordered)
+                Button("General") {
+                    pitch = 0.62
+                    zoom = 0.90
+                }
+                .font(.caption2)
+                .buttonStyle(.bordered)
+            } else {
+                Button("Centrar") {
+                    yaw = 0.6
+                    pitch = 0.25
+                    zoom = 1.0
+                    autoRotate = true
+                }
+                .font(.caption2)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.bottom, 2)
+    }
+
+    // MARK: - Mecánicas de Disparo, Recarga y Detección de Impactos
+    private func fireWeapon() {
+        guard ammoClip > 0, !isReloading else { return }
+        ammoClip -= 1
+
+        // Retroceso visual y fogonazo del arma M1911
+        weaponRecoil = 8.0
+        showMuzzleFlash = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) {
+            showMuzzleFlash = false
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            weaponRecoil = 0.0
+        }
+
+        // Raycasting / Detección de impacto contra el Zombie en Kino der Toten
+        checkBulletHit()
+    }
+
+    private func checkBulletHit() {
+        guard isZombieAlive else { return }
+
+        // Vector director de la mirada del jugador en 3D
+        let forwardVec = SIMD3<Float>(
+            sin(yaw) * cos(pitch),
+            cos(yaw) * cos(pitch),
+            sin(pitch)
+        )
+
+        // Vector desde los ojos del jugador hacia el zombie
+        let toZombie = zombiePosition + SIMD3<Float>(0, 0, 35.0) - fpsPosition
+        let dist = length(toZombie)
+        guard dist > 5.0 && dist < 1200.0 else { return }
+
+        let dirToZombie = normalize(toZombie)
+        let dotProduct = dot(normalize(forwardVec), dirToZombie)
+
+        // Si el punto de mira apunta hacia el zombie (ángulo de apertura < 12 grados)
+        if dotProduct > 0.978 {
+            applyDamageToZombie(damage: 20, isMelee: false)
+        }
+    }
+
+    private func meleeAttack() {
+        guard isZombieAlive else { return }
+        let toZombie = zombiePosition - fpsPosition
+        let dist = length(toZombie)
+
+        if dist < 95.0 {
+            // Cuchillada a corta distancia (150 HP = abatido instantáneo en Ronda 1)
+            applyDamageToZombie(damage: 150, isMelee: true)
+        }
+    }
+
+    private func applyDamageToZombie(damage: Int, isMelee: Bool) {
+        showHitmarker = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            showHitmarker = false
+        }
+
+        zombieHealth = max(0, zombieHealth - damage)
+        if isMelee {
+            points += 130 // +130 por baja con cuchillo
+        } else {
+            points += 10  // +10 por cada bala impactada
+        }
+
+        if zombieHealth <= 0 {
+            // Zombie abatido
+            isZombieAlive = false
+            if !isMelee {
+                points += 50 // Total +60 por baja con arma
+            }
+
+            // Reaparición del siguiente Zombie o avance de ronda tras 3 segundos
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                spawnNextZombie()
+            }
+        }
+    }
+
+    private func spawnNextZombie() {
+        roundNumber += 1
+        zombieHealth = 150 + (roundNumber - 1) * 50
+        // Aparece por las ventanas frontales del Lobby de Kino der Toten
+        let spawnPoints: [SIMD3<Float>] = [
+            SIMD3<Float>(350.0, -600.0, 0.0),
+            SIMD3<Float>(-380.0, -650.0, 0.0),
+            SIMD3<Float>(0.0, -320.0, 0.0)
+        ]
+        zombiePosition = spawnPoints.randomElement() ?? SIMD3<Float>(120.0, -550.0, 0.0)
+        isZombieAlive = true
+    }
+
+    private func reloadWeapon() {
+        guard !isReloading, ammoClip < 8, ammoStock > 0 else { return }
+        isReloading = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            let needed = 8 - ammoClip
+            let added = min(needed, ammoStock)
+            ammoClip += added
+            ammoStock -= added
+            isReloading = false
+        }
+    }
+
+    // MARK: - Game Loop (IA del Zombie, Mando de Juego y Daño)
+    @State private var isGamepadConnected: Bool = false
+    @State private var gamepadName: String = ""
+
+    private func startGameLoop() {
+        lastGameTick = Date()
+        gameTimer?.invalidate()
+        // 60 Hz / 30 Hz tick para respuesta fluida de mando y física
+        gameTimer = Timer.scheduledTimer(withTimeInterval: 0.033, repeats: true) { _ in
+            pollGamepad()
+            updateGameTick()
+        }
+    }
+
+    private func stopGameLoop() {
+        gameTimer?.invalidate()
+        gameTimer = nil
+    }
+
+    /// Sondeo y mapeo nativo de mandos de juego (PlayStation, Xbox, Switch, Backbone, etc.)
+    private func pollGamepad() {
+        guard let controller = GCController.current ?? GCController.controllers().first,
+              let extended = controller.extendedGamepad else {
+            if isGamepadConnected {
+                isGamepadConnected = false
+                gamepadName = ""
+            }
+            return
+        }
+
+        if !isGamepadConnected {
+            isGamepadConnected = true
+            gamepadName = controller.vendorName ?? "Mando"
+        }
+
+        guard cameraMode == .fps else { return }
+
+        // 1. Stick Izquierdo: Movimiento de desplazamiento y avance
+        let moveX = extended.leftThumbstick.xAxis.value
+        let moveY = extended.leftThumbstick.yAxis.value
+        let deadzone: Float = 0.12
+
+        if abs(moveX) > deadzone || abs(moveY) > deadzone {
+            let forwardAmount = moveY
+            let strafeAmount = moveX
+            moveFPS(forward: forwardAmount * 0.25, strafe: strafeAmount * 0.25, up: 0)
+        }
+
+        // 2. Stick Derecho: Giro de cámara (Yaw / Pitch)
+        let lookX = extended.rightThumbstick.xAxis.value
+        let lookY = extended.rightThumbstick.yAxis.value
+
+        if abs(lookX) > deadzone || abs(lookY) > deadzone {
+            let sensitivity: Float = 0.045
+            yaw += lookX * sensitivity
+            let nextPitch = pitch + lookY * sensitivity
+            pitch = min(max(nextPitch, -1.35), 1.35)
+        }
+
+        // 3. Gatillo Derecho (R2 / Right Trigger): Disparar M1911
+        if extended.rightTrigger.isPressed && extended.rightTrigger.value > 0.5 {
+            fireWeapon()
+        }
+
+        // 4. Botón X (Xbox) / Cuadrado (PlayStation): Recargar arma
+        if extended.buttonX.isPressed {
+            reloadWeapon()
+        }
+
+        // 5. Botón Stick Derecho (R3) o Botón B (Círculo): Ataque con Cuchillo
+        if (extended.rightThumbstickButton?.isPressed == true) || extended.buttonB.isPressed {
+            meleeAttack()
+        }
+    }
+
+    private func updateGameTick() {
+        guard cameraMode == .fps, isZombieAlive else { return }
+
+        // El Zombie camina lentamente hacia el jugador por el Lobby de Kino der Toten
+        let delta = zombiePosition - fpsPosition
+        let dist = length(delta)
+
+        if dist > 45.0 {
+            let stepSpeed: Float = 1.15
+            let moveDir = normalize(fpsPosition - zombiePosition)
+            zombiePosition.x += moveDir.x * stepSpeed
+            zombiePosition.y += moveDir.y * stepSpeed
+            // Sigue la cota del suelo de Kino
+            zombiePosition.z = (zombiePosition.y > -450.0) ? 140.0 : 0.0
+        } else {
+            // Rango de ataque cuerpo a cuerpo del zombie contra el jugador (<45 unidades)
+            playerTakeDamage(amount: 50.0)
+        }
+    }
+
+    private func playerTakeDamage(amount: Float) {
+        showDamageFlash = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+            showDamageFlash = false
+        }
+
+        playerHealth = max(0, playerHealth - amount)
+        if playerHealth <= 0 {
+            // Caída del jugador (Quick Revive / reaparición)
+            playerHealth = 100.0
+            resetFPSSpawn()
         }
     }
 
@@ -919,16 +1377,48 @@ struct ZoneXModelInspectorView: View {
 
     private func resetFPSSpawn() {
         guard let mesh = currentMesh else { return }
-        fpsPosition = SIMD3<Float>(mesh.center.x, mesh.center.y, mesh.mins.z + 65.0)
-        pitch = 0.0
-        yaw = 0.0
+        if mesh.meshId.hasPrefix("gfxworld:") {
+            // Spawn oficial de Kino der Toten en el Lobby frente a Quick Revive y escaleras
+            let spawnFloorZ: Float = 0.0
+            fpsPosition = SIMD3<Float>(0.0, -850.0, spawnFloorZ + playerEyeHeight)
+            pitch = 0.0
+            yaw = 0.0
+        } else {
+            fpsPosition = SIMD3<Float>(mesh.center.x, mesh.center.y, mesh.mins.z + playerEyeHeight)
+            pitch = 0.0
+            yaw = 0.0
+        }
     }
+
+    /// Altura de ojos del jugador en unidades BO1 (~60 unidades = ~1.52m / 5 pies)
+    private let playerEyeHeight: Float = 60.0
+    /// Límite físico del Lobby de Kino der Toten para impedir salirse del mapa o atravesar paredes exteriores
+    private let lobbyMinBounds = SIMD2<Float>(-550.0, -1480.0)
+    private let lobbyMaxBounds = SIMD2<Float>(550.0, -90.0)
 
     private func moveFPS(forward: Float, strafe: Float, up: Float) {
         let forwardVec = SIMD3<Float>(sin(yaw), cos(yaw), 0)
         let rightVec = SIMD3<Float>(cos(yaw), -sin(yaw), 0)
         let step = fpsSpeed * 0.20
-        fpsPosition += forwardVec * (forward * step) + rightVec * (strafe * step) + SIMD3<Float>(0, 0, up * step)
+
+        var nextPos = fpsPosition + forwardVec * (forward * step) + rightVec * (strafe * step)
+
+        if fpsWalkMode && currentMesh?.meshId.hasPrefix("gfxworld:") == true {
+            // 1. Colisión contra paredes del Lobby (eje X e Y)
+            nextPos.x = min(max(nextPos.x, lobbyMinBounds.x), lobbyMaxBounds.x)
+            nextPos.y = min(max(nextPos.y, lobbyMinBounds.y), lobbyMaxBounds.y)
+
+            // 2. Piso firme y gravedad auténtica:
+            // En el Lobby de Kino der Toten, el suelo plano está en Z ≈ 0.0 y la zona de escaleras/balcón sube hasta Z ≈ 140.0.
+            // Si el jugador intenta elevarse manualmente o caer, la gravedad lo sostiene a altura de ojos sobre el piso.
+            let floorZ: Float = (nextPos.y > -450.0) ? 140.0 : 0.0
+            nextPos.z = floorZ + playerEyeHeight
+        } else {
+            // Noclip libre (modo visor clásico)
+            nextPos.z += up * step
+        }
+
+        fpsPosition = nextPos
     }
 
     private func selectModel(_ summary: XModelSummary) {
