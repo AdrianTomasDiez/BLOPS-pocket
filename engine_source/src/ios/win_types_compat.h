@@ -19,6 +19,8 @@
 #include <arpa/inet.h>
 #include <time.h>
 #include <sys/time.h>
+#include <ctype.h>
+#include <strings.h>
 
 typedef FILE _iobuf;
 
@@ -48,6 +50,22 @@ typedef FILE _iobuf;
 
 #ifndef _vsnprintf
 #define _vsnprintf vsnprintf
+#endif
+
+#ifndef _stricmp
+#define _stricmp strcasecmp
+#endif
+
+#ifndef _strnicmp
+#define _strnicmp strncasecmp
+#endif
+
+#ifndef stricmp
+#define stricmp strcasecmp
+#endif
+
+#ifndef strnicmp
+#define strnicmp strncasecmp
 #endif
 
 static inline char *_itoa(int value, char *buffer, int radix) {
