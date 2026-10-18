@@ -155,6 +155,10 @@ inline int _snprintf_s(char *buf, size_t size, size_t count, const char *format,
 #define strnicmp strncasecmp
 #endif
 
+#ifndef _strdup
+#define _strdup strdup
+#endif
+
 static inline char *_strlwr(char *str) {
     if (!str) return NULL;
     for (char *p = str; *p; ++p) *p = (char)tolower((unsigned char)*p);
