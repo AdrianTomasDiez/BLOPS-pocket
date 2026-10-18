@@ -26,6 +26,10 @@
 #define _snprintf snprintf
 #endif
 
+#ifndef _vsnprintf
+#define _vsnprintf vsnprintf
+#endif
+
 // Desactivar static_assert específicos de tamaño de puntero de 32 bits en arquitecturas 64-bit
 #if defined(__LP64__) || defined(_WIN64) || defined(__aarch64__)
 #define static_assert(...)
