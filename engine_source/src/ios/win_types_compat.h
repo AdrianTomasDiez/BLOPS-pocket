@@ -11,6 +11,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <sched.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 // Desactivar static_assert específicos de tamaño de puntero de 32 bits en arquitecturas 64-bit
 #if defined(__LP64__) || defined(_WIN64) || defined(__aarch64__)

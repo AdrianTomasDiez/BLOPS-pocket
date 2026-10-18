@@ -203,6 +203,19 @@ typedef struct _D3DVERTEXELEMENT9 {
     BYTE    UsageIndex;
 } D3DVERTEXELEMENT9;
 
+typedef enum _D3DPOOL {
+    D3DPOOL_DEFAULT     = 0,
+    D3DPOOL_MANAGED     = 1,
+    D3DPOOL_SYSTEMMEM   = 2,
+    D3DPOOL_SCRATCH     = 3,
+    D3DPOOL_FORCE_DWORD = 0x7fffffff
+} D3DPOOL;
+
+typedef struct _D3DLOCKED_RECT {
+    INT     Pitch;
+    void    *pBits;
+} D3DLOCKED_RECT;
+
 #ifdef __cplusplus
 struct IUnknown {
     virtual ~IUnknown() {}
@@ -213,18 +226,35 @@ struct IUnknown {
 struct IDirect3DResource9 : public IUnknown {};
 struct IDirect3DSurface9 : public IDirect3DResource9 {};
 struct IDirect3DBaseTexture9 : public IDirect3DResource9 {};
-struct IDirect3DTexture9 : public IDirect3DBaseTexture9 {};
+struct IDirect3DTexture9 : public IDirect3DBaseTexture9 {
+    virtual HRESULT GetSurfaceLevel(UINT Level, IDirect3DSurface9 **ppSurfaceLevel) { return 0; }
+    virtual HRESULT LockRect(UINT Level, D3DLOCKED_RECT *pLockedRect, const RECT *pRect, DWORD Flags) { return 0; }
+    virtual HRESULT UnlockRect(UINT Level) { return 0; }
+};
 struct IDirect3DCubeTexture9 : public IDirect3DBaseTexture9 {};
 struct IDirect3DVolumeTexture9 : public IDirect3DBaseTexture9 {};
-struct IDirect3DVertexBuffer9 : public IDirect3DResource9 {};
-struct IDirect3DIndexBuffer9 : public IDirect3DResource9 {};
+struct IDirect3DVertexBuffer9 : public IDirect3DResource9 {
+    virtual HRESULT Lock(UINT OffsetToLock, UINT SizeToLock, void **ppbData, DWORD Flags) { return 0; }
+    virtual HRESULT Unlock() { return 0; }
+};
+struct IDirect3DIndexBuffer9 : public IDirect3DResource9 {
+    virtual HRESULT Lock(UINT OffsetToLock, UINT SizeToLock, void **ppbData, DWORD Flags) { return 0; }
+    virtual HRESULT Unlock() { return 0; }
+};
 struct IDirect3DVertexDeclaration9 : public IUnknown {};
 struct IDirect3DVertexShader9 : public IUnknown {};
 struct IDirect3DPixelShader9 : public IUnknown {};
 struct IDirect3DQuery9 : public IUnknown {};
 struct IDirect3DStateBlock9 : public IUnknown {};
 struct IDirect3DSwapChain9 : public IUnknown {};
-struct IDirect3DDevice9 : public IUnknown {};
+struct IDirect3DDevice9 : public IUnknown {
+    virtual HRESULT CreateTexture(UINT, UINT, UINT, DWORD, D3DFORMAT, D3DPOOL, IDirect3DTexture9**, HANDLE*) { return 0; }
+    virtual HRESULT CreateVertexBuffer(UINT, DWORD, DWORD, D3DPOOL, IDirect3DVertexBuffer9**, HANDLE*) { return 0; }
+    virtual HRESULT CreateIndexBuffer(UINT, DWORD, D3DFORMAT, D3DPOOL, IDirect3DIndexBuffer9**, HANDLE*) { return 0; }
+    virtual HRESULT CreateVertexDeclaration(const D3DVERTEXELEMENT9*, IDirect3DVertexDeclaration9**) { return 0; }
+    virtual HRESULT CreateVertexShader(const DWORD*, IDirect3DVertexShader9**) { return 0; }
+    virtual HRESULT CreatePixelShader(const DWORD*, IDirect3DPixelShader9**) { return 0; }
+};
 struct IDirect3DDevice9Ex : public IDirect3DDevice9 {};
 struct IDirect3D9 : public IUnknown {};
 #endif
