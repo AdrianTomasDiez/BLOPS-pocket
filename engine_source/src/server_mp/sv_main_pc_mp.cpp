@@ -676,7 +676,7 @@ void __cdecl SV_MasterHeartbeat(int controllerIndex)
 void SV_ReadWhiteListfile()
 {
     char *v0; // eax
-    _iobuf *fp; // [esp+4h] [ebp-8h]
+    FILE *fp; // [esp+4h] [ebp-8h]
     int i; // [esp+8h] [ebp-4h]
 
     i = 0;

@@ -20,6 +20,8 @@
 #include <time.h>
 #include <sys/time.h>
 
+typedef FILE _iobuf;
+
 #ifndef _time64
 #define _time64 time
 #endif
@@ -659,6 +661,13 @@ static inline HANDLE CreateThread(void *lpThreadAttributes, size_t dwStackSize, 
 #ifndef EXCEPTION_EXECUTE_HANDLER
 #define EXCEPTION_EXECUTE_HANDLER 1
 #endif
+
+typedef struct _EXCEPTION_RECORD _EXCEPTION_RECORD;
+typedef struct _CONTEXT _CONTEXT;
+typedef struct _EXCEPTION_POINTERS {
+    _EXCEPTION_RECORD *ExceptionRecord;
+    _CONTEXT *ContextRecord;
+} _EXCEPTION_POINTERS, *PEXCEPTION_POINTERS;
 
 static inline DWORD ResumeThread(HANDLE hThread) {
     if (!hThread) return (DWORD)-1;
