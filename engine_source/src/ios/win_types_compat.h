@@ -17,6 +17,23 @@
 #include <math.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <time.h>
+
+#ifndef _time64
+#define _time64 time
+#endif
+
+#ifndef _localtime64
+#define _localtime64 localtime
+#endif
+
+#ifndef _gmtime64
+#define _gmtime64 gmtime
+#endif
+
+#ifndef _ctime64
+#define _ctime64 ctime
+#endif
 
 #ifdef __cplusplus
 #include <new>
