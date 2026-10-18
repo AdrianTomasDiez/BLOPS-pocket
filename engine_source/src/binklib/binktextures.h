@@ -132,7 +132,7 @@ typedef struct BINKTEXTURESET
 
   // this is specialized global data for each platform
 
-  #if defined( __RADNT__ )
+  #if defined( __RADNT__ ) || defined( __APPLE__ )
   
     // on windows, we need a second set of textures to draw with
     BINKFRAMETEXTURES tex_draw;
@@ -187,7 +187,7 @@ RADDEFFUNC void Draw_Bink_textures( if_used_3d_device
 //=============================================================================
 
 
-#if defined(__RADNT__)
+#if defined(__RADNT__) || defined(__APPLE__)
 
   // On Windows, we need to use lock and unlock semantics for best performance
 
@@ -221,7 +221,7 @@ RADDEFFUNC void Draw_Bink_textures( if_used_3d_device
 
 //=============================================================================
 
-#if defined(__RADXENON__) || defined(__RADNT__) || defined(__RADPS3__)
+#if defined(__RADXENON__) || defined(__RADNT__) || defined(__RADPS3__) || defined(__APPLE__)
 
   //
   // we only have to compile the shaders on Xenon, PS3 and PC, they 
