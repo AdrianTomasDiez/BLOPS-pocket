@@ -16,3 +16,4 @@ launcher/BLOPSPocket/Info.plist
 # macOS / Xcode
 .DS_Store
 xcuserdata/
+.freebuff/

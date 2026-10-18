@@ -2847,6 +2847,19 @@ set(WIN32_FILES
 	${SRC_WIN32}
 )
 
+# ----- src/ios -----
+set(SRC_IOS
+	"${SRC_DIR}/ios/ios_main.mm"
+	"${SRC_DIR}/ios/ios_platform.cpp"
+	"${SRC_DIR}/ios/win_types_compat.h"
+)
+source_group("ios" FILES ${SRC_IOS})
+
+set(IOS_FILES
+	${SRC_IOS}
+)
+
+
 # ----- src/xanim -----
 set(SRC_XANIM
 	"${SRC_DIR}/xanim/dobj.cpp"
@@ -2963,9 +2976,18 @@ set(TL_PHYSICS_FILES
 	${TL_PHYSICS}
 )
 
-# ======================================================================
-# Build target
-# ======================================================================
+if(APPLE)
+	set(PLATFORM_SPECIFIC_FILES
+		${IOS_FILES}
+	)
+else()
+	set(PLATFORM_SPECIFIC_FILES
+		${BINKLIB_FILES}
+		${NVAPI_FILES}
+		${STEAM_FILES}
+		${WIN32_FILES}
+	)
+endif()
 
 add_executable(${BIN_NAME}
 	${DW_DEMONWAREROOT_FILES}
@@ -2977,7 +2999,6 @@ add_executable(${BIN_NAME}
 	${EFFECTSCORE_FILES}
 	${AIM_ASSIST_FILES}
 	${BGAME_FILES}
-	${BINKLIB_FILES}
 	${CGAME_FILES}
 	${CGAME_MP_FILES}
 	${CLIENT_FILES}
@@ -3002,7 +3023,6 @@ add_executable(${BIN_NAME}
 	${MINILZO_FILES}
 	${MJPEG_FILES}
 	${MONKEY_FILES}
-	${NVAPI_FILES}
 	${PHYSICS_FILES}
 	${QCOMMON_FILES}
 	${RAGDOLL_FILES}
@@ -3010,7 +3030,6 @@ add_executable(${BIN_NAME}
 	${SERVER_MP_FILES}
 	${SOUND_FILES}
 	${SPEEX_FILES}
-	${STEAM_FILES}
 	${STRINGED_FILES}
 	${TRACY_FILES}
 	${TURRET_FILES}
@@ -3019,7 +3038,7 @@ add_executable(${BIN_NAME}
 	${UNIVERSAL_FILES}
 	${VEHICLE_FILES}
 	${VPX_FILES}
-	${WIN32_FILES}
+	${PLATFORM_SPECIFIC_FILES}
 	${XANIM_FILES}
 	${ZLIB_FILES}
 	${TL_TLROOT_FILES}

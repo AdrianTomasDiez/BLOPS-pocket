@@ -26,7 +26,7 @@ struct ContentView: View {
         .statusBar(hidden: true)
         .fullScreenCover(isPresented: $isPlayingKino) {
             if let gameFolderURL {
-                KinoGameView(gameFolder: gameFolderURL)
+                NativeEngineView(gameFolder: gameFolderURL)
             }
         }
         .fileImporter(
