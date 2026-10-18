@@ -2225,6 +2225,13 @@ source_group("mjpeg" FILES ${SRC_MJPEG})
 set(MJPEG_FILES
 	${SRC_MJPEG}
 )
+if(APPLE)
+	set(MJPEG_FILES
+		"${SRC_DIR}/ios/mjpeg_stubs.cpp"
+		"${SRC_DIR}/mjpeg/mjpeg.h"
+		"${SRC_DIR}/mjpeg/yuv.h"
+	)
+endif()
 
 # ----- src/monkey -----
 set(SRC_MONKEY
