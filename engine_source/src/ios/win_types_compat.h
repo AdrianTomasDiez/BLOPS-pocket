@@ -689,6 +689,54 @@ static inline BOOL IsIconic(HWND hWnd) {
     return 0;
 }
 
+static inline int GetWindowTextA(HWND hWnd, LPSTR lpString, int nMaxCount) {
+    (void)hWnd;
+    if (lpString && nMaxCount > 0) lpString[0] = '\0';
+    return 0;
+}
+
+static inline LONG ChangeDisplaySettingsA(void *lpDevMode, DWORD dwflags) {
+    (void)lpDevMode; (void)dwflags;
+    return 0;
+}
+
+typedef BOOL (*WNDENUMPROC)(HWND, LPARAM);
+
+static inline BOOL EnumThreadWindows(DWORD dwThreadId, WNDENUMPROC lpfn, LPARAM lParam) {
+    (void)dwThreadId; (void)lpfn; (void)lParam;
+    return TRUE;
+}
+
+static inline HDC GetDC(HWND hWnd) {
+    (void)hWnd;
+    return (HDC)(intptr_t)1;
+}
+
+static inline int ReleaseDC(HWND hWnd, HDC hDC) {
+    (void)hWnd; (void)hDC;
+    return 1;
+}
+
+static inline BOOL SetDeviceGammaRamp(HDC hDC, LPVOID lpRamp) {
+    (void)hDC; (void)lpRamp;
+    return TRUE;
+}
+
+typedef struct _LUID {
+    DWORD LowPart;
+    LONG HighPart;
+} LUID, *PLUID;
+
+typedef struct _LUID_AND_ATTRIBUTES {
+    LUID Luid;
+    DWORD Attributes;
+} LUID_AND_ATTRIBUTES, *PLUID_AND_ATTRIBUTES;
+
+typedef struct _TOKEN_PRIVILEGES {
+    DWORD PrivilegeCount;
+    LUID_AND_ATTRIBUTES Privileges[1];
+} TOKEN_PRIVILEGES, _TOKEN_PRIVILEGES, *PTOKEN_PRIVILEGES;
+
 static inline HWND GetForegroundWindow(void) {
     static struct HWND__ dummyHwnd;
     return &dummyHwnd;
