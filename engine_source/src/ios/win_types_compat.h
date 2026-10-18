@@ -750,6 +750,48 @@ static inline void GlobalMemoryStatus(MEMORYSTATUS *lpBuffer) {
     }
 }
 
+#define MEM_COMMIT             0x00001000
+#define MEM_RESERVE            0x00002000
+#define MEM_DECOMMIT           0x00004000
+#define MEM_RELEASE            0x00008000
+#define MEM_RESET              0x00080000
+#define PAGE_NOACCESS          0x01
+#define PAGE_READONLY          0x02
+#define PAGE_READWRITE         0x04
+#define PAGE_EXECUTE           0x10
+#define PAGE_EXECUTE_READ      0x20
+#define PAGE_EXECUTE_READWRITE 0x40
+
+static inline void *VirtualAlloc(void *lpAddress, size_t dwSize, DWORD flAllocationType, DWORD flProtect) {
+    (void)flAllocationType;
+    (void)flProtect;
+    if (lpAddress) {
+        return lpAddress;
+    }
+    void *ptr = malloc(dwSize);
+    if (ptr) {
+        memset(ptr, 0, dwSize);
+    }
+    return ptr;
+}
+
+static inline BOOL VirtualFree(void *lpAddress, size_t dwSize, DWORD dwFreeType) {
+    (void)dwSize;
+    (void)dwFreeType;
+    if (lpAddress) {
+        free(lpAddress);
+    }
+    return 1;
+}
+
+static inline BOOL VirtualProtect(void *lpAddress, size_t dwSize, DWORD flNewProtect, DWORD *lpflOldProtect) {
+    (void)lpAddress;
+    (void)dwSize;
+    (void)flNewProtect;
+    if (lpflOldProtect) *lpflOldProtect = PAGE_READWRITE;
+    return 1;
+}
+
 static inline BOOL QueryPerformanceCounter(LARGE_INTEGER *lpPerformanceCount) {
     if (lpPerformanceCount) {
         struct timespec ts;
