@@ -11,8 +11,14 @@
 #include <string.h>
 #include <stdio.h>
 #include <sched.h>
+#include <stdarg.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#ifndef _snprintf
+#define _snprintf snprintf
+#endif
 
 // Desactivar static_assert específicos de tamaño de puntero de 32 bits en arquitecturas 64-bit
 #if defined(__LP64__) || defined(_WIN64) || defined(__aarch64__)
@@ -86,6 +92,18 @@ typedef struct tagPOINT {
     LONG x;
     LONG y;
 } POINT, *PPOINT, *LPPOINT;
+
+typedef union _LARGE_INTEGER {
+    struct {
+        DWORD LowPart;
+        LONG HighPart;
+    };
+    struct {
+        DWORD LowPart;
+        LONG HighPart;
+    } u;
+    LONGLONG QuadPart;
+} LARGE_INTEGER, *PLARGE_INTEGER;
 
 typedef struct _GUID {
     uint32_t Data1;
@@ -260,6 +278,70 @@ static inline void GlobalMemoryStatus(MEMORYSTATUS *lpBuffer) {
         lpBuffer->dwTotalPhys = 1024ULL * 1024ULL * 1024ULL;
         lpBuffer->dwAvailPhys = 512ULL * 1024ULL * 1024ULL;
     }
+}
+
+static inline BOOL QueryPerformanceCounter(LARGE_INTEGER *lpPerformanceCount) {
+    if (lpPerformanceCount) {
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        lpPerformanceCount->QuadPart = (LONGLONG)ts.tv_sec * 1000000000ULL + (LONGLONG)ts.tv_nsec;
+        return 1;
+    }
+    return 0;
+}
+
+static inline BOOL QueryPerformanceFrequency(LARGE_INTEGER *lpFrequency) {
+    if (lpFrequency) {
+        lpFrequency->QuadPart = 1000000000ULL;
+        return 1;
+    }
+    return 0;
+}
+
+#ifndef INVALID_HANDLE_VALUE
+#define INVALID_HANDLE_VALUE ((HANDLE)(intptr_t)-1)
+#endif
+
+static inline HANDLE CreateFileA(const char *lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, void *lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile) {
+    if (!lpFileName) return INVALID_HANDLE_VALUE;
+    char path[1024];
+    strncpy(path, lpFileName, sizeof(path) - 1);
+    path[sizeof(path) - 1] = '\0';
+    for (char *p = path; *p; p++) {
+        if (*p == '\\') *p = '/';
+    }
+    int flags = O_RDONLY;
+    if (dwDesiredAccess & 0x40000000) {
+        flags = O_RDWR | O_CREAT;
+    }
+    int fd = open(path, flags, 0644);
+    if (fd < 0) return INVALID_HANDLE_VALUE;
+    return (HANDLE)(intptr_t)(fd + 1);
+}
+
+static inline DWORD GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh) {
+    intptr_t val = (intptr_t)hFile;
+    if (val <= 0) return 0xFFFFFFFF;
+    int fd = (int)(val - 1);
+    off_t cur = lseek(fd, 0, SEEK_CUR);
+    off_t end = lseek(fd, 0, SEEK_END);
+    lseek(fd, cur, SEEK_SET);
+    if (lpFileSizeHigh) *lpFileSizeHigh = (DWORD)(end >> 32);
+    return (DWORD)end;
+}
+
+static inline BOOL ReadFile(HANDLE hFile, void *lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, void *lpOverlapped) {
+    intptr_t val = (intptr_t)hFile;
+    if (val <= 0 || !lpBuffer) return 0;
+    int fd = (int)(val - 1);
+    ssize_t n = read(fd, lpBuffer, nNumberOfBytesToRead);
+    if (n < 0) return 0;
+    if (lpNumberOfBytesRead) *lpNumberOfBytesRead = (DWORD)n;
+    return 1;
+}
+
+static inline HANDLE OpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId) {
+    return (HANDLE)(intptr_t)-1;
 }
 
 static inline void OutputDebugStringA(const char *lpOutputString) {
