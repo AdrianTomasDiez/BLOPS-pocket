@@ -267,6 +267,21 @@ typedef struct _D3DLOCKED_RECT {
     void    *pBits;
 } D3DLOCKED_RECT;
 
+typedef struct _D3DBOX {
+    UINT    Left;
+    UINT    Top;
+    UINT    Right;
+    UINT    Bottom;
+    UINT    Front;
+    UINT    Back;
+} D3DBOX;
+
+typedef struct _D3DLOCKED_BOX {
+    INT     RowPitch;
+    INT     SlicePitch;
+    void    *pBits;
+} D3DLOCKED_BOX;
+
 typedef struct _D3DRECT {
     LONG x1;
     LONG y1;
@@ -464,7 +479,15 @@ struct IDirect3DCubeTexture9 : public IDirect3DBaseTexture9 {
     virtual HRESULT LockRect(D3DCUBEMAP_FACES FaceType, UINT Level, D3DLOCKED_RECT *pLockedRect, const RECT *pRect, DWORD Flags) { return 0; }
     virtual HRESULT UnlockRect(D3DCUBEMAP_FACES FaceType, UINT Level) { return 0; }
 };
-struct IDirect3DVolumeTexture9 : public IDirect3DBaseTexture9 {};
+struct IDirect3DVolumeTexture9 : public IDirect3DBaseTexture9 {
+    virtual HRESULT LockBox(UINT Level, D3DLOCKED_BOX *pLockedVolumeBox, const D3DBOX *pBox, DWORD Flags) {
+        if (pLockedVolumeBox) {
+            memset(pLockedVolumeBox, 0, sizeof(*pLockedVolumeBox));
+        }
+        return 0;
+    }
+    virtual HRESULT UnlockBox(UINT Level) { return 0; }
+};
 struct IDirect3DVertexBuffer9 : public IDirect3DResource9 {
     virtual HRESULT Lock(UINT OffsetToLock, UINT SizeToLock, void **ppbData, DWORD Flags) { return 0; }
     virtual HRESULT Unlock() { return 0; }
