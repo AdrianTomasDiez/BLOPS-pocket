@@ -188,6 +188,7 @@ struct snd_dsp_master_state // sizeof=0x1000
     snd_dsp_dynamo_state limit;
 };
 
+#if !defined(__APPLE__)
 struct SDXA2MasterBusEffect : SDXA2Effect // sizeof=0xBD00
 {                                       // XREF: SoundState/r
     snd_dsp_master_params params;
@@ -219,6 +220,7 @@ struct SDXA2RadverbEffect : SDXA2Effect // sizeof=0x87B80
 
     void STDMETHODCALLTYPE SetParameters(const void *pParams, unsigned int cbParams);
 };
+#endif // !__APPLE__
 
 struct snd_dsp_squelch_param // sizeof=0x8
 {                                       // XREF: snd_dsp_futz_param/r
