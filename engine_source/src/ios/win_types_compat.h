@@ -598,6 +598,33 @@ static inline void GetSystemTime(SYSTEMTIME *lpSystemTime) {
     }
 }
 
+typedef struct _SYSTEM_INFO {
+    union {
+        DWORD dwOemId;
+        struct {
+            WORD wProcessorArchitecture;
+            WORD wReserved;
+        };
+    };
+    DWORD dwPageSize;
+    LPVOID lpMinimumApplicationAddress;
+    LPVOID lpMaximumApplicationAddress;
+    DWORD_PTR dwActiveProcessorMask;
+    DWORD dwNumberOfProcessors;
+    DWORD dwProcessorType;
+    DWORD dwAllocationGranularity;
+    WORD wProcessorLevel;
+    WORD wProcessorRevision;
+} SYSTEM_INFO, *LPSYSTEM_INFO;
+
+static inline void GetSystemInfo(SYSTEM_INFO *lpSystemInfo) {
+    if (!lpSystemInfo) return;
+    memset(lpSystemInfo, 0, sizeof(*lpSystemInfo));
+    lpSystemInfo->dwPageSize = 4096;
+    lpSystemInfo->dwNumberOfProcessors = 6;
+    lpSystemInfo->dwActiveProcessorMask = 0x3F;
+}
+
 #ifndef TRUE
 #define TRUE 1
 #endif
@@ -1201,6 +1228,21 @@ static inline BOOL ResetEvent(HANDLE hEvent) {
     if (!hEvent) return 0;
     Win32Event *ev = (Win32Event *)hEvent;
     pthread_mutex_lock(&ev->mutex);
+    ev->state = false;
+    pthread_mutex_unlock(&ev->mutex);
+    return 1;
+}
+
+static inline BOOL PulseEvent(HANDLE hEvent) {
+    if (!hEvent) return 0;
+    Win32Event *ev = (Win32Event *)hEvent;
+    pthread_mutex_lock(&ev->mutex);
+    ev->state = true;
+    if (ev->manualReset) {
+        pthread_cond_broadcast(&ev->cond);
+    } else {
+        pthread_cond_signal(&ev->cond);
+    }
     ev->state = false;
     pthread_mutex_unlock(&ev->mutex);
     return 1;
