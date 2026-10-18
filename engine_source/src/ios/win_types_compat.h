@@ -1150,6 +1150,12 @@ static inline DWORD GetFileAttributesA(const char *lpFileName) {
     return FILE_ATTRIBUTE_NORMAL;
 }
 
+static inline BOOL SetFileAttributesA(const char *lpFileName, DWORD dwFileAttributes) {
+    (void)lpFileName;
+    (void)dwFileAttributes;
+    return TRUE;
+}
+
 static inline HANDLE CreateFileA(const char *lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, void *lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile) {
     if (!lpFileName) return INVALID_HANDLE_VALUE;
     char path[1024];
