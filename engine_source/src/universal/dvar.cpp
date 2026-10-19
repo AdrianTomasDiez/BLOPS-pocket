@@ -1546,7 +1546,7 @@ void __cdecl Dvar_WeakCopyString(const char *string, DvarValue *value)
 {
     if ( !string && !Assert_MyHandler("C:\\projects_pc\\cod\\codsrc\\src\\universal\\dvar.cpp", 171, 0, "%s", "string") )
         __debugbreak();
-    value->string = string;
+    value->string = const_cast<char *>(string);
 }
 
 void __cdecl Dvar_MakeLatchedValueCurrent(dvar_s *dvar)
@@ -2000,7 +2000,7 @@ DvarValue *__cdecl Dvar_StringToValue(DvarValue *result, dvarType_t type, DvarLi
             value.integer = Dvar_StringToEnum(&domain, string);
             break;
         case DVAR_TYPE_STRING:
-            value.string = string;
+            value.string = const_cast<char *>(string);
             break;
         case DVAR_TYPE_COLOR:
             Dvar_StringToColor(string, (unsigned __int8 *)&value);
@@ -2440,7 +2440,7 @@ const dvar_s *__cdecl _Dvar_RegisterString(
     {
         __debugbreak();
     }
-    dvarValue.string = value;
+    dvarValue.string = const_cast<char *>(value);
     memset(&v5, 0, sizeof(v5));
     return Dvar_RegisterVariant((char*)dvarName, DVAR_TYPE_STRING, flags, dvarValue, v5, description);
 }
@@ -2597,7 +2597,7 @@ void __cdecl Dvar_SetBoolFromSource(dvar_s *dvar, bool value, DvarSetSource sour
                 v3 = "1";
             else
                 v3 = "0";
-            newValue.string = v3;
+            newValue.string = const_cast<char *>(v3);
         }
         else
         {
