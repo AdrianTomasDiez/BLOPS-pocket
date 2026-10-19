@@ -1102,8 +1102,10 @@ static inline void DeleteCriticalSection(CRITICAL_SECTION *cs) {
 #define InterlockedExchange(target, value) __sync_lock_test_and_set((target), (value))
 #define InterlockedCompareExchange(destination, exchange, comperand) __sync_val_compare_and_swap((destination), (comperand), (exchange))
 #define InterlockedCompareExchangePointer(destination, exchange, comperand) __sync_val_compare_and_swap((destination), (comperand), (exchange))
-#define InterlockedExchangePointer(target, value) __sync_lock_test_and_set((target), (value))
-#define InterlockedExchangeAdd(addend, value) __sync_fetch_and_add((addend), (value))
+#define InterlockedExchangeAdd(addend, value) \
+    ((sizeof(*(addend)) == 8) \
+        ? (long)__sync_fetch_and_add((volatile int64_t*)(addend), (int64_t)(int32_t)(value)) \
+        : (long)__sync_fetch_and_add((volatile int32_t*)(addend), (int32_t)(value)))
 #define InterlockedExchange64(target, value) __sync_lock_test_and_set((target), (value))
 
 #define _InterlockedIncrement(x) __sync_add_and_fetch((x), 1)
@@ -1112,7 +1114,10 @@ static inline void DeleteCriticalSection(CRITICAL_SECTION *cs) {
 #define _InterlockedCompareExchange(destination, exchange, comperand) __sync_val_compare_and_swap((destination), (comperand), (exchange))
 #define _InterlockedCompareExchangePointer(destination, exchange, comperand) __sync_val_compare_and_swap((destination), (comperand), (exchange))
 #define _InterlockedExchangePointer(target, value) __sync_lock_test_and_set((target), (value))
-#define _InterlockedExchangeAdd(addend, value) __sync_fetch_and_add((addend), (value))
+#define _InterlockedExchangeAdd(addend, value) \
+    ((sizeof(*(addend)) == 8) \
+        ? (long)__sync_fetch_and_add((volatile int64_t*)(addend), (int64_t)(int32_t)(value)) \
+        : (long)__sync_fetch_and_add((volatile int32_t*)(addend), (int32_t)(value)))
 #define _InterlockedCompareExchange64(destination, exchange, comperand) __sync_val_compare_and_swap((destination), (comperand), (exchange))
 #define _InterlockedExchange64(target, value) __sync_lock_test_and_set((target), (value))
 

@@ -27,7 +27,10 @@ static inline unsigned char _BitScanReverse(unsigned long *index, unsigned long 
 #endif
 
 #ifndef _InterlockedExchangeAdd
-#define _InterlockedExchangeAdd(target, val) __sync_fetch_and_add((target), (val))
+#define _InterlockedExchangeAdd(target, val) \
+    ((sizeof(*(target)) == 8) \
+        ? (long)__sync_fetch_and_add((volatile int64_t*)(target), (int64_t)(int32_t)(val)) \
+        : (long)__sync_fetch_and_add((volatile int32_t*)(target), (int32_t)(val)))
 #endif
 
 static inline uint64_t __rdtsc(void) {
