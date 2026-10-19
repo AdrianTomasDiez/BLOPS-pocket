@@ -1206,7 +1206,6 @@ void __cdecl CL_SetLocalClientConnectionState(int client, connstate_t state)
 #if defined(__APPLE__)
     if (state == CA_ACTIVE)
     {
-        extern "C" void bo1_ios_set_game_running(void);
         bo1_ios_set_game_running();
     }
 #endif

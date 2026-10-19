@@ -33,9 +33,10 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            build || echo "::warning::Compilación parcial del motor C++ (analizando compatibilidad en macOS)"
+            build
           mkdir -p launcher/libs
-          find engine_build -name "libBO1Zombies.a" -exec cp {} launcher/libs/ \; || true
+          find engine_build -name "libBO1Zombies.a" -exec cp {} launcher/libs/ \;
+          test -f launcher/libs/libBO1Zombies.a || { echo "ERROR: libBO1Zombies.a no fue generado por xcodebuild"; exit 1; }
 
       - name: Instalar XcodeGen
         run: brew install xcodegen

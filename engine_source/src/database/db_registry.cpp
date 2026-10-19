@@ -4192,7 +4192,6 @@ int __cdecl DB_TryLoadXFileInternal(const char *zoneName, int zoneFlags)
     else
     {
 #if defined(__APPLE__)
-        extern "C" void bo1_ios_update_progress(const char *zone, const char *asset, int current, int total, const char *stage);
         bo1_ios_update_progress(zoneName, "Montando archivo de zona...", 0, 1, "Abriendo FastFile");
 #endif
         g_zoneIndex = 0;
