@@ -144,5 +144,7 @@ Cuando la cuota mensual de GitHub Actions se agota (como los 2.000 min mensuales
 - **Pruebas:** `node --test tools/*.test.mjs` → 51/51 pasando. `git diff --check` limpio.
 - **Telemetría de Carga en Tiempo Real:** Conexión C++ ↔ Swift 1:1 mediante `bo1_ios_get_progress_info` en `db_file_load.cpp` (`Load_XAssetArrayCustom`). Muestra nombres reales de FastFiles, nombres reales de assets en carga, contador exacto `X / Y`, porcentaje real de avance y banner destacado de errores nativos en caso de fallo.
 - **Rutas de FastFiles:** Corrección de separadores Windows `\\` a POSIX `/` en `db_registry.cpp` y priorización de la ruta activa del juego en `Sys_DefaultInstallPath()`.
-- **Siguiente paso:** Generar la build de la IPA y verificar en el iPhone la carga visual asset por asset de Kino der Toten.
+- **Enlace de símbolos C++ (CI Fix):** Resuelto fallo de enlace `ld: symbol(s) not found for architecture arm64` añadiendo vinculación `extern "C"` a las llamadas de telemetría y error (`bo1_ios_set_error`, `bo1_ios_update_progress`, `bo1_ios_set_game_running`) en `common.cpp`, `db_registry.cpp` y `cl_cgame_mp.cpp`.
+- **Siguiente paso:** Verificar la finalización del workflow en CI y probar la IPA con la carga de Kino der Toten en el iPhone.
+
 
