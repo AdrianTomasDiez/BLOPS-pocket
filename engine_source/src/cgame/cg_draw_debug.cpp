@@ -1428,7 +1428,7 @@ void __cdecl CG_DrawVersion()
         h = (float)UI_TextHeight(font, fontScale);
         UI_DrawText(
             &scrPlaceFullUnsafe,
-            (char *)version->current.integer,
+            version->current.string,
             0x7FFFFFFF,
             font,
             (float)(-(w) - cg_drawVersionX->current.value) + 1.0,
@@ -1440,7 +1440,7 @@ void __cdecl CG_DrawVersion()
             0);
         UI_DrawText(
             &scrPlaceFullUnsafe,
-            (char *)version->current.integer,
+            version->current.string,
             0x7FFFFFFF,
             font,
             -(w) - cg_drawVersionX->current.value,

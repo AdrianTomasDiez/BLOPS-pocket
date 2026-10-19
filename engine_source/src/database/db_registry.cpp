@@ -4169,6 +4169,15 @@ int __cdecl DB_TryLoadXFileInternal(const char *zoneName, int zoneFlags)
     zoneFile = CreateFileA(filename, 0x80000000, 1u, 0, 3u, 0x60000000u, 0);
     if ( zoneFile == (void *)-1 )
         DB_ModXFileHandle(zoneName, &zoneFile, &zoneDir);
+#if defined(__APPLE__)
+    /* iOS: the install ships code zones without the "en_" prefix (zone/Common/code_pre_gfx_mp.ff);
+       the engine hardcodes English, so retry the unprefixed name before giving up. */
+    if ( zoneFile == (void *)-1 && !strncmp(zoneName, "en_", 3) )
+    {
+        DB_BuildOSPath(zoneName + 3, ".ff", 0x100u, filename);
+        zoneFile = CreateFileA(filename, 0x80000000, 1u, 0, 3u, 0x60000000u, 0);
+    }
+#endif
     if ( zoneFile == (void *)-1 )
     {
         v2 = strstr(filename, "_load");

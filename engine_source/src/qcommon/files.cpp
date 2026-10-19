@@ -16,7 +16,7 @@ int __cdecl FS_SV_FileExists(char *file, char *dir)
     FILE *f; // [esp+4h] [ebp-10Ch]
     char testpath[260]; // [esp+8h] [ebp-108h] BYREF
 
-    FS_BuildOSPath((char *)fs_homepath->current.integer, dir, file, testpath);
+    FS_BuildOSPath(fs_homepath->current.string, dir, file, testpath);
     f = FS_FileOpenReadBinary(testpath);
     if ( !f )
         return 0;
@@ -65,7 +65,7 @@ int __cdecl FS_SV_FOpenFileRead(char *filename, char *dir, int *fp)
     fsh[f].handleFiles.file.o = Binary;
     if (!fsh[f].handleFiles.file.o && I_stricmp(fs_homepath->current.string, fs_basepath->current.string))
     {
-        FS_BuildOSPath((char *)fs_basepath->current.integer, dir, filename, ospath);
+        FS_BuildOSPath(fs_basepath->current.string, dir, filename, ospath);
         if (fs_debug->current.integer)
             Com_Printf(10, "FS_SV_FOpenFileRead (fs_basepath): %s\n", ospath);
         v5 = FS_FileOpenReadBinary(ospath);
@@ -73,7 +73,7 @@ int __cdecl FS_SV_FOpenFileRead(char *filename, char *dir, int *fp)
     }
     if (!fsh[f].handleFiles.file.o)
     {
-        FS_BuildOSPath((char *)fs_cdpath->current.integer, dir, filename, ospath);
+        FS_BuildOSPath(fs_cdpath->current.string, dir, filename, ospath);
         if (fs_debug->current.integer)
             Com_Printf(10, "FS_SV_FOpenFileRead (fs_cdpath) : %s\n", ospath);
         v6 = FS_FileOpenReadBinary(ospath);

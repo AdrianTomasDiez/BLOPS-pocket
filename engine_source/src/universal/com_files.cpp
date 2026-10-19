@@ -471,7 +471,7 @@ int __cdecl FS_FileExists(char *file)
     _iobuf *f; // [esp+4h] [ebp-10Ch]
     char testpath[260]; // [esp+8h] [ebp-108h] BYREF
 
-    FS_BuildOSPath((char *)fs_homepath->current.integer, fs_gamedir, file, testpath);
+    FS_BuildOSPath(fs_homepath->current.string, fs_gamedir, file, testpath);
     f = FS_FileOpenReadBinary(testpath);
     if ( !f )
         return 0;
@@ -904,7 +904,7 @@ unsigned int __cdecl FS_FOpenFileReadForThread(const char *filename, int *file, 
                                     if ( fs_copyfiles->current.enabled && !I_stricmp(dir->path, fs_cdpath->current.string) )
                                     {
                                         FS_BuildOSPathForThread(
-                                            (char *)fs_basepath->current.integer,
+                                            fs_basepath->current.string,
                                             dir->gamedir,
                                             sanitizedName,
                                             copypath,
@@ -1984,7 +1984,7 @@ void __cdecl FS_AddUserMapDirIWDs(char *pszGameFolder)
         if ( i->iwd && !I_stricmp(i->iwd->iwdGamename, pszGameFolder) )
             return;
     }
-    FS_AddIwdFilesForGameDirectory((char *)fs_homepath->current.integer, pszGameFolder);
+    FS_AddIwdFilesForGameDirectory(fs_homepath->current.string, pszGameFolder);
 }
 
 int bLanguagesListed;
@@ -2470,16 +2470,16 @@ void __cdecl FS_Startup(const char *gameName, bool allow_devraw)
     if ( fs_usedevdir->current.enabled )
     {
         if ( *(_BYTE *)fs_basepath->current.integer )
-            FS_AddDevGameDirs((char *)fs_basepath->current.integer, allow_devraw);
+            FS_AddDevGameDirs(fs_basepath->current.string, allow_devraw);
         if ( *(_BYTE *)fs_homepath->current.integer && I_stricmp(fs_basepath->current.string, fs_homepath->current.string) )
-            FS_AddDevGameDirs((char *)fs_homepath->current.integer, allow_devraw);
+            FS_AddDevGameDirs(fs_homepath->current.string, allow_devraw);
         if ( *(_BYTE *)fs_cdpath->current.integer && I_stricmp(fs_basepath->current.string, fs_cdpath->current.string) )
-            FS_AddDevGameDirs((char *)fs_cdpath->current.integer, allow_devraw);
+            FS_AddDevGameDirs(fs_cdpath->current.string, allow_devraw);
     }
     if ( *(_BYTE *)fs_cdpath->current.integer && I_stricmp(fs_basepath->current.string, fs_cdpath->current.string) )
-        FS_AddLocalizedGameDirectory((char *)fs_cdpath->current.integer, gameName);
+        FS_AddLocalizedGameDirectory(fs_cdpath->current.string, gameName);
     if ( *(_BYTE *)fs_basepath->current.integer )
-        FS_AddLocalizedGameDirectory((char *)fs_basepath->current.integer, "players");
+        FS_AddLocalizedGameDirectory(fs_basepath->current.string, "players");
     // play-copy: SP FS_Startup adds "players" from fs_basepath only (SP 0x005C8346: push [fs_basepath+0x18],
     // edi = "players" 0x00A29054), same as MP. The shipped game runs with fs_homepath == fs_basepath; our Play
     // launch (fs_h != fs_b) writes the config to fs_homepath\players (Com_WriteConfiguration -> FS_WriteFile),
@@ -2488,34 +2488,34 @@ void __cdecl FS_Startup(const char *gameName, bool allow_devraw)
         && *(_BYTE *)fs_homepath->current.integer
         && I_stricmp(fs_homepath->current.string, fs_basepath->current.string) )
     {
-        FS_AddLocalizedGameDirectory((char *)fs_homepath->current.integer, "players");
+        FS_AddLocalizedGameDirectory(fs_homepath->current.string, "players");
     }
     if ( *(_BYTE *)fs_basepath->current.integer )
     {
         v3 = va("%s_shared", gameName);
-        FS_AddLocalizedGameDirectory((char *)fs_basepath->current.integer, v3);
-        FS_AddLocalizedGameDirectory((char *)fs_basepath->current.integer, gameName);
+        FS_AddLocalizedGameDirectory(fs_basepath->current.string, v3);
+        FS_AddLocalizedGameDirectory(fs_basepath->current.string, gameName);
     }
     if ( *(_BYTE *)fs_basepath->current.integer && I_stricmp(fs_homepath->current.string, fs_basepath->current.string) )
     {
         v4 = va("%s_shared", gameName);
-        FS_AddLocalizedGameDirectory((char *)fs_basepath->current.integer, v4);
-        FS_AddLocalizedGameDirectory((char *)fs_homepath->current.integer, gameName);
+        FS_AddLocalizedGameDirectory(fs_basepath->current.string, v4);
+        FS_AddLocalizedGameDirectory(fs_homepath->current.string, gameName);
     }
     if ( *(_BYTE *)fs_basegame->current.integer
         && !I_stricmp(gameName, "main")
         && I_stricmp(fs_basegame->current.string, gameName)
         && *(_BYTE *)fs_basepath->current.integer )
     {
-        FS_AddGameDirectory((char *)fs_basepath->current.integer, fs_basegame->current.string, 0, 0);
+        FS_AddGameDirectory(fs_basepath->current.string, fs_basegame->current.string, 0, 0);
     }
     if ( *(_BYTE *)fs_gameDirVar->current.integer
         && !I_stricmp(gameName, "main")
         && I_stricmp(fs_gameDirVar->current.string, gameName)
         && *(_BYTE *)fs_basepath->current.integer )
     {
-        FS_AddGameDirectory((char *)fs_basepath->current.integer, "usermaps", 0, 0);
-        FS_AddGameDirectory((char *)fs_basepath->current.integer, fs_gameDirVar->current.string, 0, 0);
+        FS_AddGameDirectory(fs_basepath->current.string, "usermaps", 0, 0);
+        FS_AddGameDirectory(fs_basepath->current.string, fs_gameDirVar->current.string, 0, 0);
     }
     // mod: fs_mods "a b c" stacks mods/a, mods/b, mods/c on top of the above (later wins for plain files), then
     // mods/_stack: the hook files every mod may ship (maps/<map>_ffotd.gsc, maps/_zombiemode_ffotd.gsc) chained, so
@@ -2528,8 +2528,8 @@ void __cdecl FS_Startup(const char *gameName, bool allow_devraw)
         I_strncpyz(gamedir, fs_gamedir, 256);
         int count = FS_ModStackNames(names, 16);
         for ( int m = 0; m < count; ++m )
-            FS_AddGameDirectory((char *)fs_basepath->current.integer, va("mods/%s", names[m]), 0, 0);
-        FS_AddGameDirectory((char *)fs_basepath->current.integer, "mods/_stack", 0, 0);
+            FS_AddGameDirectory(fs_basepath->current.string, va("mods/%s", names[m]), 0, 0);
+        FS_AddGameDirectory(fs_basepath->current.string, "mods/_stack", 0, 0);
         I_strncpyz(fs_gamedir, gamedir, 256);
     }
     Com_ReadCDKey();
@@ -2674,7 +2674,7 @@ void FS_RegisterDvars()
     fs_ignoreLocalized = _Dvar_RegisterBool("fs_ignoreLocalized", 0, 0xA0u, "Ignore localized files");
     homePath = (char *)RETURN_ZERO32();
     if ( !homePath || !*homePath )
-        homePath = (char *)fs_basepath->reset.integer;
+        homePath = fs_basepath->reset.string;
     fs_homepath = _Dvar_RegisterString("fs_h", homePath, 0x210u, "Game home path");
     FS_GetOsFolderPath(5, ospathPersonalDocuments);
     fs_userDocuments = _Dvar_RegisterString(

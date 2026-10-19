@@ -910,9 +910,9 @@ void __cdecl    G_InitGame(int levelTime, int randomSeed, int restart, int regis
     if (*(_BYTE *)g_log->current.integer)
     {
         if (g_logSync->current.enabled)
-            FS_FOpenFileByMode((char *)g_log->current.integer, &level.logFile, FS_APPEND_SYNC);
+            FS_FOpenFileByMode(g_log->current.string, &level.logFile, FS_APPEND_SYNC);
         else
-            FS_FOpenFileByMode((char *)g_log->current.integer, &level.logFile, FS_APPEND);
+            FS_FOpenFileByMode(g_log->current.string, &level.logFile, FS_APPEND);
         if (level.logFile)
         {
             char serverinfo[1024];
@@ -2398,7 +2398,7 @@ void G_PrintAllFastFileErrors()
     // zombies: the SP front end loads no common zone (SP 0x004C8940..0x004C8966): nothing to report there.
     if ( !Com_IsSPFrontEndRunning() )
         G_PrintFastFileErrors(G_SP_IsSPLevel() ? (char*)"common_zombie" : (char*)"common_mp");
-    G_PrintFastFileErrors((char *)sv_mapname->current.integer);
+    G_PrintFastFileErrors(sv_mapname->current.string);
 }
 
 void __cdecl G_PrintFastFileErrors(char *fastfile)

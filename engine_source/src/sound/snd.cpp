@@ -2274,7 +2274,7 @@ void __cdecl SND_UpdateDebugAlias()
         soundDir[1] = 0.0f;
         soundDir[2] = 0.0f;
         entHandle.field = SND_EntHandle(0, 4094, 0, 0, 1, TEAM_FREE).field;
-        SND_Play((char *)snd_start_alias->current.integer, 0, 1.0, entHandle, g_snd.listeners[0].orient.origin, soundDir, 0);
+        SND_Play(snd_start_alias->current.string, 0, 1.0, entHandle, g_snd.listeners[0].orient.origin, soundDir, 0);
         Dvar_SetString((dvar_s *)snd_start_alias, "");
     }
 }
