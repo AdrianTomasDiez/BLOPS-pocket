@@ -36,7 +36,7 @@ union DvarValue // sizeof=0x10
         unsigned __int64 unsignedInt64;
         float value;
         float vector[4];
-        const char *string;
+        char *string;
         unsigned __int8 color[4];
 };
 
