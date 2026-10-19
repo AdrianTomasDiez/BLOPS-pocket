@@ -987,7 +987,7 @@ void SV_UpdateHostnameDefault()
     const bool atDefault = !strcmp(dvar->current.string, dvar->reset.string)
         && !strcmp(dvar->latched.string, dvar->reset.string);
     DvarValue value = {};
-    value.string = hostname;
+    value.string = const_cast<char *>(hostname);
     Dvar_UpdateResetValue(dvar, value);
     if (atDefault)
         Dvar_SetString(dvar, hostname);
