@@ -1945,19 +1945,34 @@ void __cdecl Com_Init_Try_Block_Function(char *commandLine)
     max = Com_GetBuildName();
     BuildVersion = Com_GetBuildVersion();
     Com_Printf(16, "%s %s build %s %s\n", BuildVersion, max, "win-x86", "Nov    5 2010");
+
+    Sys_Print((char *)"[BO1 Com_Init 1/14] Com_ParseCommandLine\n");
     Com_ParseCommandLine(commandLine);
+
+    Sys_Print((char *)"[BO1 Com_Init 2/14] SL_Init(SERVER)\n");
     SL_Init(SCRIPTINSTANCE_SERVER);
+
+    Sys_Print((char *)"[BO1 Com_Init 3/14] SL_Init(CLIENT)\n");
     SL_Init(SCRIPTINSTANCE_CLIENT);
+
+    Sys_Print((char *)"[BO1 Com_Init 4/14] Swap_Init & Cbuf_Init & Cmd_Init\n");
     Swap_Init();
     Cbuf_Init();
     Cmd_Init();
+
+    Sys_Print((char *)"[BO1 Com_Init 5/14] Com_StartupVariable(0)\n");
     Com_StartupVariable(0);
+
+    Sys_Print((char *)"[BO1 Com_Init 6/14] Com_InitDvars\n");
     Com_InitDvars();
+
+    Sys_Print((char *)"[BO1 Com_Init 7/14] IK_InitSystem\n");
     IK_InitSystem();
     initStartTime = 0;
 
-    if ( useFastFile->current.enabled )
+    if ( useFastFile && useFastFile->current.enabled )
     {
+        Sys_Print((char *)"[BO1 Com_Init 8/14] PMem_Init & LiveSteam_Init\n");
         PMem_Init();
         LiveSteam_Init();
         DB_SetInitializing(1);
@@ -1966,18 +1981,25 @@ void __cdecl Com_Init_Try_Block_Function(char *commandLine)
         PMem_BeginAlloc("$init", 1u, TRACK_MISC);
     }
 
+    Sys_Print((char *)"[BO1 Com_Init 9/14] Stream_Init\n");
     Stream_Init();
     //BLOPS_NULLSUB();
 
-    if ( useFastFile->current.enabled )
+    if ( useFastFile && useFastFile->current.enabled )
+    {
+        Sys_Print((char *)"[BO1 Com_Init 10/14] Com_InitCodeXAssets\n");
         Com_InitCodeXAssets();
+    }
 
+    Sys_Print((char *)"[BO1 Com_Init 11/14] CL_InitKeyCommands\n");
     CL_InitKeyCommands();
     CL_InitGamepadCommands();
     CL_InitGamepadAxisBindings();
 
+    Sys_Print((char *)"[BO1 Com_Init 12/14] FS_InitFilesystem\n");
     FS_InitFilesystem(1);
 
+    Sys_Print((char *)"[BO1 Com_Init 13/14] Con_InitChannels & TaskManager2_Init\n");
     Con_InitChannels();
     TaskManager2_Init();
 
@@ -1985,6 +2007,7 @@ void __cdecl Com_Init_Try_Block_Function(char *commandLine)
     dwInit();
 #endif
 
+    Sys_Print((char *)"[BO1 Com_Init 14/14] DDL_Init & StartupConfigs & ClientGameStates\n");
     DDL_Init();
     Com_InitClientGameStates();
     Con_Restricted_SecureConfigs();
@@ -2009,7 +2032,7 @@ void __cdecl Com_Init_Try_Block_Function(char *commandLine)
     Com_CheckSetRecommended(0);
     Com_StartupVariable(0);
 
-    if ( !useFastFile->current.enabled )
+    if ( useFastFile && !useFastFile->current.enabled )
         SEH_UpdateLanguageInfo();
 
     if (IsDedicatedServer())
@@ -2180,7 +2203,7 @@ void __cdecl Com_Init_Try_Block_Function(char *commandLine)
     mjpeg_initonce();
     COM_PlayIntroMovies();
 
-    if ( useFastFile->current.enabled )
+    if ( useFastFile && useFastFile->current.enabled )
     {
         PMem_EndAlloc("$init", 1u);
         DB_SetInitializing(0);
@@ -2190,6 +2213,7 @@ void __cdecl Com_Init_Try_Block_Function(char *commandLine)
 
     R_EndRemoteScreenUpdate(0);
     com_fullyInitialized = 1;
+    Sys_Print((char *)"[BO1 Engine] --- Common Initialization Complete ---\n");
     Com_Printf(16, "--- Common Initialization Complete ---\n");
     Com_DvarDump(6, 0);
 }

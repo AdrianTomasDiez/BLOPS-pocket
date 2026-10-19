@@ -145,8 +145,13 @@ Cuando la cuota mensual de GitHub Actions se agota (como los 2.000 min mensuales
 - **Telemetría de Carga en Tiempo Real:** Conexión C++ ↔ Swift 1:1 mediante `bo1_ios_get_progress_info` en `db_file_load.cpp` (`Load_XAssetArrayCustom`). Muestra nombres reales de FastFiles, nombres reales de assets en carga, contador exacto `X / Y`, porcentaje real de avance y banner destacado de errores nativos en caso de fallo.
 - **Rutas de FastFiles:** Corrección de separadores Windows `\\` a POSIX `/` en `db_registry.cpp` y priorización de la ruta activa del juego en `Sys_DefaultInstallPath()`.
 - **Corrección Cuelgue en 5/8 (Dvar_Init):** Se corrigió el cuelgue en el paso 5/8 (`Dvar_Init`). Al invocar `Sys_UnlockRead`, el código original de Treyarch usaba `_InterlockedExchangeAdd(&critSect->readCount, 0xFFFFFFFF)`. En ARM64 (LP64), `long` es de 64 bits y `0xFFFFFFFF` es `unsigned int`, por lo que se convertía a `+4294967295LL` en vez de `-1`, dejando `readCount = 4294967296` y provocando un bucle infinito en `Sys_LockWrite`. Se actualizaron las macros `_InterlockedExchangeAdd` con extensión con signo `(int)`, se definió `FastCriticalSection` con `volatile __int32` (8 bytes reales), se restauraron los stubs `InterlockedExchangePointer` y `NET_RestartDebug`, y se implementó `NET_Sleep` con `sched_yield()`/`usleep`.
-- **Compilación en CI (100% Exitosa):** El workflow ha completado sin errores en macOS ARM64 y la nueva IPA (`BLOPSPocket.ipa`) ya está publicada en [GitHub Releases](https://github.com/AdrianTomasDiez/BLOPS-pocket/releases/tag/latest).
-- **Siguiente paso:** Instalar la IPA actualizada en el iPhone y verificar que supera el paso 5/8 e inicia la carga de FastFiles de Kino der Toten.
+- **Diagnóstico y Corrección de Cierre Inesperado en Com_Init:** Tras superar los pasos 1/8 a 6/8 y el paso 5/8 (Dvar_Init), la app se cerró de golpe tras imprimir la versión de build en `Com_Init` (`Com_Init_Try_Block_Function`).
+  1. Se implementó un manejador de señales nativas POSIX (`Sys_InstallCrashHandlers`) para capturar `SIGSEGV`, `SIGBUS`, `SIGABRT`, `SIGILL`, `SIGFPE` y `SIGTRAP` imprimiendo la dirección de fallo (`si_addr`), nombre de la señal y el volcado de pila (`backtrace`/`backtrace_symbols`) directamente a `bo1_console.log` y `bo1_error.log`.
+  2. Se conectó `Sys_HeadlessLogAssert` para que cualquier fallo de aserción (`Assert_MyHandler`) en el motor no termine en `__debugbreak()` silencioso, sino que escriba de inmediato el archivo, línea y mensaje a los logs y notifique a la UI en SwiftUI (`bo1_ios_set_error`).
+  3. Se deshabilitaron operaciones de Steam en iOS (`LiveSteam_CreateSteamAppIdFile` y `LiveSteam_Init`), evitando accesos a archivos de PC inexistentes.
+  4. Se añadió comprobación nula defensiva en `SL_Init` para `hashTable` de `gScrStringGlob` y en accesos a `useFastFile`.
+  5. Se instrumentó `Com_Init_Try_Block_Function` con trazas 1/14 a 14/14 que se vuelcan y vacían (`fflush`) de inmediato en disco en cada subpaso.
+- **Siguiente paso:** Subir a GitHub Actions, generar la nueva IPA y probar en el iPhone para ver la traza exacta o comprobar el paso a la carga de FastFiles.
 
 
 

@@ -176,6 +176,8 @@ void bo1_ios_init(const char *gameDirectory)
     snprintf(startMsg, sizeof(startMsg), "\n=== [BO1 iOS Engine Init] gameDirectory: %s ===", gameDirectory ? gameDirectory : "(null)");
     logMsg(startMsg);
 
+    Sys_InstallCrashHandlers();
+
     // Preparar línea de comandos para Treyarch engine
     static char s_cmdline[1024];
     snprintf(s_cmdline, sizeof(s_cmdline),

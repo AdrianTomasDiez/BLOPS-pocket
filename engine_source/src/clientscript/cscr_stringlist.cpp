@@ -193,6 +193,9 @@ void __cdecl SL_Init(scriptInstance_t inst)
     }
     MT_Init(inst);
     Sys_EnterCriticalSection(CRITSECT_SCRIPT_STRING);
+    if (!gScrStringGlob[inst].hashTable) {
+        gScrStringGlob[inst].hashTable = (inst != SCRIPTINSTANCE_SERVER ? &gScrStringHashTable[0x8000] : &gScrStringHashTable[0]);
+    }
     gScrStringGlob[inst].hashTable->status_next = 0;
     prev = 0;
     for (hash = 1; hash < (inst != SCRIPTINSTANCE_SERVER ? 0x4000 : 0x8000); ++hash)

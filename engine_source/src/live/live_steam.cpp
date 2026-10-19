@@ -230,6 +230,10 @@ void __cdecl LiveSteam_PopOverlayForSteamID(unsigned __int64 steamID)
 
 void __cdecl LiveSteam_Init()
 {
+#if defined(__APPLE__)
+    g_liveSteamInitialized = false;
+    livesteam_sv_vac = _Dvar_RegisterBool("sv_vac", 0, 1u, "Enable VAC on this server");
+#else
     LiveSteam_CreateSteamAppIdFile();
     // no-steam: retail LiveSteam_Init starts SteamAPI here and quits (LiveSteam_Quit, WIN_NO_STEAM) when it fails;
     // KB starts it earlier in Steam_Init (win_steam.cpp) and keeps running without Steam. "Initialized" keeps the
@@ -237,6 +241,7 @@ void __cdecl LiveSteam_Init()
     // LiveSteam_DWUserNameFromSteamID, LiveSteam_AuthRequestTicket) stay off without the Steam client.
     g_liveSteamInitialized = g_steamAPIInitialized;
     livesteam_sv_vac = _Dvar_RegisterBool("sv_vac", 1, 1u, "Enable VAC on this server");
+#endif
 }
 
 void __cdecl LiveSteam_TestFriends_f()
@@ -274,6 +279,9 @@ void __cdecl LiveSteam_TestFriends_f()
 
 _iobuf *LiveSteam_CreateSteamAppIdFile()
 {
+#if defined(__APPLE__)
+    return nullptr;
+#else
     _iobuf *result; // eax
     _iobuf *f; // [esp+0h] [ebp-4h]
 
@@ -291,6 +299,7 @@ _iobuf *LiveSteam_CreateSteamAppIdFile()
         }
     }
     return result;
+#endif
 }
 
 void __cdecl LiveSteam_Shutdown()

@@ -7,6 +7,7 @@ extern "C" {
 void bo1_ios_update_progress(const char *zone, const char *asset, int current, int total, const char *stage);
 void bo1_ios_set_error(const char *error);
 void bo1_ios_set_game_running(void);
+void Sys_InstallCrashHandlers(void);
 
 void bo1_ios_get_progress_info(
     char *outZone, int maxZoneLen,

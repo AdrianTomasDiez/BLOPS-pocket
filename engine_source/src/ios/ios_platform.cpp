@@ -17,6 +17,8 @@
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
+#include <signal.h>
+#include <execinfo.h>
 
 // ----- Critical sections -----
 _RTL_CRITICAL_SECTION s_criticalSection[75];
@@ -263,7 +265,78 @@ bool __cdecl Sys_IsHeadlessClient() { return false; }
 void __cdecl Sys_HeadlessNoteHud(int pmType, bool hudDrawn) {}
 void __cdecl Sys_HeadlessTimeline(const char *what) {}
 void __cdecl Sys_HeadlessLevelNotify(const char *name) {}
-void __cdecl Sys_HeadlessLogAssert(const char *filename, int line, const char *message) {}
+
+void __cdecl Sys_HeadlessLogAssert(const char *filename, int line, const char *message)
+{
+    char buf[2048];
+    snprintf(buf, sizeof(buf), "\n[BO1 ASSERTION FAILED] %s:%d: %s\n", filename ? filename : "unknown", line, message ? message : "");
+    fprintf(stderr, "%s", buf);
+    Sys_Print(buf);
+    bo1_ios_set_error(buf);
+}
+
+static void bo1_crash_signal_handler(int sig, siginfo_t *info, void *ucontext)
+{
+    signal(sig, SIG_DFL);
+
+    const char *sigName = "UNKNOWN";
+    switch (sig) {
+        case SIGSEGV: sigName = "SIGSEGV (Segmentation Fault / Bad Memory Access)"; break;
+        case SIGBUS:  sigName = "SIGBUS (Bus Error / Alignment)"; break;
+        case SIGABRT: sigName = "SIGABRT (Abort)"; break;
+        case SIGILL:  sigName = "SIGILL (Illegal Instruction)"; break;
+        case SIGFPE:  sigName = "SIGFPE (Floating Point Exception)"; break;
+        case SIGTRAP: sigName = "SIGTRAP (Trap / Breakpoint / Assert)"; break;
+    }
+
+    char crashMsg[4096];
+    snprintf(crashMsg, sizeof(crashMsg),
+             "\n=======================================================\n"
+             "[BO1 NATIVE CRASH] Caught signal %d: %s\n"
+             "Faulting address: %p\n"
+             "=======================================================\n",
+             sig, sigName, info ? info->si_addr : nullptr);
+
+    fprintf(stderr, "%s", crashMsg);
+    Sys_Print(crashMsg);
+
+    void *callstack[64];
+    int frames = backtrace(callstack, 64);
+    char **symbols = backtrace_symbols(callstack, frames);
+    if (symbols) {
+        Sys_Print((char *)"[BO1 Callstack]:\n");
+        for (int i = 0; i < frames; ++i) {
+            char lineBuf[512];
+            snprintf(lineBuf, sizeof(lineBuf), "  [%02d] %s\n", i, symbols[i]);
+            Sys_Print(lineBuf);
+            fprintf(stderr, "%s", lineBuf);
+        }
+        free(symbols);
+    }
+
+    bo1_ios_set_error(crashMsg);
+
+    usleep(500000);
+    _exit(128 + sig);
+}
+
+void Sys_InstallCrashHandlers()
+{
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_sigaction = bo1_crash_signal_handler;
+    sa.sa_flags = SA_SIGINFO | SA_RESETHAND;
+
+    sigaction(SIGSEGV, &sa, NULL);
+    sigaction(SIGBUS, &sa, NULL);
+    sigaction(SIGABRT, &sa, NULL);
+    sigaction(SIGILL, &sa, NULL);
+    sigaction(SIGFPE, &sa, NULL);
+    sigaction(SIGTRAP, &sa, NULL);
+
+    Sys_Print((char *)"[BO1 iOS] Posix crash & assert signal handlers installed successfully\n");
+}
+
 unsigned int __cdecl Sys_HitchWatchBegin() { return 0; }
 void __cdecl Sys_HitchWatchEnd() {}
 void __cdecl Sys_SetQuitRequested() {}
