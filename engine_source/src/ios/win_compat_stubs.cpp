@@ -169,6 +169,7 @@ void __cdecl NET_Sleep(unsigned int msec) {
         usleep((useconds_t)msec * 1000);
     }
 }
+void __cdecl NET_RestartDebug() {}
 void __cdecl NET_ShutdownDebug() {}
 int __cdecl Sys_GetPacket(netadr_t *net_from, msg_t *net_message) { return 0; }
 char __cdecl Sys_SendPacket(unsigned int length, unsigned __int8 *data, netadr_t to) { return 1; }
