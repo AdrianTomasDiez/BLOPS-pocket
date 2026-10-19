@@ -66,7 +66,7 @@ inline void __cdecl MemFile_WriteData(MemoryFile *memFile, unsigned int byteCoun
     }
 }
 
-inline void __cdecl MemFile_WriteCString(MemoryFile *memFile, char *string)
+inline void __cdecl MemFile_WriteCString(MemoryFile *memFile, const char *string)
 {
     if (!string
         && !Assert_MyHandler(
