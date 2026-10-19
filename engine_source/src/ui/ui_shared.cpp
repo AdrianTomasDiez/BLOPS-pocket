@@ -8128,7 +8128,7 @@ char    Menu_Paint(
 
     ScopedScrPlaceViewStack scopedScrPlaceStack(scrPlaceViewStack, scrPlace); // [esp+B4h] [ebp-138h] BYREF
     //ScopedScrPlaceViewStack::ScopedScrPlaceViewStack(&scopedScrPlaceStack, scrPlaceViewStack, scrPlace);
-    if (*(_BYTE *)ui_showMenuOnly->current.integer
+    if (ui_showMenuOnly->current.string[0]
         && menu->window.name
         && I_stricmp(menu->window.name, ui_showMenuOnly->current.string))
     {

@@ -907,7 +907,7 @@ void __cdecl    G_InitGame(int levelTime, int randomSeed, int restart, int regis
         Com_Printf(15, "loadgame: G_InitGame loaded saved weapons\n");
     }
 
-    if (*(_BYTE *)g_log->current.integer)
+    if (g_log->current.string[0])
     {
         if (g_logSync->current.enabled)
             FS_FOpenFileByMode(g_log->current.string, &level.logFile, FS_APPEND_SYNC);
