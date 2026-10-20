@@ -2793,8 +2793,8 @@ bool __cdecl FS_IsBasePathValid()
 void __cdecl FS_InitFilesystem(bool allow_devraw)
 {
     Com_StartupVariable("fs_cdpath");
-    Com_StartupVariable("fs_b");
-    Com_StartupVariable("fs_h");
+    Com_StartupVariable("fs_basepath");
+    Com_StartupVariable("fs_homepath");
     Com_StartupVariable("fs_game");
     Com_StartupVariable("fs_mods"); // mod: fs_mods
     Com_StartupVariable("fs_copyfiles");
