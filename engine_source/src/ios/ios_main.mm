@@ -181,7 +181,7 @@ void bo1_ios_init(const char *gameDirectory)
     // Preparar línea de comandos para Treyarch engine
     static char s_cmdline[1024];
     snprintf(s_cmdline, sizeof(s_cmdline),
-             "+set fs_basepath \"%s\" +set fs_homepath \"%s\" +set developer 0 +set bo1_zombies 1 +set sv_cheats 1 +set sys_smp_allowed 0 +set r_smp 0 +set com_introPlayed 1 +devmap zombie_theater",
+             "+set fs_b \"%s\" +set fs_h \"%s\" +set developer 0 +set bo1_zombies 1 +set sv_cheats 1 +set sys_smp_allowed 0 +set r_smp 0 +set com_introPlayed 1 +devmap zombie_theater",
              gameDirectory, gameDirectory);
 
     logMsg("[BO1 iOS Step 1/8] Sys_InitializeCriticalSections");
