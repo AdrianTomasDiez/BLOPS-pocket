@@ -407,6 +407,22 @@ class EngineViewController: UIViewController {
 
     private var engineReady = false
 
+    /// Añade una línea a bo1_console.log (Documents/ y Documents/BLOPS/), igual que el motor.
+    private func appendLauncherLog(_ message: String) {
+        guard let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first,
+              let data = (message + "\n").data(using: .utf8) else { return }
+        let blopsDir = docs.appendingPathComponent("BLOPS")
+        for targetURL in [docs.appendingPathComponent("bo1_console.log"), blopsDir.appendingPathComponent("bo1_console.log")] {
+            if FileManager.default.fileExists(atPath: targetURL.path), let handle = try? FileHandle(forWritingTo: targetURL) {
+                handle.seekToEndOfFile()
+                handle.write(data)
+                try? handle.close()
+            } else {
+                try? data.write(to: targetURL)
+            }
+        }
+    }
+
     private func setupEngine() {
         guard let folder = gameFolderURL else { return }
         print("[Engine] Inicializando motor nativo BO1 Zombies con carpeta: \(folder.path)")
@@ -448,11 +464,10 @@ class EngineViewController: UIViewController {
             // de PC los trae y la de iOS no. Se crean solo si faltan.
             do {
                 let created = try BaseGameData.ensureInstalled(in: folder)
-                if !created.isEmpty {
-                    print("[Engine] Archivos base creados en main/: \(created.joined(separator: ", "))")
-                }
+                let check = folder.appendingPathComponent("main/fileSysCheck.cfg").path
+                self.appendLauncherLog("[BLOPS Launcher] Archivos base creados: \(created) | fileSysCheck.cfg existe: \(FileManager.default.fileExists(atPath: check))")
             } catch {
-                print("[Engine] No se pudieron crear los archivos base en main/: \(error)")
+                self.appendLauncherLog("[BLOPS Launcher] ERROR creando archivos base en main/: \(error)")
             }
 
             folder.path.withCString { cPath in

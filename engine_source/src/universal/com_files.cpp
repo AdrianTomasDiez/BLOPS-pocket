@@ -2790,6 +2790,33 @@ bool __cdecl FS_IsBasePathValid()
     return FS_ReadFile("fileSysCheck.cfg", 0) > 0;
 }
 
+// Diagnóstico (iOS): se llama justo antes del Com_Error de fileSysCheck.cfg. Vuelca en bo1_console.log
+// las rutas reales de fs_b/fs_h/fs_game y si main/fileSysCheck.cfg existe (y su tamaño) en cada una.
+static void FS_DumpBasePathDiagnostics()
+{
+    char ospath[1024];
+    const char *bases[2] = { fs_basepath->current.string, fs_homepath->current.string };
+    const char *names[2] = { "fs_b", "fs_h" };
+
+    Com_Printf(10, "[BO1 diag] fs_b=\"%s\" fs_h=\"%s\" fs_game=\"%s\"\n", fs_basepath->current.string, fs_homepath->current.string, fs_gameDirVar->current.string);
+    for (int i = 0; i < 2; ++i)
+    {
+        FS_BuildOSPath((char *)bases[i], (char *)"main", (char *)"fileSysCheck.cfg", ospath);
+        FILE *f = fopen(ospath, "rb");
+        if (f)
+        {
+            fseek(f, 0, SEEK_END);
+            long size = ftell(f);
+            fclose(f);
+            Com_Printf(10, "[BO1 diag] %s: %s EXISTE, size=%ld\n", names[i], ospath, size);
+        }
+        else
+        {
+            Com_Printf(10, "[BO1 diag] %s: %s NO SE PUEDE ABRIR\n", names[i], ospath);
+        }
+    }
+}
+
 void __cdecl FS_InitFilesystem(bool allow_devraw)
 {
     Com_StartupVariable("fs_cdpath");
@@ -2806,10 +2833,13 @@ void __cdecl FS_InitFilesystem(bool allow_devraw)
     SEH_UpdateLanguageInfo();
     FS_SetRestrictions();
     if ( !FS_IsBasePathValid() )
+    {
+        FS_DumpBasePathDiagnostics();
         Com_Error(
             ERR_FATAL,
             "Couldn't load %s.    Make sure Call of Duty is run from the correct folder.",
             "fileSysCheck.cfg");
+    }
     I_strncpyz(lastValidBase, fs_basepath->current.string, 256);
     I_strncpyz(lastValidGame, fs_gameDirVar->current.string, 256);
 }
