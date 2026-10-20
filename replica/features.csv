@@ -1,0 +1,27 @@
+feature,area,priority,original,clone,notes
+Import Steam game folder,iOS launcher,must,yes,partial,document picker + sandbox copy (stub)
+Verify file integrity vs manifest,iOS launcher,must,yes,partial,hash/size checks (engine logic tested)
+Launch Kino der Toten Zombies,iOS launcher,must,yes,no,source-port engine entry
+Touch controls (move/aim/fire/reload),gameplay,must,yes,no,virtual sticks and buttons
+Zombie AI basic,gameplay,must,yes,no,spawning and pathfinding
+Weapon purchase and ammo,gameplay,must,yes,no,wall buys
+Points economy,gameplay,must,yes,no,earn/spend
+Round progression,gameplay,must,yes,no,round counter and difficulty
+Perk-a-Cola machines (4 core),gameplay,must,yes,no,Jug/Speed/Quick Revive/Double Tap
+Pack-a-Punch upgrade,gameplay,must,yes,no,5000 points upgrade
+Power switch and doors,gameplay,must,yes,no,map progression
+Game over and high score,gameplay,must,yes,no,survival rounds tracking
+Graphics quality presets,iOS launcher,should,yes,no,low/medium/high
+Sensitivity and control layout settings,iOS launcher,should,yes,no,persisted profile
+Audio volume controls,iOS launcher,should,yes,no,music/sfx/voice
+Pause and resume,gameplay,should,yes,no,in-game menu
+Power-ups (max ammo/double points/instakill),gameplay,should,yes,no,drop logic
+Mystery box,gameplay,could,yes,no,random weapon
+Hellhound rounds,gameplay,could,yes,no,special round
+Easter egg song,gameplay,could,yes,no,licensed audio risk
+Co-op multiplayer,gameplay,could,yes,no,local/network later
+Online leaderboards,online,skip,yes,skip,Activision services not replicable
+Exact Activision branding/UI art,branding,skip,yes,skip,clean-room UI required
+Licensed music and movie clips,audio,skip,yes,skip,copyright
+Campaign and multiplayer modes,scope,skip,yes,skip,out of first slice
+All Zombies maps,scope,skip,yes,skip,Kino only in v1
