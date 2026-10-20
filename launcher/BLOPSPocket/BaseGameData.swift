@@ -1,6 +1,8 @@
 // Archivos base de main/ que la instalación de PC trae y el Play de iOS no: el motor los exige en la
 // carpeta del juego. Generado desde engine_source/data/main/playlists_sp.info (mismo contenido que la
 // copia de escritorio). Lo escribe GameFolderLocator/NativeEngineView si falta; no sobrescribe.
+import Foundation
+
 enum BaseGameData {
     /// Marcador leído por FS_IsBasePathValid (com_files.cpp). Su contenido solo tiene que ser legible y no vacío.
     static let fileSysCheckContents = "// Marcador de instalación de BLOPS pocket (FS_IsBasePathValid).\n"
