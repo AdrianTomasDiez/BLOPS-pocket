@@ -1,4 +1,4 @@
-name: iOS IPA (unsigned)
+name: iOS IPA
 
 on:
   push:
@@ -42,23 +42,37 @@ jobs:
         run: |
           mkdir -p Payload
           cp -R app/build/Build/Products/Release-iphoneos/BLOPSPocket.app Payload/
-          zip -r BLOPSPocket-${{ github.run_number }}.ipa Payload
-          mv BLOPSPocket-${{ github.run_number }}.ipa $GITHUB_WORKSPACE/
+          zip -r BLOPSPocket.ipa Payload
           rm -rf Payload
 
-      - name: Upload artifact
+      - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: BLOPSPocket-unsigned
-          path: app/build/Build/Products/Release-iphoneos/BLOPSPocket.ipa
+          name: BLOPSPocket-${{ github.run_number }}
+          path: BLOPSPocket.ipa
 
-      - name: Create GitHub Release with IPA
+      # One single, always-newest release: same tag, same asset name.
+      # Download URL never changes:
+      #   https://github.com/AdrianTomasDiez/BLOPS-pocket/releases/download/latest-ipa/BLOPSPocket.ipa
+      - name: Remove previous IPA release
+        run: gh release delete latest-ipa --yes --cleanup-tag || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish IPA release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            BLOPSPocket-${{ github.run_number }}.ipa
-          name: Build ${{ github.run_number }} - ${{ github.sha }}
+          tag_name: latest-ipa
+          name: LAST IPA - build ${{ github.run_number }}
+          body: |
+            Unsigned IPA, install with AltStore / SideStore / Sideloadly.
+
+            Built from commit ${{ github.sha }} on ${{ github.event.repository.updated_at }}.
+
+            **This release is always overwritten with the newest build.**
+          files: BLOPSPocket.ipa
           draft: false
-          prerelease: true
+          prerelease: false
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
