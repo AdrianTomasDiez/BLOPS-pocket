@@ -11,11 +11,15 @@ files.
 - Engine core: file-manifest verification implemented and tested (`engine/`).
 - iOS app shell: SwiftUI views scaffolded (`app/`), not yet wired to engine.
 
-## Legal
+## Game files (your copy)
 
-You must own Call of Duty: Black Ops on Steam. This project does not include or
-distribute any game assets, trademarks, or copyrighted content. Clean-room
-reimplementation of functionality/UX only.
+On Windows (Steam), the game folder is usually:
+
+```
+C:\Program Files (x86)\Steam\steamapps\common\Call of Duty Black Ops
+```
+
+The app does not download or ship any game files. You import that folder from your PC/iPhone storage. The iOS app only reads files you own.
 
 ## Build engine (Windows/dev)
 
