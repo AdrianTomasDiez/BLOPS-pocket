@@ -444,6 +444,17 @@ class EngineViewController: UIViewController {
             guard let self = self else { return }
             self.securityAccessActive = folder.startAccessingSecurityScopedResource()
 
+            // El motor exige main/fileSysCheck.cfg y main/playlists_sp.info en la carpeta del juego; la copia
+            // de PC los trae y la de iOS no. Se crean solo si faltan.
+            do {
+                let created = try BaseGameData.ensureInstalled(in: folder)
+                if !created.isEmpty {
+                    print("[Engine] Archivos base creados en main/: \(created.joined(separator: ", "))")
+                }
+            } catch {
+                print("[Engine] No se pudieron crear los archivos base en main/: \(error)")
+            }
+
             folder.path.withCString { cPath in
                 bo1_ios_init(cPath)
             }
