@@ -1,0 +1,22 @@
+name: Engine
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S engine -B engine/build
+      - name: Build
+        run: cmake --build engine/build
+      - name: Test
+        run: ctest --test-dir engine/build --output-on-failure

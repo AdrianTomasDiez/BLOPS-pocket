@@ -1,0 +1,48 @@
+name: iOS IPA (unsigned)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: app
+        run: xcodegen generate
+
+      - name: Build (unsigned)
+        working-directory: app
+        run: |
+          xcodebuild \
+            -project BLOPSPocket.xcodeproj \
+            -scheme BLOPSPocket \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package IPA
+        working-directory: app/build/Build/Products/Release-iphoneos
+        run: |
+          mkdir -p Payload
+          cp -R BLOPSPocket.app Payload/
+          zip -r BLOPSPocket.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BLOPSPocket-unsigned
+          path: app/build/Build/Products/Release-iphoneos/BLOPSPocket.ipa

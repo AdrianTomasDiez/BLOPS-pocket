@@ -1,0 +1,25 @@
+name: BLOPSPocket
+options:
+  bundleIdPrefix: com.adriantomasdiez
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "15.0"
+targets:
+  BLOPSPocket:
+    type: application
+    platform: iOS
+    sources:
+      - path: BLOPSLauncher
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.adriantomasdiez.blopspocket
+      SWIFT_VERSION: "5.9"
+      INFOPLIST_FILE: BLOPSLauncher/Info.plist
+    info:
+      path: BLOPSLauncher/Info.plist
+      properties:
+        CFBundleDisplayName: "BLOPS Pocket"
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
