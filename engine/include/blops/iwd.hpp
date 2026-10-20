@@ -11,7 +11,7 @@ namespace blops {
 
 struct IwdEntry {
     std::string name;
-    std::uint32_t crc32 = 0;
+    std::uint32_t crc = 0;
     std::uint64_t compressedSize = 0;
     std::uint64_t uncompressedSize = 0;
     std::uint64_t localHeaderOffset = 0;

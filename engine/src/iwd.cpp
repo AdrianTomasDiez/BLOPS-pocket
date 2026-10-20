@@ -1,6 +1,6 @@
 #include "blops/iwd.hpp"
 
-#include <zlib.h>
+#include "miniz.h"
 
 #include <cstdio>
 #include <cstring>
@@ -102,7 +102,7 @@ IwdArchive openIwd(const std::string& path) {
         const unsigned char* r = cd.data() + pos;
         IwdEntry entry;
         entry.method = u16(r + 10);
-        entry.crc32 = u32(r + 16);
+        entry.crc = u32(r + 16);
         entry.compressedSize = u32(r + 20);
         entry.uncompressedSize = u32(r + 24);
         const std::uint16_t nameLen = u16(r + 28);
@@ -184,7 +184,7 @@ bool readIwdEntry(const std::string& path, const IwdEntry& entry,
     }
 
     const std::uint32_t crc = crc32(0, out.data(), static_cast<uInt>(out.size()));
-    if (crc != entry.crc32) {
+    if (crc != entry.crc) {
         error = "iwd: crc mismatch for " + entry.name;
         return false;
     }

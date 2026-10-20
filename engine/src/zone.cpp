@@ -1,6 +1,6 @@
 #include "blops/zone.hpp"
 
-#include <zlib.h>
+#include "miniz.h"
 
 #include <cstdio>
 #include <cstring>
