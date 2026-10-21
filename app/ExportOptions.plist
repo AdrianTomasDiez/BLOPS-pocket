@@ -3,10 +3,10 @@
 <plist version="1.0">
 <dict>
     <key>method</key>
-    <string>app-store</string>
+    <string>development</string>
     <key>teamID</key>
-    <string>YOUR_TEAM_ID</string>
+    <string></string>
     <key>uploadSymbols</key>
-    <true/>
+    <false/>
 </dict>
 </plist>

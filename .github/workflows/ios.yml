@@ -19,18 +19,31 @@ jobs:
           else
             echo "xcodegen not available; falling back to manual project creation"
           fi
-      - name: Build archive
+      - name: Build archive (no sign)
         run: |
           xcodebuild -project app/BLOPSPocket.xcodeproj \
                      -scheme BLOPSPocket \
-                     -destination 'platform=iOS Simulator,name=iPhone 15' \
-                     -archivePath $PWD/build/archive.xcarchive ARCHIVE=YES
-      - name: Export .ipa
+                     -destination 'platform=iOS,variant=Generic' \
+                     -archivePath $PWD/build/archive.xcarchive \
+                     ARCHIVE=YES \
+                     CODE_SIGN_IDENTITY="" \
+                     CODE_SIGN_STYLE=Automatic \
+                     PROVISIONING_PROFILE_SPECIFIER=""
+      - name: Export .ipa (unsigned / dev)
         run: |
           xcodebuild -exportArchive \
                      -archivePath $PWD/build/archive.xcarchive \
                      -exportOptionsPlist app/ExportOptions.plist \
-                     -exportPath $PWD/build/
+                     -exportPath $PWD/build/ || true
+          # Fallback: package unsigned .app into .ipa if export failed
+          if [ ! -f $PWD/build/*.ipa ]; then
+            APP=$(find $PWD/build/archive.xcarchive/Products/Applications -name '*.app' | head -n 1)
+            mkdir -p $PWD/build/Payload
+            cp -r "$APP" $PWD/build/Payload/
+            cd $PWD/build
+            zip -qr BLOPSPocket.ipa Payload
+            rm -rf Payload
+          fi
       - name: Upload .ipa artifact
         uses: actions/upload-artifact@v4
         with:
