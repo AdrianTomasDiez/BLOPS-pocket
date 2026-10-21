@@ -116,17 +116,10 @@ final class GameFileStore: ObservableObject {
         return nil
     }
 
-    #if os(iOS)
-    private var resolveOptions: URL.BookmarkResolutionOptions { [.withSecurityScope] }
-#if os(iOS)
-    private var createOptions: URL.BookmarkCreationOptions { [] }
-#else
-    private var createOptions: URL.BookmarkCreationOptions { [.withSecurityScope] }
-#endif
-    #else
+    // Security-scoped bookmarks are a macOS-only API. On iOS we keep the plain
+    // path and re-request access through the file picker when needed.
     private var resolveOptions: URL.BookmarkResolutionOptions { [] }
     private var createOptions: URL.BookmarkCreationOptions { [] }
-    #endif
 
     private func scan(url: URL, persist: Bool, completion: (() -> Void)? = nil) {
         isScanning = true
