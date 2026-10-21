@@ -38,7 +38,7 @@ struct GameView: View {
                                     // follows the finger 1:1 without double counting.
                                     lookDelta.x += value.translation.width - lookPrev.x
                                     lookDelta.y += value.translation.height - lookPrev.y
-                                    lookPrev = value.translation
+                                    lookPrev = CGPoint(x: value.translation.width, y: value.translation.height)
                                 }
                             }
                             .onEnded { value in
