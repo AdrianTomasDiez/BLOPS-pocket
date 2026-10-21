@@ -4,48 +4,56 @@ on:
   push:
     branches: [main, master]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Install XcodeGen
-        run: brew install xcodegen || gem install xcodegen || pip install xcodegen || true
+        run: |
+          brew install xcodegen || echo "xcodegen unavailable via brew"
+
       - name: Generate Xcode project
         run: |
           if command -v xcodegen >/dev/null 2>&1; then
             xcodegen generate --spec app/project.yml --project app/
           else
-            echo "xcodegen not available; falling back to manual project creation"
+            echo "::error::xcodegen is required to generate the Xcode project"
+            exit 1
           fi
-      - name: Build archive (no sign)
+
+      - name: Build unsigned .app (iphoneos)
         run: |
           xcodebuild -project app/BLOPSPocket.xcodeproj \
                      -scheme BLOPSPocket \
-                     -destination 'platform=iOS,variant=Generic' \
-                     -archivePath $PWD/build/archive.xcarchive \
-                     ARCHIVE=YES \
+                     -configuration Release \
+                     -sdk iphoneos \
+                     -destination 'generic/platform=iOS' \
+                     -derivedDataPath build/DD \
+                     CODE_SIGNING_ALLOWED=NO \
+                     CODE_SIGNING_REQUIRED=NO \
                      CODE_SIGN_IDENTITY="" \
-                     CODE_SIGN_STYLE=Automatic \
-                     PROVISIONING_PROFILE_SPECIFIER=""
-      - name: Export .ipa (unsigned / dev)
+                     CODE_SIGN_STYLE=Manual \
+                     PROVISIONING_PROFILE_SPECIFIER="" \
+                     build
+
+      - name: Package .ipa (unsigned)
         run: |
-          xcodebuild -exportArchive \
-                     -archivePath $PWD/build/archive.xcarchive \
-                     -exportOptionsPlist app/ExportOptions.plist \
-                     -exportPath $PWD/build/ || true
-          # Fallback: package unsigned .app into .ipa if export failed
-          if [ ! -f $PWD/build/*.ipa ]; then
-            APP=$(find $PWD/build/archive.xcarchive/Products/Applications -name '*.app' | head -n 1)
-            mkdir -p $PWD/build/Payload
-            cp -r "$APP" $PWD/build/Payload/
-            cd $PWD/build
-            zip -qr BLOPSPocket.ipa Payload
-            rm -rf Payload
-          fi
+          APP=$(find build/DD/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -n 1)
+          if [ -z "$APP" ]; then echo "::error::no .app produced"; exit 1; fi
+          rm -rf build/Payload && mkdir -p build/Payload
+          cp -R "$APP" build/Payload/
+          cd build
+          zip -qr BLOPSPocket.ipa Payload
+          rm -rf Payload
+          ls -lh BLOPSPocket.ipa
+
       - name: Upload .ipa artifact
         uses: actions/upload-artifact@v4
         with:
-          name: BLOPSPocket.ipa
-          path: build/*.ipa
+          name: BLOPSPocket-unsigned
+          path: build/BLOPSPocket.ipa
+          if-no-files-found: error

@@ -1,0 +1,15 @@
+name: Swift Core Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  swift-test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test GameCore
+        run: cd app && swift test --package-path GameCore
