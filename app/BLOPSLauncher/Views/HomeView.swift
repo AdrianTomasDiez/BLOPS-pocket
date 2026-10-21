@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject var state: AppState
+    @EnvironmentObject var store: GameFileStore
     @State private var showImport = false
 
     var body: some View {
@@ -9,13 +10,15 @@ struct HomeView: View {
             Text("BO1 Zombies Launcher")
                 .font(.title)
             StatusCard(status: state.installationStatus, verified: state.isVerified)
-            Button("Import Game Files") { showImport = true }
-                .buttonStyle(.borderedProminent)
-            Button("Verify Files") { /* navigate verify */ }
-            Button("Play") { /* navigate mapSelect */ }
-                .disabled(!state.isVerified)
-            Button("Settings") { }
-            Button("About") { }
+            if store.summary != nil {
+                Button("Verify Files") { state.path.push(Route.verify) }
+                Button("Play") { state.path.push(Route.mapSelect) }
+                    .disabled(!state.isVerified)
+            } else {
+                Button("Import Game Files") { state.path.push(Route.importFiles) }
+            }
+            Button("Settings") { state.path.push(Route.settings) }
+            Button("About") { state.path.push(Route.about) }
         }
         .padding()
         .navigationTitle("Home")

@@ -2,10 +2,9 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject var state: AppState
-    @State private var path = NavigationPath()
 
     var body: some View {
-        NavigationStack(path: $path) {
+        NavigationStack(path: $state.path) {
             HomeView()
                 .navigationDestination(for: Route.self) { route in
                     switch route {

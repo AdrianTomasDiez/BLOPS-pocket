@@ -13,28 +13,6 @@ struct LoadingView: View {
     }
 }
 
-struct GameView: View {
-    let map: String
-    @State private var paused = false
-    var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
-            Text("Metal render surface placeholder")
-                .foregroundStyle(.white)
-            VStack {
-                HStack {
-                    Spacer()
-                    Button("Pause") { paused = true }
-                }
-                Spacer()
-            }
-            .padding()
-            if paused { PauseOverlay(isPaused: $paused) }
-        }
-        .navigationTitle(map)
-    }
-}
-
 struct PauseOverlay: View {
     @Binding var isPaused: Bool
     var body: some View {
