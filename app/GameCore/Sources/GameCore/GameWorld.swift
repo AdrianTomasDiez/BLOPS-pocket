@@ -129,6 +129,7 @@ public final class GameWorld {
     public var powerOn: Bool = false
     public var round: Int = 1
     public var zombiesRemainingThisRound: Int = 0
+    public var zombiesToSpawn: Int = 0
     public var zombiesSpawnedThisRound: Int = 0
     public var maxAliveZombies: Int = 6
     public var spawnInterval: Float = 1.0
@@ -161,7 +162,7 @@ public final class GameWorld {
         handleSpawning(dt: dt, events: &events)
         handleRoundEnd(dt: dt, events: &events)
         processInput(input: input, dt: dt, events: &events)
-        collisionPass()
+
 
         if player.isDowned {
             state = .gameOver
@@ -172,13 +173,13 @@ public final class GameWorld {
     }
 
     private func movePlayer(dt: Float, input: PlayerInput, events: inout [GameEvent]) {
-        let speed = (input.sprint ? 6.5 : 4.2) * (player.perks.contains(.speedCola) ? 1.3 : 1.0)
+        let speed: Float = (input.sprint ? Float(6.5) : Float(4.2)) * (player.perks.contains(.speedCola) ? Float(1.3) : Float(1.0))
         let forward = Vec3(sin(player.yaw), 0, cos(player.yaw)).normalized()
         let right = Vec3(-forward.z, 0, forward.x)
 
         var pos = player.position
-        pos += forward * (input.moveZ * speed * dt)
-        pos += right * (input.moveX * speed * dt)
+        pos = pos + forward * (input.moveZ * speed * dt)
+        pos = pos + right * (input.moveX * speed * dt)
 
         pos.y = player.position.y
         pos = resolveCollision(pos, radius: Player.radius, height: Player.height)
@@ -241,7 +242,7 @@ public final class GameWorld {
     }
 
     private func handleSpawning(dt: Float, events: inout [GameEvent]) {
-        guard zombiesSpawnedThisRound < zombiesRemainingThisRound else { return }
+        guard zombiesSpawnedThisRound < zombiesToSpawn else { return }
         spawnTimer -= dt
         guard spawnTimer <= 0 else { return }
         spawnTimer = spawnInterval
@@ -289,7 +290,7 @@ public final class GameWorld {
     }
 
     private func handleRoundEnd(dt: Float, events: inout [GameEvent]) {
-        if zombiesSpawnedThisRound >= zombiesRemainingThisRound && zombies.allSatisfy({ $0.isDying }) {
+        if zombiesSpawnedThisRound >= zombiesToSpawn && zombies.allSatisfy({ $0.isDying }) {
             if roundEndTimer < 0 {
                 roundEndTimer = 3.0
                 events.append(.roundEnd(round: round))
@@ -308,7 +309,7 @@ public final class GameWorld {
 
     private func beginRound() {
         let counts = [6, 8, 13, 16, 19, 22, 25, 28, 31, 33]
-        zombiesRemainingThisRound = round <= counts.count ? counts[round - 1] : Int(0.3 * Float(round) * Float(round) + 5.5 * Float(round) - 6)
+        zombiesToSpawn = round <= counts.count ? counts[round - 1] : 33
         zombiesSpawnedThisRound = 0
         maxAliveZombies = Swift.min(24, 4 + round * 2)
         spawnInterval = Swift.max(0.3, 1.2 - Float(round) * 0.08)
@@ -376,7 +377,7 @@ public final class GameWorld {
                             zc.deathTimer = 1.5
                             let points = headshot ? 100 : 60
                             player.addPoints(points)
-                            zombiesRemainingThisRound = Swift.max(0, zombiesRemainingThisRound - 1)
+
                         } else {
                             player.addPoints(10)
                         }
