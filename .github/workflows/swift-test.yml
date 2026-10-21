@@ -15,4 +15,4 @@ jobs:
       - name: Run core unit tests
         run: |
           cd app/GameCore
-          swift test --skip-build
+          swift test
