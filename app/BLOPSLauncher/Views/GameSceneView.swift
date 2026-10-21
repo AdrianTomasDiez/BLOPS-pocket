@@ -10,7 +10,8 @@ struct GameView: View {
     @State private var didBuild = false
     @State private var lastUpdate = Date()
     @State private var move = CGPoint.zero
-    @State private var lookDrag = CGPoint.zero
+    @State private var lookDelta = CGPoint.zero
+    @State private var lookPrev = CGPoint.zero
     @State private var isFiring = false
     @State private var gameOverTriggered = false
 
@@ -31,16 +32,21 @@ struct GameView: View {
                         DragGesture(minimumDistance: 0)
                             .onChanged { value in
                                 if value.startLocation.x < geo.size.width * 0.45 {
-                                    move = value.translation
+                                    move = CGPoint(x: value.translation.width, y: value.translation.height)
                                 } else {
-                                    lookDrag = value.translation
+                                    // Accumulate the incremental delta so the camera
+                                    // follows the finger 1:1 without double counting.
+                                    lookDelta.x += value.translation.width - lookPrev.x
+                                    lookDelta.y += value.translation.height - lookPrev.y
+                                    lookPrev = value.translation
                                 }
                             }
                             .onEnded { value in
                                 if value.startLocation.x < geo.size.width * 0.45 {
                                     move = .zero
                                 } else {
-                                    lookDrag = .zero
+                                    lookDelta = .zero
+                                    lookPrev = .zero
                                 }
                             }
                     )
@@ -117,8 +123,8 @@ struct GameView: View {
             let dt = Float(now.timeIntervalSince(lastUpdate))
             lastUpdate = now
             let events = world.update(dt: dt, input: currentInput)
-            // The look delta is a one-shot impulse: consume it after applying.
-            lookDrag = .zero
+            // Consume the look delta once per frame
+            lookDelta = .zero
             handle(events)
             syncScene()
         }
@@ -130,8 +136,8 @@ struct GameView: View {
         var input = PlayerInput()
         input.moveX = Float(move.x / 60.0)
         input.moveZ = Float(-move.y / 60.0)
-        input.lookDX = Float(lookDrag.x) * 0.05
-        input.lookDY = Float(lookDrag.y) * 0.05
+        input.lookDX = Float(lookDelta.x) * 0.05
+        input.lookDY = Float(-lookDelta.y) * 0.05
         input.firing = isFiring
         input.sprint = input.moveX != 0 || input.moveZ != 0
         return input
@@ -209,13 +215,13 @@ struct GameView: View {
 
         for door in world.level.doors {
             let size = door.alongZ
-                ? CGSize(width: 0.35, height: 4)
-                : CGSize(width: door.width, height: 4)
+                ? CGSize(width: CGFloat(0.35), height: 4)
+                : CGSize(width: CGFloat(door.width), height: 4)
             let geometry = SCNBox(width: CGFloat(size.width),
                                   height: CGFloat(size.height),
-                                  length: door.alongZ ? CGFloat(door.width) : 0.35,
+                                  length: door.alongZ ? CGFloat(door.width) : CGFloat(0.35),
                                   chamferRadius: 0)
-            geometry.firstMaterial?.diffuse.contents = UIColor(red: 0.55, green: 0.35, alpha: 0.25)
+            geometry.firstMaterial?.diffuse.contents = UIColor(red: 0.55, green: 0.35, blue: 0.35, alpha: 0.25)
             let node = SCNNode(geometry: geometry)
             node.name = "door_\(door.id)"
             node.position = SCNVector3(door.center.x, 2, door.center.z)
@@ -253,7 +259,7 @@ struct GameView: View {
             if let geo = node.geometry as? SCNCapsule {
                 let healthRatio = max(0.05, CGFloat(zombie.health / max(zombie.maxHealth, 1)))
                 geo.height = 1.8
-                geo.radius = 0.35
+                geo.capRadius = 0.35
                 geo.firstMaterial?.diffuse.contents = UIColor(
                     red: 0.35 * healthRatio + 0.25,
                     green: 0.55 * healthRatio,
@@ -261,8 +267,9 @@ struct GameView: View {
                     alpha: 1)
             }
         }
-        for child in container.childNodes where !seen.contains(Int(child.name.dropFirst()) ?? -1) {
-            child.removeFromParentNode()
+        for child in container.childNodes {
+            let zid = Int((child.name ?? "").dropFirst()) ?? -1
+            if !seen.contains(zid) { child.removeFromParentNode() }
         }
     }
 
