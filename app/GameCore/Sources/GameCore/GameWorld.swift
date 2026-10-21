@@ -201,7 +201,8 @@ public final class GameWorld {
             guard !zombies[i].isDying else {
                 zombies[i].deathTimer -= dt
                 continue
-            }            if zombies[i].stagger > 0 { zombies[i].stagger = Swift.max(0, zombies[i].stagger - dt) }
+            }
+            if zombies[i].stagger > 0 { zombies[i].stagger = Swift.max(0, zombies[i].stagger - dt) }
             if zombies[i].attackCooldown > 0 { zombies[i].attackCooldown -= dt }
 
             let target = player.position

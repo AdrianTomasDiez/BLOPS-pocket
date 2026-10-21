@@ -57,3 +57,18 @@ jobs:
           name: BLOPSPocket-unsigned
           path: build/BLOPSPocket.ipa
           if-no-files-found: error
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: BLOPS Pocket ${{ github.run_number }} (unsigned .ipa)
+          body: |
+            Unsigned iOS build of BLOPS Pocket (clean-room reimplementation).
+
+            Install with AltStore / Sideloadly (Windows) or sign with your own
+            Apple ID before installing.
+
+            Built from commit ${{ github.sha }}.
+          files: build/BLOPSPocket.ipa
+          fail_on_unmatched_files: true
