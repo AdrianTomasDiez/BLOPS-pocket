@@ -462,7 +462,7 @@ public final class GameWorld {
             }
             return
         }
-        for d in level.doors where !doorsOpen.contains(d.id), (p - d.interactPoint()).horizontalLength < reach {
+        for d in level.doors where !doorsOpen.contains(d.id) && (p - d.interactPoint()).horizontalLength < reach {
             if player.points >= d.cost {
                 player.points -= d.cost
                 doorsOpen.insert(d.id)
