@@ -153,6 +153,10 @@ public final class GameWorld {
         var events: [GameEvent] = []
 
         player.tick(dt: dt, speedMultiplier: 1.0)
+        if var w = player.currentWeapon {
+            _ = w.tick(dt: dt, reloadSpeedMultiplier: 1.0)
+            player.weapons[player.currentWeaponIndex] = w
+        }
 
         if !player.isDowned {
             movePlayer(dt: dt, input: input, events: &events)
@@ -197,8 +201,7 @@ public final class GameWorld {
             guard !zombies[i].isDying else {
                 zombies[i].deathTimer -= dt
                 continue
-            }
-            if zombies[i].stagger > 0 { zombies[i].stagger = Swift.max(0, zombies[i].stagger - dt) }
+            }            if zombies[i].stagger > 0 { zombies[i].stagger = Swift.max(0, zombies[i].stagger - dt) }
             if zombies[i].attackCooldown > 0 { zombies[i].attackCooldown -= dt }
 
             let target = player.position
@@ -224,6 +227,8 @@ public final class GameWorld {
                 if revived { events.append(.playerRevived) }
             }
         }
+        // Purge fully dead zombies so the array doesn't grow
+        zombies.removeAll { $0.isDying && $0.deathTimer <= 0 }
     }
 
     private func separation(_ z: Zombie) -> Vec3 {
@@ -243,6 +248,8 @@ public final class GameWorld {
 
     private func handleSpawning(dt: Float, events: inout [GameEvent]) {
         guard zombiesSpawnedThisRound < zombiesToSpawn else { return }
+        let alive = zombies.filter { !$0.isDying }.count
+        guard alive < maxAliveZombies else { return }
         spawnTimer -= dt
         guard spawnTimer <= 0 else { return }
         spawnTimer = spawnInterval
@@ -258,6 +265,7 @@ public final class GameWorld {
         nextZombieId += 1
         zombies.append(z)
         zombiesSpawnedThisRound += 1
+        zombiesRemainingThisRound = Swift.max(0, zombiesToSpawn - zombiesSpawnedThisRound)
         events.append(.zombieSpawned(zombieId: z.id))
     }
 
@@ -290,7 +298,7 @@ public final class GameWorld {
     }
 
     private func handleRoundEnd(dt: Float, events: inout [GameEvent]) {
-        if zombiesSpawnedThisRound >= zombiesToSpawn && zombies.allSatisfy({ $0.isDying }) {
+        if zombiesSpawnedThisRound >= zombiesToSpawn && zombies.filter({ !$0.isDying }).isEmpty {
             if roundEndTimer < 0 {
                 roundEndTimer = 3.0
                 events.append(.roundEnd(round: round))
@@ -311,8 +319,9 @@ public final class GameWorld {
         let counts = [6, 8, 13, 16, 19, 22, 25, 28, 31, 33]
         zombiesToSpawn = round <= counts.count ? counts[round - 1] : 33
         zombiesSpawnedThisRound = 0
+        zombiesRemainingThisRound = zombiesToSpawn
         maxAliveZombies = Swift.min(24, 4 + round * 2)
-        spawnInterval = Swift.max(0.3, 1.2 - Float(round) * 0.08)
+        spawnInterval = Swift.max(0.25, 0.6 - Float(round) * 0.05)
     }
 
     private func processInput(input: PlayerInput, dt: Float, events: inout [GameEvent]) {
@@ -350,7 +359,7 @@ public final class GameWorld {
         for _ in 0..<weapon.def.pellets {
             let dir = direction
             var pos = origin
-            let step: Float = 0.5
+            let step: Float = 0.15
             var dist: Float = 0
             while dist < 60 {
                 pos = pos + dir * step

@@ -73,8 +73,18 @@ final class GameCoreTests: XCTestCase {
 
         let w2 = GameWorld(seed: 1)
         var i = PlayerInput()
-        for _ in 0..<100 {
-            let events = w2.update(dt: 0.05, input: i)
+        for _ in 0..<400 {
+            // Advance spawn and then just kill all spawned zombies so round completes
+            _ = w2.update(dt: 0.05, input: i)
+            // Kill any alive zombies (simulates the player clearing the round)
+            for idx in w2.zombies.indices {
+                if !w2.zombies[idx].isDying {
+                    var z = w2.zombies[idx]
+                    z.isDying = true
+                    z.deathTimer = 1.5
+                    w2.zombies[idx] = z
+                }
+            }
             if w2.round == 2 { break }
         }
         XCTAssertEqual(w2.round, 2)

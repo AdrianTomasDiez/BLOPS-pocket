@@ -102,16 +102,16 @@ public struct AABB: Equatable, Codable {
         var dist = (dx * dx + dz * dz).squareRoot()
 
         if dist < 0.0001 {
-            // Centre is inside the box: exit along the shallowest axis.
+            // Centre is inside the box footprint: exit through nearest face.
             let left = position.x - min.x
             let right = max.x - position.x
             let back = position.z - min.z
             let front = max.z - position.z
             let least = Swift.min(Swift.min(left, right), Swift.min(back, front))
-            if least == left { dx = -1; dz = 0; dist = 0.0001 }
-            else if least == right { dx = 1; dz = 0; dist = 0.0001 }
-            else if least == back { dx = 0; dz = -1; dist = 0.0001 }
-            else { dx = 0; dz = 1; dist = 0.0001 }
+            if least == left { return Vec3(min.x - radius, position.y, position.z) }
+            else if least == right { return Vec3(max.x + radius, position.y, position.z) }
+            else if least == back { return Vec3(position.x, position.y, min.z - radius) }
+            else { return Vec3(position.x, position.y, max.z + radius) }
         }
         let overlap = radius - dist
         guard overlap > 0 else { return position }
