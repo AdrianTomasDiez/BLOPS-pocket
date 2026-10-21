@@ -118,7 +118,11 @@ final class GameFileStore: ObservableObject {
 
     #if os(iOS)
     private var resolveOptions: URL.BookmarkResolutionOptions { [.withSecurityScope] }
+#if os(iOS)
+    private var createOptions: URL.BookmarkCreationOptions { [] }
+#else
     private var createOptions: URL.BookmarkCreationOptions { [.withSecurityScope] }
+#endif
     #else
     private var resolveOptions: URL.BookmarkResolutionOptions { [] }
     private var createOptions: URL.BookmarkCreationOptions { [] }

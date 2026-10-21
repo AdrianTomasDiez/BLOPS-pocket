@@ -75,11 +75,11 @@ struct ImportView: View {
                         if summary.isUsable {
                             Label("Listo para verificar", systemImage: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
-                                .font(.caption3)
+                                .font(.caption2)
                         } else {
                             Label("Faltan carpetas main o zone", systemImage: "exclamationmark.triangle")
                                 .foregroundStyle(.orange)
-                                .font(.caption3)
+                                .font(.caption2)
                         }
                     }
                     .padding()
