@@ -12,6 +12,9 @@ targets:
     platform: iOS
     sources:
       - path: BLOPSLauncher
+      # GameCore is compiled straight into the app module. The same sources are
+      # also a SwiftPM package so they can be unit tested on CI.
+      - path: GameCore/Sources/GameCore
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.adriantomasdiez.blopspocket

@@ -3,7 +3,6 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject var state: AppState
     @EnvironmentObject var store: GameFileStore
-    @State private var showImport = false
 
     var body: some View {
         VStack(spacing: 16) {
@@ -11,14 +10,14 @@ struct HomeView: View {
                 .font(.title)
             StatusCard(status: state.installationStatus, verified: state.isVerified)
             if store.summary != nil {
-                Button("Verify Files") { state.path.push(Route.verify) }
-                Button("Play") { state.path.push(Route.mapSelect) }
+                Button("Verify Files") { state.path.append(Route.verify) }
+                Button("Play") { state.path.append(Route.mapSelect) }
                     .disabled(!state.isVerified)
             } else {
-                Button("Import Game Files") { state.path.push(Route.importFiles) }
+                Button("Import Game Files") { state.path.append(Route.importFiles) }
             }
-            Button("Settings") { state.path.push(Route.settings) }
-            Button("About") { state.path.push(Route.about) }
+            Button("Settings") { state.path.append(Route.settings) }
+            Button("About") { state.path.append(Route.about) }
         }
         .padding()
         .navigationTitle("Home")
