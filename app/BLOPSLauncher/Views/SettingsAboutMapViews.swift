@@ -40,14 +40,26 @@ struct AboutView: View {
 }
 
 struct MapSelectView: View {
+    @EnvironmentObject var state: AppState
     let maps = [MapInfo(id: "kino", name: "Kino der Toten", supported: true)]
     var body: some View {
         List(maps) { m in
-            HStack {
-                Text(m.name)
-                Spacer()
-                if m.supported { Text("Supported").foregroundStyle(.green) }
+            Button {
+                state.selectedMap = m.id
+                state.path.append(Route.loading(m.id))
+            } label: {
+                HStack {
+                    Text(m.name)
+                    Spacer()
+                    if m.supported {
+                        Text("Supported")
+                            .foregroundStyle(.green)
+                    }
+                }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .disabled(!m.supported)
         }
         .navigationTitle("Select Map")
     }

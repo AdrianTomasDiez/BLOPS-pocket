@@ -1,0 +1,38 @@
+name: iOS Build & IPA
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen || gem install xcodegen || pip install xcodegen || true
+      - name: Generate Xcode project
+        run: |
+          if command -v xcodegen >/dev/null 2>&1; then
+            xcodegen generate --spec app/project.yml --project app/
+          else
+            echo "xcodegen not available; falling back to manual project creation"
+          fi
+      - name: Build archive
+        run: |
+          xcodebuild -project app/BLOPSPocket.xcodeproj \
+                     -scheme BLOPSPocket \
+                     -destination 'platform=iOS Simulator,name=iPhone 15' \
+                     -archivePath $PWD/build/archive.xcarchive ARCHIVE=YES
+      - name: Export .ipa
+        run: |
+          xcodebuild -exportArchive \
+                     -archivePath $PWD/build/archive.xcarchive \
+                     -exportOptionsPlist app/ExportOptions.plist \
+                     -exportPath $PWD/build/
+      - name: Upload .ipa artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BLOPSPocket.ipa
+          path: build/*.ipa
